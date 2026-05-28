@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s03 Todo Write - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header p { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }  /* comment */
+  pre .kw { color: #c084fc; }  /* keyword */
+  pre .fn { color: #60a5fa; }  /* function */
+  pre .s { color: #86efac; }   /* string */
+  pre .op { color: #fbbf24; }  /* operator */
+  pre .num { color: #f472b6; } /* number */
+  pre .tp { color: #67e8f9; }  /* type */
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📘 s03 · s03_todo_write.py 复习笔记</h1>
+  <p>从 s02 到 s03：当 Agent 学会做计划</p>
+  <span class="badge">基于 s03_todo_write.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">Python 基础语法速查</a></li>
+    <li><a href="#s2">raw_item 是字典还是对象？</a></li>
+    <li><a href="#s3">render() 渲染函数详解</a></li>
+    <li><a href="#s4">active_form 是什么？</a></li>
+    <li><a href="#s5">TODO = TodoManager() 单例模式</a></li>
+    <li><a href="#s6">subprocess.run 执行命令</a></li>
+    <li><a href="#s7">run_write 为什么先创建父目录？</a></li>
+    <li><a href="#s8">TOOLS 工具定义格式</a></li>
+    <li><a href="#s9">TOOL_HANDLERS ↔ agent_loop 联动</a></li>
+    <li><a href="#s10">ANSI 转义码</a></li>
+    <li><a href="#s11">s02 → s03 变化全览</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> Python 基础语法速查</h2>
+
+  <h3>📍 enumerate — 同时取索引和元素</h3>
+  <pre><span class="kw">for</span> index, raw_item <span class="kw">in</span> <span class="fn">enumerate</span>(items):</pre>
+  <p>把列表变成 <code>(索引, 元素)</code> 的配对序列：</p>
+  <pre>fruits = [<span class="s">"apple"</span>, <span class="s">"banana"</span>, <span class="s">"cherry"</span>]
+<span class="kw">for</span> i, v <span class="kw">in</span> <span class="fn">enumerate</span>(fruits):
+    <span class="fn">print</span>(i, v)
+<span class="cm"># 0 apple</span>
+<span class="cm"># 1 banana</span>
+<span class="cm"># 2 cherry</span></pre>
+  <p><strong>注意</strong>：<code>index</code> 和 <code>raw_item</code> 是循环变量名，<strong>不是</strong>从 items 里取出来的字段。</p>
+
+  <h3>📍 .get() — 字典的安全取值</h3>
+  <pre>raw_item.<span class="fn">get</span>(<span class="s">"content"</span>, <span class="s">""</span>)</pre>
+  <table>
+    <tr><th>参数</th><th>含义</th></tr>
+    <tr><td>第一个参数</td><td>要取的键名（key）</td></tr>
+    <tr><td>第二个参数</td><td>键不存在时返回的默认值（可选，不传则返回 None）</td></tr>
+  </table>
+  <pre>d = {<span class="s">"name"</span>: <span class="s">"Alice"</span>}
+d.<span class="fn">get</span>(<span class="s">"name"</span>)        <span class="cm"># "Alice"</span>
+d.<span class="fn">get</span>(<span class="s">"age"</span>, <span class="s">"?"</span>)     <span class="cm"># "?"  ← 键不存在，返回默认值</span>
+d[<span class="s">"age"</span>]                <span class="cm"># KeyError  ← 直接索引会报错</span></pre>
+
+  <h3>📍 .strip() — 去掉首尾空白字符</h3>
+  <p>去掉字符串开头和结尾的空格、换行 <code>\n</code>、制表符 <code>\t</code> 等：</p>
+  <pre><span class="s">"  hello world \n  "</span>.<span class="fn">strip</span>()  <span class="cm"># "hello world"</span></pre>
+  <p>变体：<code>.lstrip()</code>（去左边）、<code>.rstrip()</code>（去右边）</p>
+
+  <h3>📍 .lower() — 转小写</h3>
+  <p>统一大小写后再比较，避免大小写不一致的问题：</p>
+  <pre><span class="s">"Pending"</span>.<span class="fn">lower</span>()  <span class="cm"># "pending"</span>
+<span class="s">"PENDING"</span>.<span class="fn">lower</span>()  <span class="cm"># "pending"</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> raw_item 是字典还是 PlanItem 对象？</h2>
+
+  <div class="callout green">
+    <strong>答案：raw_item 是字典（dict），不是 PlanItem 对象。</strong>
+  </div>
+
+  <p>关键证据在第 57 行——调用了 <code>.get()</code> 方法：</p>
+  <pre>raw_item.<span class="fn">get</span>(<span class="s">"content"</span>, <span class="s">""</span>)    <span class="cm"># ← 字典才有的方法</span>
+raw_item.<span class="fn">get</span>(<span class="s">"status"</span>, <span class="s">"pending"</span>)
+raw_item.<span class="fn">get</span>(<span class="s">"active_form"</span>, <span class="s">""</span>)</pre>
+
+  <p>如果 <code>raw_item</code> 是 <code>PlanItem</code> 对象，访问属性应该用点号：</p>
+  <pre>raw_item.content   <span class="cm"># ✅ 对象用点号</span>
+raw_item.<span class="fn">get</span>(<span class="s">"content"</span>)  <span class="cm"># ❌ 对象没有 .get() 方法，会 AttributeError</span></pre>
+
+  <div class="diagram">┌─ 外部传入（raw）─────────────┐     ┌─ 内部管理（normalized）──────┐
+│ items = [                    │     │ self.state.items = [         │
+│   {                          │  →  │   PlanItem(                 │
+│     "content": "写单元测试",   │ 验证 │     content="写单元测试",     │
+│     "status": "in_progress"  │ 转换 │     status="in_progress",    │
+│   }                          │     │   )                          │
+│ ]                            │     │ ]                            │
+└──────────────────────────────┘     └──────────────────────────────┘
+       ↑ raw_item 是这里每个 dict          ↑ normalized 里是 PlanItem</div>
+
+  <p><strong>数据流：</strong>外部传来的 JSON/dict  → 验证/清洗  → 转成 PlanItem 对象存入状态</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> render() — 渲染函数详解</h2>
+
+  <p>作用：把 <code>self.state.items</code>（PlanItem 列表）渲染成人类可读的文本。</p>
+
+  <h3>状态 → 符号映射</h3>
+  <pre>marker = {
+    <span class="s">"pending"</span> : <span class="s">"[ ]"</span>,
+    <span class="s">"in_progress"</span> : <span class="s">"[>]"</span>,
+    <span class="s">"completed"</span> : <span class="s">"[x]"</span>,
+}[item.status]</pre>
+  <p>用字典做映射，代替 if-elif 链，更简洁。</p>
+
+  <h3>进度统计</h3>
+  <pre>completed = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> item <span class="kw">in</span> self.state.items <span class="kw">if</span> item.status == <span class="s">"completed"</span>)</pre>
+  <p>生成器表达式：遍历 → 筛选 → 每个符合条件的生成 1 → sum 求和。</p>
+
+  <h3>完整输出示例</h3>
+  <pre>[>] 写单元测试 (test_foo.py)
+[ ] 重构代码
+[x] 添加注释
+
+1/3 completed</pre>
+
+  <p>等价于：</p>
+  <pre><span class="s">"[>]"</span> + <span class="s">" "</span> + <span class="s">"写单元测试"</span> + <span class="s">" (test_foo.py)"</span>  <span class="cm"># 拼接逻辑</span>
+<span class="s">"\n"</span>.<span class="fn">join</span>([...])                                   <span class="cm"># 换行合并</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> active_form 是什么？</h2>
+
+  <div class="callout green">
+    <strong>active_form 代表"当前正在操作的文件/对象"。</strong>
+  </div>
+
+  <p>在 <code>render()</code> 输出中显示在括号里：</p>
+
+  <pre>[>] 写单元测试 (test_foo.py)    <span class="cm">← test_foo.py 就是 active_form</span></pre>
+
+  <p><strong>只对 <code>in_progress</code> 状态有效</strong>——渲染时只在该状态下才追加括号信息：</p>
+
+  <pre><span class="kw">if</span> item.status == <span class="s">"in_progress"</span> <span class="kw">and</span> item.active_form:
+    line += <span class="s">f" ({item.active_form})"</span></pre>
+
+  <p>名字叫 <code>active_form</code>（活跃表单/文档）而不是 <code>active_file</code>，可能是：</p>
+  <ul>
+    <li>沿用了 Anthropic 官方 Todo API 的字段命名</li>
+    <li>语义更通用——不一定是"文件"，也可以是正在填的表单、编辑的文档等</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> TODO = TodoManager() — 单例模式</h2>
+
+  <pre>TODO = <span class="fn">TodoManager</span>()</pre>
+
+  <p>就是创建一个实例赋值给变量，但变量名全大写有特殊含义：</p>
+
+  <table>
+    <tr><th>写法</th><th>含义</th></tr>
+    <tr><td><code>TODO = TodoManager()</code></td><td>全局唯一的 TodoManager 实例（单例）</td></tr>
+    <tr><td><code>TODO</code> 全大写</td><td>约定：表示这是一个<strong>模块级常量/单例</strong></td></tr>
+  </table>
+
+  <p>类似写法在很多项目中很常见：</p>
+  <pre><span class="cm"># 常见惯例</span>
+DEBUG = <span class="tp">True</span>
+CONFIG = <span class="fn">Config</span>()
+LOGGER = <span class="fn">logging.getLogger</span>(<span class="s">__name__</span>)
+TODO   = <span class="fn">TodoManager</span>()</pre>
+
+  <p><strong>为什么这样做？</strong>整个程序只需要一个 TodoManager，其他地方直接 <code>from xxx import TODO</code> 就能用。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> subprocess.run — 执行系统命令</h2>
+
+  <pre>result = subprocess.<span class="fn">run</span>(
+    command,            <span class="cm"># 要执行的命令字符串</span>
+    shell=<span class="tp">True</span>,         <span class="cm"># 通过 /bin/sh 执行（支持管道 | 、重定向 > 等）</span>
+    cwd=WORKDIR,        <span class="cm"># 工作目录</span>
+    capture_output=<span class="tp">True</span>, <span class="cm"># 捕获 stdout 和 stderr</span>
+    text=<span class="tp">True</span>,          <span class="cm"># 返回字符串而非字节 b"..."</span>
+    timeout=<span class="num">120</span>,        <span class="cm"># 超时 120 秒</span>
+)</pre>
+
+  <table>
+    <tr><th>参数</th><th>作用</th></tr>
+    <tr><td><code>shell=True</code></td><td>支持管道 <code>|</code>、变量、<code>&&</code> 等 shell 语法</td></tr>
+    <tr><td><code>capture_output=True</code></td><td>捕获输出到内存，不打印到终端</td></tr>
+    <tr><td><code>text=True</code></td><td>返回 <code>str</code> 而非 <code>bytes</code></td></tr>
+    <tr><td><code>timeout=120</code></td><td>超时后抛 <code>TimeoutExpired</code> 异常</td></tr>
+  </table>
+
+  <h3>危险命令过滤</h3>
+  <pre>dangerous = [<span class="s">"rm -rf /"</span>, <span class="s">"sudo"</span>, <span class="s">"shutdown"</span>, <span class="s">"reboot"</span>, <span class="s">"> /dev/"</span>]
+<span class="kw">if</span> <span class="fn">any</span>(d <span class="kw">in</span> command <span class="kw">for</span> d <span class="kw">in</span> dangerous):
+    <span class="kw">return</span> <span class="s">"Error: Dangerous command blocked"</span></pre>
+  <p><code>any()</code> + 生成器：遍历危险关键词列表，只要有一个出现在命令里就拦截。</p>
+
+  <h3>输出截断</h3>
+  <pre>output = (result.stdout + result.stderr).<span class="fn">strip</span>()          <span class="cm"># 合并 stdout+stderr，去首尾空白</span>
+<span class="kw">return</span> output[:<span class="num">50000</span>] <span class="kw">if</span> output <span class="kw">else</span> <span class="s">"(no output)"</span>  <span class="cm"># 最多 50000 字符</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> run_write — 为什么先创建父目录？</h2>
+
+  <pre><span class="kw">def</span> <span class="fn">run_write</span>(path: <span class="tp">str</span>, content: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    file_path = <span class="fn">safe_path</span>(path)
+    file_path.parent.<span class="fn">mkdir</span>(parents=<span class="tp">True</span>, exist_ok=<span class="tp">True</span>)  <span class="cm"># ← 先确保父目录存在</span>
+    file_path.<span class="fn">write_text</span>(content)                          <span class="cm"># ← 再写文件</span>
+    <span class="kw">return</span> <span class="s">f"Wrote {len(content)} bytes to {path}"</span></pre>
+
+  <div class="callout">
+    <strong>如果不先创建父目录：</strong>写入 <code>src/utils/helper.py</code> 时，如果 <code>src/utils/</code> 不存在，会报 <code>FileNotFoundError</code>。
+  </div>
+
+  <p><code>file_path.parent</code> 一层层拆解：</p>
+  <pre>file_path        <span class="cm"># Path("/home/user/project/src/utils/helper.py")</span>
+       .parent   <span class="cm"># Path("/home/user/project/src/utils")          ← 父目录</span>
+       .mkdir(   <span class="cm"># 创建这个目录</span>
+           parents=<span class="tp">True</span>,   <span class="cm"># 递归创建：a/b/c 全部不存在时也会一并创建</span>
+           exist_ok=<span class="tp">True</span>   <span class="cm"># 目录已存在时不报错</span>
+       )</pre>
+
+  <div class="diagram">想写入: src/utils/helper.py
+                │
+           ┌────▼────┐
+           │ 安全校验? │  ← safe_path() 防止路径穿越
+           └────┬────┘
+                │
+           ┌────▼─────────────┐
+           │ 创建父目录        │
+           │ src/utils/       │  ← 不存在就递归创建
+           └────┬─────────────┘
+                │
+           ┌────▼──────────┐
+           │ 写入文件       │
+           │ helper.py     │
+           └────┬──────────┘
+                │
+           ┌────▼──────────────┐
+           │ 返回成功消息       │
+           │ "Wrote 42 bytes   │
+           │  to src/utils/... │
+           └───────────────────┘</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> TOOLS — 给 AI 的工具说明书</h2>
+
+  <p>这是 Anthropic API 的工具定义格式（JSON Schema），告诉 AI 模型可以调用什么工具、每个工具有什么参数。</p>
+
+  <pre>{                                   <span class="cm"># 工具定义 = 给 AI 的说明书</span>
+    <span class="s">"name"</span>: <span class="s">"bash"</span>,                <span class="cm"># ① 工具名称</span>
+    <span class="s">"description"</span>: <span class="s">"Run a shell command."</span>,  <span class="cm"># ② 描述（自然语言）</span>
+    <span class="s">"input_schema"</span>: {                <span class="cm"># ③ 参数结构（JSON Schema）</span>
+        <span class="s">"type"</span>: <span class="s">"object"</span>,
+        <span class="s">"properties"</span>: {               <span class="cm"># ④ 具体参数列表</span>
+            <span class="s">"command"</span>: { <span class="s">"type"</span>: <span class="s">"string"</span> }
+        },
+        <span class="s">"required"</span>: [<span class="s">"command"</span>]       <span class="cm"># ⑤ 必填参数</span>
+    }
+}</pre>
+
+  <table>
+    <tr><th>字段</th><th>含义</th></tr>
+    <tr><td><code>name</code></td><td>工具名，AI 在回复中通过这个名字指定调用哪个工具</td></tr>
+    <tr><td><code>description</code></td><td>自然语言描述，AI 据此判断何时用这个工具</td></tr>
+    <tr><td><code>input_schema</code></td><td>参数结构定义（JSON Schema 格式）</td></tr>
+    <tr><td><code>properties</code></td><td>参数名 + 类型</td></tr>
+    <tr><td><code>required</code></td><td>哪些参数是必填的</td></tr>
+  </table>
+
+  <p><strong>s03 新增的 todo 工具定义：</strong></p>
+  <pre>{
+    <span class="s">"name"</span>: <span class="s">"todo"</span>,
+    <span class="s">"description"</span>: <span class="s">"Rewrite the current session plan for multi-step work."</span>,
+    <span class="s">"input_schema"</span>: {
+        <span class="s">"properties"</span>: {
+            <span class="s">"items"</span>: {
+                <span class="s">"type"</span>: <span class="s">"array"</span>,
+                <span class="s">"items"</span>: {
+                    <span class="s">"properties"</span>: {
+                        <span class="s">"content"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>},
+                        <span class="s">"status"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>, <span class="s">"enum"</span>: [...]},
+                        <span class="s">"activeForm"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}
+                    },
+                    <span class="s">"required"</span>: [<span class="s">"content"</span>, <span class="s">"status"</span>]
+                }
+            }
+        }
+    }
+}</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> TOOL_HANDLERS ↔ agent_loop 联动</h2>
+
+  <p>这是整个程序的核心——Agent Loop（代理循环）。</p>
+
+  <h3>TOOL_HANDLERS：字符串名 → 实际函数的映射表</h3>
+  <pre>TOOL_HANDLERS = {
+    <span class="s">"bash"</span>:       <span class="kw">lambda</span> **kw: <span class="fn">run_bash</span>(kw[<span class="s">"command"</span>]),
+    <span class="s">"read_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_read</span>(kw[<span class="s">"path"</span>], kw.<span class="fn">get</span>(<span class="s">"limit"</span>)),
+    <span class="s">"write_file"</span>: <span class="kw">lambda</span> **kw: <span class="fn">run_write</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"content"</span>]),
+    <span class="s">"edit_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_edit</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"old_text"</span>], kw[<span class="s">"new_text"</span>]),
+    <span class="s">"todo"</span>:       <span class="kw">lambda</span> **kw: TODO.<span class="fn">update</span>(kw[<span class="s">"items"</span>])       <span class="cm"># ← s03 新增</span>
+}</pre>
+
+  <div class="callout">
+    <strong>为什么不用 if-elif 链？</strong>因为 AI 返回的是<strong>字符串</strong> <code>"bash"</code>，字典映射比 elif 链更干净、更易扩展（加新工具只需加一行）。
+  </div>
+
+  <h3>agent_loop — 完整 8 步闭环</h3>
+
+  <div class="diagram">① 用户输入
+     │
+     ▼
+② 把用户消息 + TOOLS 定义一起发给 AI
+     │
+     ▼
+③ AI 决定要调用哪个工具
+   block.name == "bash"
+   block.input == {"command": "ls -la"}
+     │
+     ▼
+④ TOOL_HANDLERS.get("bash") → 找到 run_bash
+     │
+     ▼
+⑤ handler(**block.input) → run_bash(command="ls -la")
+     │
+     ▼
+⑥ 拿到执行结果 "file1.txt\nfile2.txt"
+     │
+     ▼
+⑦ 包装成 tool_result，塞回消息列表，再次发给 AI
+     │
+     ▼
+⑧ 回到 ②，直到 AI 不再调用工具 → 返回最终回复</div>
+
+  <p>核心代码逻辑（[agent_loop](file:///home/zyh/learn-claude-code/s03/s03_todo_write.py#L226-L255)）：</p>
+
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(messages: <span class="tp">list</span>):
+    <span class="kw">while</span> <span class="tp">True</span>:
+        response = client.messages.<span class="fn">create</span>(
+            model=MODEL, system=SYSTEM,
+            messages=messages,    <span class="cm"># 把消息发给 AI</span>
+            tools=TOOLS,          <span class="cm"># 告诉 AI 有哪些工具可用</span>
+        )
+        messages.<span class="fn">append</span>({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: response.content})
+
+        <span class="kw">if</span> response.stop_reason != <span class="s">"tool_use"</span>:  <span class="cm"># AI 不再调用工具 → 结束</span>
+            <span class="kw">return</span>
+
+        results = []
+        <span class="kw">for</span> block <span class="kw">in</span> response.content:           <span class="cm"># 遍历 AI 返回的每个 block</span>
+            <span class="kw">if</span> block.type != <span class="s">"tool_use"</span>:          <span class="cm"># 跳过文本块</span>
+                <span class="kw">continue</span>
+
+            handler = TOOL_HANDLERS.<span class="fn">get</span>(block.name)  <span class="cm"># 找到对应函数</span>
+            output = <span class="fn">handler</span>(**block.input)          <span class="cm"># 调用函数执行</span>
+
+            results.<span class="fn">append</span>({
+                <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+                <span class="s">"tool_use_id"</span>: block.id,            <span class="cm"># 配对 ID</span>
+                <span class="s">"content"</span>: <span class="fn">str</span>(output)
+            })
+
+        messages.<span class="fn">append</span>({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})  <span class="cm"># 结果喂回 AI</span></pre>
+
+  <h3>AI 回复中的两种 block 类型</h3>
+  <pre>response.content = [
+    {                               <span class="cm"># 类型 1: 文本块 — AI 想说的话</span>
+        <span class="s">"type"</span>: <span class="s">"text"</span>,
+        <span class="s">"text"</span>: <span class="s">"我先看看当前目录..."</span>
+    },
+    {                               <span class="cm"># 类型 2: 工具调用块</span>
+        <span class="s">"type"</span>: <span class="s">"tool_use"</span>,
+        <span class="s">"id"</span>: <span class="s">"toolu_abc123"</span>,           <span class="cm"># 唯一 ID，用于配对结果</span>
+        <span class="s">"name"</span>: <span class="s">"bash"</span>,                  <span class="cm"># 工具名</span>
+        <span class="s">"input"</span>: {<span class="s">"command"</span>: <span class="s">"ls"</span>}      <span class="cm"># 参数</span>
+    },
+]</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> ANSI 转义码 — 终端彩色文字</h2>
+
+  <pre>query = <span class="fn">input</span>(<span class="s">"\033[36ms02 >> \033[0m"</span>)</pre>
+
+  <p>这是 ANSI 转义码，用来在终端里显示彩色文字：</p>
+
+  <table>
+    <tr><th>代码</th><th>含义</th></tr>
+    <tr><td><code>\033[</code></td><td>转义序列开始（<code>\033</code> = ESC 字符）</td></tr>
+    <tr><td><code>36m</code></td><td>设置文字颜色为<strong>青色</strong></td></tr>
+    <tr><td><code>s02 >> </code></td><td>实际显示的提示文字</td></tr>
+    <tr><td><code>\033[0m</code></td><td><strong>重置</strong>颜色（不加的话后面所有文字都会变色）</td></tr>
+  </table>
+
+  <p>常见颜色：</p>
+  <pre><span class="cm"># 前景色（文字颜色）</span>
+<span class="s">"\033[31m"</span>   <span class="cm"># 红色</span>
+<span class="s">"\033[32m"</span>   <span class="cm"># 绿色</span>
+<span class="s">"\033[33m"</span>   <span class="cm"># 黄色</span>
+<span class="s">"\033[34m"</span>   <span class="cm"># 蓝色</span>
+<span class="s">"\033[35m"</span>   <span class="cm"># 紫色</span>
+<span class="s">"\033[36m"</span>   <span class="cm"># 青色</span>
+<span class="s">"\033[0m"</span>    <span class="cm"># 重置（一定要加）</span></pre>
+  <p>纯装饰作用，不加也不影响程序逻辑。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> s02 → s03 变化全览</h2>
+
+  <h3>增加了什么？</h3>
+  <table>
+    <tr><th>新增内容</th><th>作用</th></tr>
+    <tr><td><code>dataclass</code> 导入</td><td>定义 PlanItem、PlanningState 数据类</td></tr>
+    <tr><td><code>PLAN_REMINDER_INTERVAL</code></td><td>多少轮不更新计划就提醒（=3）</td></tr>
+    <tr><td><code>PlanItem</code></td><td>单个计划条目：content / status / active_form</td></tr>
+    <tr><td><code>PlanningState</code></td><td>计划状态容器：items + rounds_since_update</td></tr>
+    <tr><td><code>TodoManager</code></td><td>计划管理器（update / render / remind）</td></tr>
+    <tr><td><code>TODO = TodoManager()</code></td><td>全局单例</td></tr>
+    <tr><td><code>todo</code> 工具注册</td><td>TOOL_HANDLERS + TOOLS 各新增一条</td></tr>
+    <tr><td><code>extract_text()</code></td><td>从 AI 回复中提取纯文本</td></tr>
+    <tr><td>提醒机制</td><td>used_todo 跟踪 + rounds_since_update</td></tr>
+    <tr><td>SYSTEM 提示升级</td><td>加入了 todo 工具的使用指导</td></tr>
+    <tr><td>try/except 异常捕获</td><td>工具执行失败时返回错误信息而不是崩溃</td></tr>
+  </table>
+
+  <h3>删除了什么？</h3>
+  <table>
+    <tr><th>删除内容</th><th>原因</th></tr>
+    <tr><td><code>CONCURRENCY_SAFE / UNSAFE</code></td><td>s03 还没用到并发，去掉预留声明保持简洁</td></tr>
+    <tr><td><code>normalize_messages()</code></td><td>SDK 环境稳定后不再需要手动清洗消息</td></tr>
+  </table>
+
+  <h3>核心设计意图</h3>
+
+  <div class="diagram">s02 架构（只有消息流）：
+  messages ──→ AI ──→ tool_use ──→ 执行工具 ──→ 结果写回 messages
+  （AI 独自在脑子里记忆上下文）
+
+s03 架构（多了外部计划状态）：
+  messages ──→ AI ──→ tool_use ──→ 执行工具 ──→ 结果写回 messages
+                ↑                                     │
+                │           PlanningState              │
+                │           - items: [PlanItem]        │
+                │           - rounds_since_update      │
+                └────────── 提醒写回 messages ──────────┘
+  （"当前要做什么"从模型脑内移到系统可观察的状态里）</div>
+
+  <div class="callout green">
+    <strong>一句话总结 s03 的升级：</strong>把"当前要做什么"从模型脑子里移到了系统可观察的状态里。当 AI 连续 3 轮没更新计划时，系统自动插入提醒，拉回注意力。
+  </div>
+
+  <h3>TodoManager 要解决的核心问题</h3>
+  <pre><span class="cm"># s02 的问题：做着做着就忘了</span>
+AI: <span class="s">"先读文件 → 然后改代码 → 然后运行测试"</span>
+    ↓ 三回合后
+AI: <span class="s">"我再读一遍文件吧"</span>  ← 漂移了
+
+<span class="cm"># s03 的解法：显式计划</span>
+AI 调用 todo： [>] 读错误日志
+              [ ] 定位问题代码
+              [ ] 修复并测试
+    ↓ 做完一步后再次调用 todo 更新
+              [x] 读错误日志
+              [>] 定位问题代码
+              [ ] 修复并测试</pre>
+</div>
+
+<!-- ==================== Footer ==================== -->
+<div style="text-align:center; color:var(--text-muted); font-size:.85rem; padding:16px 0 32px;">
+  基于 s03_todo_write.py 源码 · 学习笔记
+</div>
+
+</div>
+</body>
+</html>

@@ -96,12 +96,16 @@ def normalize_messages(messages: list) -> list:
         if isinstance(msg.get("content"), str):
             clean["content"] = msg["content"]
         elif isinstance(msg.get("content"), list):
-            clean["content"] = [
-                {k: v for k, v in block.items()
-                 if not k.startswith("_")}
-                for block in msg["content"]
-                if isinstance(block, dict)
-            ]
+            clean["content"] = []
+            for block in msg["content"]:
+                if isinstance(block, dict):
+                    clean_block = {k: v for k, v in block.items() if not k.startswith("_")}
+                elif hasattr(block, "model_dump"):
+                    d = block.model_dump()
+                    clean_block = {k: v for k, v in d.items() if not k.startswith("_")}
+                else:
+                    continue
+                clean["content"].append(clean_block)
         else:
             clean["content"] = msg.get("content", "")
         cleaned.append(clean)

@@ -20,6 +20,15 @@
 12. [s01 的 LoopState 主要作用？](#12-s01-的-loopstate-主要作用)
 13. [Python 的 readline 库具体什么作用？](#13-python-的-readline-库具体什么作用)
 14. [Path 会自动获取当前路径吗？](#14-path-会自动获取当前路径吗)
+15. [tool_use 和 text 为什么不是字典？](#15-tool_use-和-text-为什么不是字典)
+16. [handler 的调用流程是什么？output 怎么来的？](#16-handler-的调用流程是什么output-怎么来的)
+17. [output 和大模型回复之间是什么关系？](#17-output-和大模型回复之间是什么关系)
+18. [history 的结构是什么？每条消息长什么样？](#18-history-的结构是什么每条消息长什么样)
+19. [content 是 message 的一部分吗？](#19-content-是-message-的一部分吗)
+20. [content 可以放哪几种形式？](#20-content-可以放哪几种形式)
+21. [一条 message 可以同时放多种 block 吗？](#21-一条-message-可以同时放多种-block-吗)
+22. [每轮大模型都读整个 history 吗？](#22-每轮大模型都读整个-history-吗)
+23. [如何确定 history[-1]["content"] 就是最终回复？](#23-如何确定-history-1-content-就是最终回复)
 
 ---
 
@@ -422,6 +431,429 @@ Path(".").resolve()   # Path("/home/zyh/learn-claude-code")  — 手动解析成
 ```
 
 s02 用 `Path.cwd()` 直接拿到绝对路径，这样后续 `safe_path` 中的 `.is_relative_to(WORKDIR)` 才能正确工作。
+
+---
+
+## 15. tool_use 和 text 为什么不是字典？
+
+**因为 Anthropic SDK 自动把 API 返回的 JSON 转换成了 Python 对象。**
+
+### 完整流程
+
+```
+API 返回的原始 JSON（网络传输格式）：
+{
+  "content": [
+    {"type": "text", "text": "我来读取文件..."},          ← 纯 JSON
+    {"type": "tool_use", "id": "xyz", "name": "bash",     ← 纯 JSON
+     "input": {"command": "ls -la"}}
+  ],
+  "stop_reason": "tool_use",
+  ...
+}
+
+                    ↓ SDK 反序列化
+
+你在 Python 代码里拿到的：
+response.content = [
+    TextBlock(text="我来读取文件...", type="text"),         ← 对象
+    ToolUseBlock(id="xyz", name="bash",                    ← 对象
+                 input={"command": "ls -la"}, type="tool_use")
+]
+```
+
+### 用代码验证
+
+```python
+response = client.messages.create(...)
+
+for block in response.content:
+    print(type(block).__name__)
+    # "TextBlock" 或 "ToolUseBlock"
+
+    print(isinstance(block, dict))
+    # False  ← 不是字典！
+```
+
+### 那为什么 tool_result 又是字典？
+
+因为 `tool_result` **不是 API 返回的**，是你自己在代码里构造的：
+
+```python
+results.append({
+    "type": "tool_result",
+    "tool_use_id": block.id,
+    "content": output,
+})
+```
+
+你手动写的 `{...}` 字面量，所以它是 `dict`。
+
+### 消息列表里混用的两种格式
+
+| 消息角色 | content 里的 block 类型 | 来源 | 是 dict 吗？ |
+|---------|----------------------|------|-------------|
+| assistant | `TextBlock` 对象 | API 返回，SDK 自动转换 | ❌ 不是 |
+| assistant | `ToolUseBlock` 对象 | API 返回，SDK 自动转换 | ❌ 不是 |
+| user | `tool_result` 的 dict | 你自己手动构造的 | ✅ 是 |
+| user | 纯文本字符串 | 用户输入 | 是字符串 |
+
+**这就是为什么 `normalize_messages` 必须同时处理 dict 和对象两种情况**——消息列表里两者都有。
+
+---
+
+## 16. handler 的调用流程是什么？output 怎么来的？
+
+### 核心代码
+
+```python
+handler = TOOL_HANDLERS.get(block.name)
+output = handler(**block.input) if handler else f"Unknown tool: {block.name}"
+```
+
+### 逐行拆解
+
+**第1行：从字典里查找到对应的处理函数**
+
+```python
+TOOL_HANDLERS = {
+    "bash":       lambda **kw: run_bash(kw["command"]),
+    "read_file":  lambda **kw: run_read(kw["path"], kw.get("limit")),
+    "write_file": lambda **kw: run_write(kw["path"], kw["content"]),
+    "edit_file":  lambda **kw: run_edit(kw["path"], kw["old_text"], kw["new_text"]),
+}
+```
+
+假设 `block.name` 是 `"bash"`：
+- `handler = TOOL_HANDLERS.get("bash")` → 拿到 `lambda **kw: run_bash(kw["command"])` 这个函数
+- 现在 `handler` **指向这个 lambda 函数**，可以像普通函数一样调用它
+
+**第2行：调用处理函数，把结果存到 output**
+
+`**block.input` 是 Python 的**字典解包语法**。`block.input` 是模型传给工具的参数：
+
+| block.name | block.input | 实际调用的函数 |
+|-----------|-------------|---------------|
+| `"bash"` | `{"command": "ls -la"}` | `run_bash(command="ls -la")` |
+| `"read_file"` | `{"path": "file.py", "limit": 50}` | `run_read(path="file.py", limit=50)` |
+| `"write_file"` | `{"path": "greet.py", "content": "print('hi')"}` | `run_write(path="greet.py", content="print('hi')")` |
+| `"edit_file"` | `{"path": "greet.py", "old_text": "hi", "new_text": "hello"}` | `run_edit(path="greet.py", old_text="hi", new_text="hello")` |
+
+后半句 `if handler else ...` 是防御代码：万一模型调了一个字典里没有的工具名，不会崩溃。
+
+### output 到底是什么？
+
+**`output` 就是工具函数的返回值，是一个字符串。**
+
+| 工具 | 返回值示例 |
+|------|-----------|
+| `run_bash("ls -la")` | `"total 12\ndrwxrwxr-x 2 zyh ..."` |
+| `run_read("file.py", limit=10)` | `"#!/usr/bin/env python3\n# Harness: ..."` |
+| `run_write("greet.py", "print('hi')")` | `"Wrote 11 bytes to greet.py"` |
+| `run_edit("greet.py", "hi", "hello")` | `"Edited greet.py"` |
+| 执行出错 | `"Error: Path escapes workspace: ..."` |
+
+### 完整调用链
+
+```
+block.name = "bash"
+block.input = {"command": "ls -la"}
+    ↓
+handler = TOOL_HANDLERS.get("bash")
+# = lambda **kw: run_bash(kw["command"])
+    ↓
+handler(**block.input)
+# = handler(command="ls -la")
+# = run_bash(command="ls -la")
+    ↓
+subprocess.run("ls -la", shell=True, ...)
+    ↓
+return "-rw-r--r-- 1 zyh ... file.txt"
+    ↓
+output = "-rw-r--r-- 1 zyh ... file.txt"
+```
+
+---
+
+## 17. output 和大模型回复之间是什么关系？
+
+**`output` 是工具执行的原始结果，大模型看到它后决定下一步做什么。**
+
+### 完整流程示意
+
+```
+第1轮循环：
+你问 "你能读取md文件吗？"
+    ↓
+模型决定: "我先看看目录里有什么"
+    ↓
+API 返回: ToolUseBlock(bash, ls -la *.md)
+    ↓
+handler 执行 → output = "-rw-r--r-- s02-qa-review.md"   ← 目录列表
+    ↓
+包装成 tool_result 发回给 API
+    ↓
+
+第2轮循环：
+模型看到: "有一个 s02-qa-review.md 文件"
+    ↓
+模型决定: "让我读取它"
+    ↓
+API 返回: ToolUseBlock(read_file, s02-qa-review.md)
+    ↓
+handler 执行 → output = "# s02 学习笔记..."              ← 文件内容
+    ↓
+包装成 tool_result 发回给 API
+    ↓
+
+第3轮循环：
+模型看到: "已经读到内容了"
+    ↓
+模型决定: "可以回答用户了"
+    ↓
+API 返回: TextBlock(text="我可以读取！文件内容是关于s02的学习笔记...")
+    ↓
+stop_reason != "tool_use" → 循环结束 ✅
+    ↓
+打印到终端
+```
+
+### 一句话总结
+
+> **`output` 是工具的"原材料"（ls 的结果、文件内容），模型是"厨师"，决定怎么用这个材料 —— 是继续调用工具，还是直接回答你。**
+
+---
+
+## 18. history 的结构是什么？每条消息长什么样？
+
+### 最基本的结构
+
+```python
+history = [
+    {"role": "user",      "content": "你能读取md文件吗？"},
+    {"role": "assistant", "content": [ToolUseBlock(bash, ...)]},
+    {"role": "user",      "content": [{"type":"tool_result", ...}]},
+    {"role": "assistant", "content": [TextBlock(text="可以读取！")]},
+]
+```
+
+`history` 是一个列表，里面每条消息是一个字典（dict），**按时间顺序排队**。
+
+### 每条消息（message）的结构
+
+```python
+一条 message = {
+    "role": "user",       # 字段1：角色 — 谁说的
+    "content": "..."      # 字段2：内容 — 说了什么
+}
+```
+
+### history 是不断增长的，旧消息不会被覆盖
+
+```python
+# 第1轮开始时
+history = [
+    {"role": "user", "content": "你能读取md文件吗？"}
+]
+
+# agent_loop 第1次 API 调用后
+history = [
+    {"role": "user",      "content": "你能读取md文件吗？"},
+    {"role": "assistant", "content": [ToolUseBlock(bash)]},         ← 追加
+]
+
+# agent_loop 执行工具后
+history = [
+    {"role": "user",      "content": "你能读取md文件吗？"},
+    {"role": "assistant", "content": [ToolUseBlock(bash)]},
+    {"role": "user",      "content": [{"type":"tool_result", ...}]},  ← 追加
+]
+
+# agent_loop 第2次 API 调用后
+history = [
+    {"role": "user",      "content": "你能读取md文件吗？"},
+    {"role": "assistant", "content": [ToolUseBlock(bash)]},
+    {"role": "user",      "content": [{"type":"tool_result", ...}]},
+    {"role": "assistant", "content": [ToolUseBlock(read_file)]},      ← 追加
+]
+
+# ... 继续直到模型回复文本 ...
+history = [
+    ...,
+    {"role": "assistant", "content": [TextBlock(text="可以读取！")]}  ← 最后一条
+]
+```
+
+---
+
+## 19. content 是 message 的一部分吗？
+
+**是的。`message` 是一个字典，`content` 是字典里的一个字段。**
+
+```python
+history = [
+    {                         ← 列表元素1（一条 message）
+        "role": "user",       ← 字段1：角色
+        "content": "..."      ← 字段2：内容（这就是你说的 content）
+    },
+    {                         ← 列表元素2（另一条 message）
+        "role": "assistant",
+        "content": [...]      ← 这里 content 是一个列表（多个 block）
+    },
+]
+```
+
+用 Python 索引来理解：
+
+```python
+history[0]              # 第1条 message → {"role": "user", "content": "..."}
+history[0]["role"]      # "user"
+history[0]["content"]   # "你能读取md文件吗？"
+history[-1]             # 最后一条 message
+history[-1]["content"]  # 最后一条 message 的内容
+```
+
+### content 只存当前这条消息的内容
+
+**每条消息的 `content` 只存它自己该轮的内容，不是整段历史的拼接。**
+
+```python
+history = [
+    {"role": "user",      "content": "你能读取md文件吗？"},          # 第1条：用户输入
+    {"role": "assistant", "content": [ToolUseBlock(...)]},          # 第2条：模型要调工具
+    {"role": "user",      "content": [{"type":"tool_result", ...}]}, # 第3条：工具结果
+    {"role": "assistant", "content": [TextBlock(text="可以读取！")]},  # 第4条：最终回答
+]
+```
+
+- `history[-1]` → 第4条 → content 里只有 `"可以读取！"`
+- `history[0]` → 第1条 → content 里只有 `"你能读取md文件吗？"`
+
+---
+
+## 20. content 可以放哪几种形式？
+
+**三种形式，取决于这条 message 的角色和用途。**
+
+### 形式1：纯字符串（用户的提问）
+
+```python
+{"role": "user", "content": "你能读取md文件吗？"}
+```
+
+`content` 就是一个普通字符串。
+
+### 形式2：对象列表（模型回复）
+
+```python
+{"role": "assistant", "content": [
+    TextBlock(text="好的，我来看看"),      ← block 类型1：文字
+    ToolUseBlock(name="bash", ...),        ← block 类型2：工具调用
+]}
+```
+
+`content` 是一个**列表**，里面是 Anthropic SDK 的对象。
+
+### 形式3：字典列表（工具执行结果）
+
+```python
+{"role": "user", "content": [
+    {"type": "tool_result", "tool_use_id": "xyz", "content": "文件内容..."}
+]}
+```
+
+`content` 是一个**列表**，里面是你自己构造的 `tool_result` 字典。
+
+---
+
+## 21. 一条 message 可以同时放多种 block 吗？
+
+**可以。模型回复时，一段文字 + 多个工具调用可以一次性返回。**
+
+```python
+{"role": "assistant", "content": [
+    TextBlock(text="好的，我来查看文件内容"),     ← 文字
+    ToolUseBlock(name="read_file", ...),         ← 工具1
+    ToolUseBlock(name="bash", ...),              ← 工具2
+]}
+```
+
+`response.content` 是一个列表，里面可以同时包含：
+- `TextBlock` — 有 `.text` 属性（模型说的话）
+- `ToolUseBlock` — 没有 `.text`，有 `.name`、`.input`、`.id`（模型要调的工具）
+
+这就是为什么遍历时一定要用 `hasattr(block, "text")` 或 `getattr(block, "text", None)` 来判断，不能直接 `block.text`。
+
+---
+
+## 22. 每轮大模型都读整个 history 吗？
+
+**是的！每次 API 调用，整个 history 都发过去。**
+
+这就是为什么它叫"对话历史"——模型"记得"之前说过什么，因为每次调用都把全部消息发回去了。
+
+```python
+# 第1次 API 调用：发送
+[
+    {"role": "user", "content": "你能读取md文件吗？"}
+]
+# 模型看到：用户问了一个问题
+
+# 第2次 API 调用：发送
+[
+    {"role": "user",      "content": "你能读取md文件吗？"},
+    {"role": "assistant", "content": [ToolUseBlock(bash)]},
+    {"role": "user",      "content": [{"type":"tool_result", ...}]}
+]
+# 模型看到：哦，我刚才让执行了 ls，现在结果回来了，继续处理
+```
+
+每次调用前，`normalize_messages(history)` 会把整个 `history` 清洗一遍再发出去。
+
+---
+
+## 23. 如何确定 history[-1]["content"] 就是最终回复？
+
+**因为 `agent_loop` 的退出机制保证的。**
+
+```python
+def agent_loop(messages: list):
+    while True:
+        response = client.messages.create(...)
+        messages.append({"role": "assistant", "content": response.content})  # ← 每次都先追加
+
+        if response.stop_reason != "tool_use":
+            return   # ← 只有"不需要调工具了"才退出
+```
+
+### 为什么最后一条一定是最终回复
+
+```
+agent_loop 运行中：
+
+第1次循环：
+  发 API → 返回 tool_use → 追加 assistant → 执行工具 → 追加 tool_result → 继续
+
+第2次循环：
+  发 API → 返回 tool_use → 追加 assistant → 执行工具 → 追加 tool_result → 继续
+
+第3次循环：
+  发 API → 返回 TextBlock → 追加 assistant ← 最后追加的
+  此时 stop_reason = "end_turn" ≠ "tool_use"
+  → return ✅
+```
+
+`agent_loop` 退出前**做的最后一件事**就是追加 `assistant` 消息。
+
+退出时 history 的最后几条：
+```
+...
+{"role": "user",      "content": [tool_result]}                   ← 工具结果
+{"role": "assistant", "content": [TextBlock(text="可以读取！")]}   ← ← ← history[-1]
+                                                                      content = "可以读取！"
+```
+
+这条消息的 `stop_reason` 是 `"end_turn"` 或 `"max_tokens"`（不是 `"tool_use"`），说明模型决定**回答完毕，不再调工具了**。
 
 ---
 
