@@ -80,7 +80,13 @@ class AgentTemplate:
             self.system_prompt = text
             return
         for line in match.group(1).splitlines():
+            if ":" in line:
+                k, _, v, = line.partition(":")
+                self.config[k.strip()] = v.strip()
+        self.system_prompt = match.group(2).strip()
+        self.name = self.config.get("name", self.name)
 
+# -- Tool implementations shared by parent and child --
 def safe_path(p: str) -> Path:
     path = (WORKDIR / p).resolve()
     if not path.is_relative_to(WORKDIR):
@@ -92,22 +98,16 @@ def run_bash(command: str) -> str:
     if any(d in command for d in dangerous):
         return "Error: Dangerous command blocked"
     try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            cwd=WORKDIR,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        r = subprocess.run(command, shell=True, cwd=WORKDIR,
+                           capture_output=True, text=True, timeout=120)
+        out = (r.stdout + r.stderr).strip()
     except subprocess.TimeoutExpired:
         return "Error: Timeout (120s)"
-
-    output = (result.stdout + result.stderr).strip()
-    return output[:50000] if output else "(no output)"
+    except (FileNotFoundError, OSError) as e:
+        return f"Error: {e}"
 
 def run_read(path: str, limit: int = None) -> str:
-    try:
+    try:        
         lines = safe_path(path).read_text().splitlines()
         if limit and limit < len(lines):
             lines = lines[:limit] + [f"... ({len(lines) - limit} more lines)"]
@@ -140,10 +140,9 @@ TOOL_HANDLERS = {
     "read_file":  lambda **kw: run_read(kw["path"], kw.get("limit")),
     "write_file": lambda **kw: run_write(kw["path"], kw["content"]),
     "edit_file":  lambda **kw: run_edit(kw["path"], kw["old_text"], kw["new_text"]),
-    "todo":       lambda **kw: TODO.update(kw["items"])
 }
 
-TOOLS = [
+CHILD_TOOLS = [
     {"name": "bash", "description": "Run a shell command.",
      "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}},
     {"name": "read_file", "description": "Read file contents.",
@@ -152,51 +151,40 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]}},
     {"name": "edit_file", "description": "Replace exact text in file.",
      "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "old_text": {"type": "string"}, "new_text": {"type": "string"}}, "required": ["path", "old_text", "new_text"]}},
-     {  "name": "todo",
-        "description": "Rewrite the current session plan for multi-step work.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "content": {"type": "string"},
-                            "status": {
-                                "type": "string",
-                                "enum": ["pending", "in_progress", "completed"],
-                            },
-                            "activeForm": {
-                                "type": "string",
-                                "description": "Optional present-continuous label.",
-                            },
-                        },
-                        "required": ["content", "status"],
-                    },
-                },
-            },
-            "required": ["items"],
-        },
-    },
 ]
 
-def extract_text(content) -> str:
-    if not isinstance(content, list):
-        return ""
-    texts = []
-    for block in content:
-        text = getattr(block, "text", None)
-        if text:
-            texts.append(text)
-    return "\n".join(texts).strip()
+# -- Subagent: fresh context, filtered tools, summary-only return --
+def run_subagent(prompt: str) -> str:
+    sub_messages = [{"role": "user", "content": prompt}] # fresh context
+    for _ in range(30):
+        response = client.messages.create(
+            model=MODEL, system=SUBAGENT_SYSTEM, messages=sub_messages,
+            tools=CHILD_TOOLS, max_tokens=8000
+        )
+        sub_messages.append({"role": "assistant", "content": response.content})
+        if response.stop_reason != "tool_use":
+            break
+        results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                handler = TOOL_HANDLERS.get(block.name)
+                output = handler(**block.input) if handler else f"Unknown tool: {block.name}"
+                results.append({"type": "tool_result", "tool_use_id": block.id, "content": str(output)[:50000]})
+        sub_messages.append({"role": "user", "content": results})
+    return "".join(b.text for b in response.content if hasattr(b, "text")) or  "(no summary)"
 
+# -- Parent tools: base tools + task dispatcher --
+PARENT_TOOLS = CHILD_TOOLS + [
+    {"name": "task", "description": "Spawn a subagent with fresh context.It shares the filessystem but not conversation history.",
+     "input_schema": {"type": "object", "properties": {"prompt": {"type": "string"}, "description": {"type": "string", "description": "Short description of the task"}}, "required": ["prompt"]}},
+]
+        
 def agent_loop(messages: list):
     while True:
         response = client.messages.create(
             model=MODEL, system=SYSTEM,
             messages=messages,
-            tools=TOOLS, max_tokens=8000,
+            tools=PARENT_TOOLS, max_tokens=8000,
         )
         messages.append({"role": "assistant", "content": response.content})
         
@@ -204,41 +192,29 @@ def agent_loop(messages: list):
             return
         
         results = []
-        used_todo = False
         for block in response.content:
-            if block.type != "tool_use":
-                continue
-            
-            handler = TOOL_HANDLERS.get(block.name)
-            try:
-                output = handler(**block.input) if handler else f"Unknown tool: {block.name}"
-            except Exception as exc:
-                output = f"Error: {exc}"
-                
-            print(f"> {block.name}: {str(output)[:200]}")
-            results.append({
-                "type": "tool_result",
-                "tool_use_id": block.id,
-                "content": str(output)
-            })
-            if block.name == "todo":
-                used_todo = True
-        
-        if used_todo:
-            TODO.state.rounds_since_update = 0
-        else:
-            TODO.note_round_without_update()
-            remider = TODO.remider()
-            if remider:
-                results.insert(0, {"type": "text", "text": remider})
-            
+            if block.type == "tool_use":
+                if block.name == "task":
+                    desc = block.input.get("descripition", "subtask")
+                    prompt = block.input.get("prompt", "")
+                    print(f"> task ({desc}): {prompt[:80]}")
+                    output = run_subagent(prompt)
+                else:
+                    handler = TOOL_HANDLERS.get(block.name)
+                    output = handler(**block.input) if handler else f"Unknown tool: {block.name}"                
+                print(f"> {block.name}: {str(output)[:200]}")
+                results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": str(output)
+                })
         messages.append({"role": "user", "content": results})
-        
+
 if __name__ == "__main__":
     history = []
     while True:
         try:
-            query = input("\033[36ms02 >> \033[0m")
+            query = input("\033[36ms04 >> \033[0m")
         except (EOFError, KeyboardInterrupt):
             break
         if query.strip().lower() in ("q", "exit", ""):
@@ -246,8 +222,9 @@ if __name__ == "__main__":
         
         history.append({"role": "user", "content": query})
         agent_loop(history)
-        
-        final_text = extract_text(history[-1]["content"])
-        if final_text:
-            print(final_text)
+        response_content = history[-1]["content"]
+        if isinstance(response_content, list):
+            for block in response_content:
+                if hasattr(block, "text"):
+                    print(block.text)
         print()

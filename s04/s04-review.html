@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s04 Subagent - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header p { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }  /* comment */
+  pre .kw { color: #c084fc; }  /* keyword */
+  pre .fn { color: #60a5fa; }  /* function */
+  pre .s { color: #86efac; }   /* string */
+  pre .op { color: #fbbf24; }  /* operator */
+  pre .num { color: #f472b6; } /* number */
+  pre .tp { color: #67e8f9; }  /* type */
+  pre .hl { color: #fbbf24; font-weight: bold; }  /* highlight */
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📗 s04 · s04_subagent.py 复习笔记</h1>
+  <p>从 s03 到 s04：当 Agent 学会派生子任务</p>
+  <span class="badge">基于 s04_subagent.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">AgentTemplate._parse — Frontmatter 解析</a></li>
+    <li><a href="#s2">run_subagent — 子 agent 执行循环</a></li>
+    <li><a href="#s3">handler(**block.input) 用法</a></li>
+    <li><a href="#s4">block.name 从哪里来？</a></li>
+    <li><a href="#s5">父 agent 如何决定调用子 agent？</a></li>
+    <li><a href="#s6">s03 → s04 完整对比</a></li>
+    <li><a href="#s7">概念速查表</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> AgentTemplate._parse — Frontmatter 解析</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s04_subagent.py#L76-87</pre>
+
+  <h3>📍 作用</h3>
+  <p>解析 Markdown 文件中的 <strong>frontmatter（前置元数据）</strong>，把元数据和正文分离开。</p>
+
+  <div class="callout green">
+    <strong>一句话：_parse 解析 <code>---</code> 包裹的简易 YAML 头，把元数据和正文拆成两个部分分别存储。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">_parse</span>(<span class="tp">self</span>):
+    text = <span class="tp">self</span>.path.<span class="fn">read_text</span>()                       <span class="cm"># ① 读取整个 .md 文件</span>
+    match = re.<span class="fn">match</span>(<span class="s">r"^---\s*\n(.*?)\n---\s*\n(.*)"</span>,      <span class="cm"># ② 正则提取 frontmatter</span>
+                     text, re.<span class="op">DOTALL</span>)
+    <span class="kw">if</span> <span class="kw">not</span> match:                                    <span class="cm"># ③ 没有 frontmatter → 整个文件即正文</span>
+        <span class="tp">self</span>.system_prompt = text
+        <span class="kw">return</span>
+    <span class="kw">for</span> line <span class="kw">in</span> match.<span class="fn">group</span>(<span class="num">1</span>).<span class="fn">splitlines</span>():      <span class="cm"># ④ 逐行解析元数据</span>
+        <span class="kw">if</span> <span class="s">":"</span> <span class="kw">in</span> line:
+            k, _, v = line.<span class="fn">partition</span>(<span class="s">":"</span>)         <span class="cm"># 按 : 切 key/value</span>
+            <span class="tp">self</span>.config[k.<span class="fn">strip</span>()] = v.<span class="fn">strip</span>()
+    <span class="tp">self</span>.system_prompt = match.<span class="fn">group</span>(<span class="num">2</span>).<span class="fn">strip</span>()  <span class="cm"># ⑤ 正文 = system prompt</span>
+    <span class="tp">self</span>.name = <span class="tp">self</span>.config.<span class="fn">get</span>(<span class="s">"name"</span>, <span class="tp">self</span>.name) <span class="cm"># ⑥ frontmatter 有 name 就覆盖</span></pre>
+
+  <h3>📍 正则详解</h3>
+  <div class="diagram">r"^---\s*\n(.*?)\n---\s*\n(.*)"
+   │         │              │
+   │         │              └── group(2)：正文（贪婪匹配到结尾）
+   │         └── group(1)：元数据（非贪婪，遇 \n--- 就停）
+   └── 以 "---" 开头（可含空白）
+   re.DOTALL ← 让 . 匹配换行符</div>
+
+  <h3>📍 具体例子</h3>
+  <pre>假设文件 researcher.md 内容：
+<span class="s">---
+name: researcher
+tools: bash, read, glob
+---
+You are a researcher agent.
+Your task is to explore the codebase.</span>
+
+解析后：
+  self.config = {<span class="s">"name"</span>: <span class="s">"researcher"</span>, <span class="s">"tools"</span>: <span class="s">"bash, read, glob"</span>}
+  self.name   = <span class="s">"researcher"</span>           <span class="cm">← 来自 frontmatter 覆盖</span>
+  self.system_prompt = <span class="s">"You are a researcher agent.\nYour task is..."</span></pre>
+
+  <div class="callout">
+    <strong>注意：</strong>在这个文件中 <code>AgentTemplate</code> 只是<strong>教学展示</strong>，并未被实际使用。
+    父子 agent 的 system prompt 都是硬编码的常量 <code>SYSTEM</code> 和 <code>SUBAGENT_SYSTEM</code>。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> run_subagent — 子 agent 执行循环</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s04_subagent.py#L157-173</pre>
+
+  <div class="callout green">
+    <strong>核心：子 agent 的价值不是"多一个模型实例"，而是"多一个干净上下文"。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">run_subagent</span>(prompt: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    sub_messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}]  <span class="cm"># ① 全新上下文</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">30</span>):                                     <span class="cm"># ② 最多 30 轮</span>
+        response = client.messages.<span class="fn">create</span>(
+            model=MODEL, system=SUBAGENT_SYSTEM, messages=sub_messages,
+            tools=CHILD_TOOLS, max_tokens=<span class="num">8000</span>
+        )
+        sub_messages.<span class="fn">append</span>({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: response.content})  <span class="cm"># ③</span>
+        <span class="kw">if</span> response.stop_reason != <span class="s">"tool_use"</span>:               <span class="cm"># ④ 无工具调用 → 结束</span>
+            <span class="kw">break</span>
+        results = []
+        <span class="kw">for</span> block <span class="kw">in</span> response.content:                      <span class="cm"># ⑤ 执行工具</span>
+            <span class="kw">if</span> block.type == <span class="s">"tool_use"</span>:
+                handler = TOOL_HANDLERS.<span class="fn">get</span>(block.name)
+                output = <span class="fn">handler</span>(**block.input) <span class="kw">if</span> handler <span class="kw">else</span> ...
+                results.<span class="fn">append</span>({<span class="s">"type"</span>: <span class="s">"tool_result"</span>, ...})
+        sub_messages.<span class="fn">append</span>({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})  <span class="cm"># ⑥ 结果喂回</span>
+    <span class="kw">return</span> <span class="s">""</span>.<span class="fn">join</span>(b.text <span class="kw">for</span> b <span class="kw">in</span> response.content <span class="kw">if</span> <span class="fn">hasattr</span>(b, <span class="s">"text"</span>)) <span class="cm"># ⑦ 摘要返回</span></pre>
+
+  <h3>📍 逐段拆解</h3>
+  <table>
+    <tr><th>步骤</th><th>代码</th><th>作用</th></tr>
+    <tr><td>①</td><td><code>sub_messages = [{...prompt...}]</code></td><td><strong>上下文隔离的关键</strong>——子 agent 从空消息列表开始</td></tr>
+    <tr><td>②</td><td><code>for _ in range(30)</code></td><td>防止模型无限调用工具</td></tr>
+    <tr><td>③</td><td><code>sub_messages.append({...response...})</code></td><td>把模型回复追加到对话历史</td></tr>
+    <tr><td>④</td><td><code>stop_reason != "tool_use"</code></td><td>模型只输出 text 没调工具 → 任务完成</td></tr>
+    <tr><td>⑤</td><td><code>for block in response.content</code></td><td>遍历 tool_use 块，通过 TOOL_HANDLERS 找到函数并执行</td></tr>
+    <tr><td>⑥</td><td><code>sub_messages.append({..."tool_result"...})</code></td><td>工具结果喂回，让模型继续推理</td></tr>
+    <tr><td>⑦</td><td><code>return "".join(b.text ...)</code></td><td>只返回文本摘要，不返回中间工具调用细节</td></tr>
+  </table>
+
+  <h3>📍 标准 tool-use 循环示意</h3>
+  <div class="diagram">      响应                           响应
+┌───────────────┐          ┌───────────────┐
+│ 模型输出 text  │          │ 模型输出 text  │
+│      +        │          │      +        │
+│  tool_use 块  │          │  tool_use 块  │
+└───────┬───────┘          └───────┬───────┘
+        ↓                          ↓
+  执行工具代码              执行工具代码
+  (bash/read...)             (bash/read...)
+        ↓                          ↓
+  结果塞回 messages          结果塞回 messages
+        ↓                          ↓
+   继续循环            stop_reason != "tool_use" → 跳出</div>
+
+  <h3>📍 5 个关键设计要点</h3>
+  <table>
+    <tr><th>设计</th><th>代码体现</th><th>目的</th></tr>
+    <tr><td><strong>上下文隔离</strong></td><td><code>sub_messages = [{"role": "user", "content": prompt}]</code></td><td>子 agent 不继承父 agent 的对话历史</td></tr>
+    <tr><td><strong>工具隔离</strong></td><td><code>CHILD_TOOLS</code> 只有 4 个，没有 <code>task</code></td><td>防止子 agent 无限递归派生</td></tr>
+    <tr><td><strong>信息压缩</strong></td><td><code>return "".join(b.text ...)</code></td><td>只返回摘要，不返回中间细节</td></tr>
+    <tr><td><strong>单向通信</strong></td><td>子 agent 只返回字符串</td><td>父子之间没有双向对话</td></tr>
+    <tr><td><strong>安全防护</strong></td><td><code>for _ in range(30)</code></td><td>防止子 agent 无限循环</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> handler(**block.input) — 函数是一等公民</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s04_subagent.py#L134-138 (TOOL_HANDLERS)
+s04_subagent.py#L171     (使用处)</pre>
+
+  <h3>📍 核心原理</h3>
+  <p>Python 中<strong>函数是一等公民</strong>——可以像普通值一样放入字典、赋值给变量。</p>
+
+  <pre>TOOL_HANDLERS = {
+    <span class="s">"bash"</span>:       <span class="kw">lambda</span> **kw: <span class="fn">run_bash</span>(kw[<span class="s">"command"</span>]),
+    <span class="s">"read_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_read</span>(kw[<span class="s">"path"</span>], kw.<span class="fn">get</span>(<span class="s">"limit"</span>)),
+    <span class="s">"write_file"</span>: <span class="kw">lambda</span> **kw: <span class="fn">run_write</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"content"</span>]),
+    <span class="s">"edit_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_edit</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"old_text"</span>], kw[<span class="s">"new_text"</span>]),
+}<span class="cm">                              ↑↑↑↑↑↑↑↑ 字典里存的都是 lambda 函数</span></pre>
+
+  <h3>📍 用法拆解</h3>
+  <div class="diagram">handler = TOOL_HANDLERS.get(<span class="s">"bash"</span>)
+<span class="cm"># handler 现在是: lambda **kw: run_bash(kw["command"])  ← 一个函数对象</span>
+
+handler(**{<span class="s">"command"</span>: <span class="s">"ls -la"</span>})
+<span class="cm"># 等价于: run_bash("ls -la")</span></div>
+
+  <p>类比更简单的例子：</p>
+  <pre>func_map = {<span class="s">"greet"</span>: <span class="kw">lambda</span> name: <span class="s">f"Hello, {name}"</span>}
+
+f = func_map[<span class="s">"greet"</span>]       <span class="cm"># f 就是一个函数</span>
+result = <span class="fn">f</span>(<span class="s">"Alice"</span>)        <span class="cm"># 调用它 → "Hello, Alice"</span></pre>
+
+  <h3>📍 ** 解包</h3>
+  <p><code>**{"command": "ls -la", "cwd": "/tmp"}</code> 展开成 <code>command="ls -la", cwd="/tmp"</code>，这些作为关键字参数传给 lambda。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> block.name 从哪里来？</h2>
+
+  <div class="callout green">
+    <strong>block.name 的值来源于模型的自主选择，不是代码硬编码的。</strong>
+  </div>
+
+  <h3>📍 block 是什么？</h3>
+  <p><code>response.content</code> 是一个列表，里面每个元素是 Anthropic SDK 反序列化后的 <strong>ContentBlock 对象</strong>。</p>
+
+  <table>
+    <tr><th>Block 类型</th><th>出现时机</th><th>关键属性</th><th>类比</th></tr>
+    <tr><td><strong>TextBlock</strong></td><td>模型想<strong>说话</strong>时</td><td><code>.type = "text"</code>, <code>.text = "..."</code></td><td>模型在"说"</td></tr>
+    <tr><td><strong>ToolUseBlock</strong></td><td>模型想<strong>调工具</strong>时</td><td><code>.type = "tool_use"</code>, <code>.name</code>, <code>.id</code>, <code>.input</code></td><td>模型在"要"</td></tr>
+    <tr><td><strong>ToolResultBlock</strong></td><td>你把<strong>结果写回</strong>时</td><td><code>.type = "tool_result"</code>, <code>.tool_use_id</code>, <code>.content</code></td><td>你在"喂结果"</td></tr>
+  </table>
+
+  <h3>📍 完整链路</h3>
+  <div class="diagram">你传给模型的工具列表:
+CHILD_TOOLS = [
+    {<span class="s">"name"</span>: <span class="s">"bash"</span>, ...},       <span class="cm">← 告诉模型：有个工具叫 "bash"</span>
+    {<span class="s">"name"</span>: <span class="s">"read_file"</span>, ...},  <span class="cm">← 有个工具叫 "read_file"</span>
+    ...
+]
+
+模型在响应中说 "我想调 read_file":
+response.content = [
+    TextBlock(type=<span class="s">"text"</span>, text=<span class="s">"让我看看文件内容"</span>),
+    ToolUseBlock(                       <span class="cm">← SDK 对象，不是字典</span>
+        type=<span class="s">"tool_use"</span>,
+        id=<span class="s">"toolu_abc123"</span>,
+        name=<span class="s">"read_file"</span>,            <span class="cm">← 模型选中了这个工具</span>
+        input={<span class="s">"path"</span>: <span class="s">"main.py"</span>}     <span class="cm">← 模型自己填的参数</span>
+    )
+]
+
+代码中的查找链:
+block.name == <span class="s">"read_file"</span>
+  ↓
+TOOL_HANDLERS.get(<span class="s">"read_file"</span>)  →  lambda
+  ↓
+run_read(path=<span class="s">"main.py"</span>)           →  执行</div>
+
+  <h3>📍 是谁定义了 ToolUseBlock 的属性？</h3>
+  <table>
+    <tr><th>层</th><th>谁做的</th><th>做了什么</th></tr>
+    <tr><td>API 规范</td><td>Anthropic 公司</td><td>规定 tool_use 块必须有 id、name、input 字段</td></tr>
+    <tr><td>SDK</td><td><code>anthropic</code> 包</td><td>把 JSON 反序列化成 Python 对象，提供 .type、.name、.id、.input 属性</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么是 <code>block.name</code> 而不是 <code>block["name"]</code>？</strong><br>
+    因为 SDK 把 API 返回的 JSON 转成了 <strong>Python 对象</strong>（ToolUseBlock），不是字典。对象访问属性用点号，字典用方括号。你可以在 Python 里验证：
+    <pre>type(block)  <span class="cm"># &lt;class 'anthropic.types.tool_use_block_param.ToolUseBlockParam'&gt;</span>
+isinstance(block, dict)  <span class="cm"># False</span></pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> 父 agent 如何决定调用子 agent？</h2>
+
+  <div class="callout green">
+    <strong>完全由大模型自主判断，代码里没有任何逻辑说"现在必须调子 agent"。</strong>
+  </div>
+
+  <h3>📍 代码做了哪两件事</h3>
+
+  <p><strong>第一：告诉模型有一个 task 工具可用</strong></p>
+  <pre>{<span class="s">"name"</span>: <span class="s">"task"</span>,
+ <span class="s">"description"</span>: <span class="s">"Spawn a subagent with fresh context. It shares the filesystem but not conversation history."</span>,
+ <span class="s">"input_schema"</span>: {
+     <span class="s">"type"</span>: <span class="s">"object"</span>,
+     <span class="s">"properties"</span>: {
+         <span class="s">"prompt"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>},
+         <span class="s">"description"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>, <span class="s">"description"</span>: <span class="s">"Short description..."</span>}
+     },
+     <span class="s">"required"</span>: [<span class="s">"prompt"</span>]
+ }}</pre>
+
+  <p><strong>第二：把工具列表传给 API（里面包含 task）</strong></p>
+  <pre>response = client.messages.<span class="fn">create</span>(
+    ...
+    tools=PARENT_TOOLS,   <span class="cm"># ← 5 个工具全传（含 task）</span>
+    ...
+)</pre>
+
+  <h3>📍 模型看到了什么</h3>
+  <table>
+    <tr><th>工具名</th><th>描述（给模型看的）</th><th>模型何时可能调用它</th></tr>
+    <tr><td><code>bash</code></td><td>"Run a shell command."</td><td>想执行命令</td></tr>
+    <tr><td><code>read_file</code></td><td>"Read file contents."</td><td>想读文件</td></tr>
+    <tr><td><code>write_file</code></td><td>"Write content to file."</td><td>想写文件</td></tr>
+    <tr><td><code>edit_file</code></td><td>"Replace exact text in file."</td><td>想编辑文件</td></tr>
+    <tr><td><strong><code>task</code></strong></td><td><strong>"Spawn a subagent with fresh context..."</strong></td><td><strong>觉得任务可以独立出去</strong></td></tr>
+  </table>
+
+  <h3>📍 模型为什么"愿意"调 task？</h3>
+  <ol>
+    <li><strong>description 写得好</strong>——<code>"Spawn a subagent with fresh context."</code> 明确告诉模型可以外包</li>
+    <li><strong>训练数据覆盖</strong>——Claude 训练时就学过"有 task 工具时，合适场景可以派生子任务"</li>
+  </ol>
+
+  <div class="diagram">类比: 你给一个人两个指令
+ ① 螺丝刀 —— 描述："拧螺丝"
+ ② 电钻   —— 描述："在墙上打孔"
+你自己决定什么时候用什么。
+代码的角色 = 提供工具并描述清楚
+模型的角色 = 看情况自己选</div>
+
+  <h3>📍 实际推理过程（模拟）</h3>
+  <p>用户问"这个项目用什么测试框架？"，模型的推理过程：</p>
+  <table>
+    <tr><th>轮次</th><th>模型想</th><th>调用</th></tr>
+    <tr><td>1</td><td>"我需要先读 pyproject.toml"</td><td><code>read_file</code></td></tr>
+    <tr><td>2</td><td>"再看看 requirements.txt"</td><td><code>read_file</code></td></tr>
+    <tr><td>3</td><td>"跑一下 pytest --version"</td><td><code>bash</code></td></tr>
+    <tr><td>4</td><td>"这些中间步骤没必要留在父对话里"</td><td><strong><code>task(prompt="检查测试框架...")</code></strong></td></tr>
+  </table>
+  <p><strong>代码里没有 if 判断说"超过 3 轮就调子 agent"</strong>，完全是模型自主决定。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> s03 → s04 完整对比</h2>
+
+  <h3>📍 核心差异速览</h3>
+  <table>
+    <tr><th>维度</th><th>s03（待办写入）</th><th>s04（子代理）</th></tr>
+    <tr><td>核心问题</td><td>模型记不住多步计划</td><td>父上下文被局部任务噪声填满</td></tr>
+    <tr><td>解决方案</td><td>外部 Todo 计划追踪</td><td>子 agent 独立上下文隔离</td></tr>
+    <tr><td>代码行数</td><td>~278 行</td><td>~230 行</td></tr>
+    <tr><td>系统提示词</td><td>1 个（父 agent）</td><td><span class="tag new">新增</span> <strong>2 个</strong>（父 + 子）</td></tr>
+    <tr><td>特殊工具</td><td><code>todo</code></td><td><code>task</code></td></tr>
+    <tr><td>父工具数</td><td>5 个</td><td>5 个</td></tr>
+    <tr><td>子工具数</td><td>—</td><td><span class="tag new">新增</span> <strong>4 个</strong>（无 task）</td></tr>
+    <tr><td>外部状态管理</td><td><code>TodoManager</code> + <code>PlanningState</code> + <code>PlanItem</code></td><td>无</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag new">新增</span> 了什么</h3>
+  <table>
+    <tr><th>新增内容</th><th>位置</th><th>为什么加</th></tr>
+    <tr><td><code>SUBAGENT_SYSTEM</code></td><td>L58</td><td>子 agent 需要自己的 system prompt（与父角色不同：执行者+总结者）</td></tr>
+    <tr><td><code>AgentTemplate</code> 类</td><td>L60-91</td><td>教学展示：真实 Claude Code 的 agent 配置文件解析（当前未使用）</td></tr>
+    <tr><td><code>run_subagent()</code></td><td>L157-173</td><td>创建子 agent、隔离上下文、限制轮数、只返回摘要</td></tr>
+    <tr><td><code>CHILD_TOOLS</code></td><td>L140-153</td><td>子 agent 专属工具列表（4 个，不含 task）</td></tr>
+    <tr><td><code>PARENT_TOOLS</code></td><td>L175-180</td><td>父 agent 工具列表（5 个，多一个 task）</td></tr>
+    <tr><td><code>task</code> 处理分支</td><td>L197-200</td><td><code>block.name == "task"</code> 时不走 handler，直接启动子 agent</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag del">删除</span> 了什么</h3>
+  <table>
+    <tr><th>删除内容</th><th>s03 中位置 / 作用</th><th>为什么删</th></tr>
+    <tr><td><code>TodoManager</code> 类体系</td><td>~70 行计划管理</td><td>s04 关注"上下文隔离"而非"计划管理"，焦点不同</td></tr>
+    <tr><td><code>PlanningState</code> / <code>PlanItem</code></td><td>两个 dataclass</td><td>计划系统的附属数据结构</td></tr>
+    <tr><td><code>PLAN_REMINDER_INTERVAL</code></td><td>提醒间隔常量</td><td>提醒机制是计划系统的附属功能</td></tr>
+    <tr><td><code>extract_text()</code></td><td>文本提取工具函数</td><td>内联到两处使用点，不再需要单独函数</td></tr>
+    <tr><td><code>todo</code> 工具定义</td><td>TOOLS 列表 + TOOL_HANDLERS</td><td>由 <code>task</code> 工具替代，不再需要</td></tr>
+    <tr><td>提醒逻辑（reminder）</td><td>agent_loop 分支</td><td>不再需要</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag mod">修改</span> 了什么</h3>
+  <table>
+    <tr><th>修改项</th><th>s03</th><th>s04</th></tr>
+    <tr><td><code>SYSTEM</code> 提示词</td><td><code>"...Use the todo tool for multi-step work."</code></td><td><code>"...Use the task tool to delegate exploration..."</code></td></tr>
+    <tr><td>tool 处理逻辑</td><td>所有工具统一 <code>handler(**block.input)</code>，额外检查 <code>used_todo</code></td><td><code>task</code> 特殊处理（启动子 agent），<code>其他</code> 走 handler</td></tr>
+    <tr><td><code>TOOL_HANDLERS</code></td><td>5 个（含 todo）</td><td><strong>4 个</strong>（无 todo，task 在 agent_loop 单独处理）</td></tr>
+  </table>
+
+  <h3>📍 演进逻辑</h3>
+  <div class="callout">
+    <p>s03 → s04 的演进不是"替换"，而是<strong>换个方向解决不同问题</strong>：</p>
+    <p><strong>s03</strong>：模型脑子里记不住计划 → 用外部 Todo 帮它记</p>
+    <p><strong>s04</strong>：父上下文被局部任务填满 → 用子 agent 隔离出去做</p>
+    <p>两者<strong>不冲突</strong>，可以组合（需要时可以在 s04 基础上再加回 TodoManager）。</p>
+  </div>
+
+  <h3>📍 架构对比图</h3>
+  <div class="diagram">s03 架构（只有消息流 + 外部计划状态）：
+                                 ┌────────────────┐
+                                 │  PlanningState │
+                                 │  - items       │
+                                 │  - rounds...   │
+                                 └───────┬────────┘
+                                         │
+messages ──→ AI ──→ tool_use ──→ 执行工具 ──→ 结果写回 messages
+                ↑                                    │
+                └───────── reminder ─────────────────┘
+
+s04 架构（多了子 agent 上下文隔离）：
+父 agent 循环                        子 agent 循环
+messages ──→ AI ──→ tool_use ──→ task(prompt) ──→ sub_messages（全新）
+                │                      │                 ↓
+                │                      │            执行工具...
+                │                      │                 ↓
+                │                      └── 摘要 ──→ 返回父对话
+                └── 其他工具 ──→ 执行 ──→ 结果写回 messages</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> 概念速查表</h2>
+
+  <table>
+    <tr><th>概念</th><th>一句话</th></tr>
+    <tr><td><strong>子代理 (Subagent)</strong></td><td>父 agent 临时派生的、使用独立上下文的执行单元</td></tr>
+    <tr><td><strong>上下文隔离</strong></td><td>子 agent 的 <code>messages</code> 从空开始，父 agent 的历史不污染它</td></tr>
+    <tr><td><strong>摘要返回</strong></td><td>子 agent 只返回文本摘要，不返回中间工具调用历史</td></tr>
+    <tr><td><strong>工具隔离</strong></td><td>子 agent 没有 <code>task</code> 工具，不能继续生子 agent</td></tr>
+    <tr><td><strong>Frontmatter</strong></td><td><code>---</code> 包裹的 YAML 元数据段，用于定义 agent 角色属性</td></tr>
+    <tr><td><strong>ToolUseBlock</strong></td><td>SDK 对象，表示"模型想调工具"，包含 <code>.name</code>, <code>.id</code>, <code>.input</code></td></tr>
+    <tr><td><strong>stop_reason</strong></td><td>API 响应字段，<code>"tool_use"</code> 表示模型还要继续调工具</td></tr>
+    <tr><td><strong>CHILD_TOOLS</strong></td><td>子 agent 的工具集：bash, read_file, write_file, edit_file（不含 task）</td></tr>
+    <tr><td><strong>PARENT_TOOLS</strong></td><td>父 agent 的工具集：CHILD_TOOLS + task</td></tr>
+    <tr><td><strong>函数一等公民</strong></td><td>Python 中函数可以像普通值一样存进字典、赋值给变量、当作参数传递</td></tr>
+  </table>
+</div>
+
+</div><!-- .container -->
+
+</body>
+</html>
