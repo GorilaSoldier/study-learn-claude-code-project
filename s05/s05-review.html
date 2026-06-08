@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s05 Skill Loading - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header p { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }  /* comment */
+  pre .kw { color: #c084fc; }  /* keyword */
+  pre .fn { color: #60a5fa; }  /* function */
+  pre .s { color: #86efac; }   /* string */
+  pre .op { color: #fbbf24; }  /* operator */
+  pre .num { color: #f472b6; } /* number */
+  pre .tp { color: #67e8f9; }  /* type */
+  pre .hl { color: #fbbf24; font-weight: bold; }  /* highlight */
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📗 s05 · s05_skill_loading.py 复习笔记</h1>
+  <p>从 s04 到 s05：当 Agent 学会按需加载技能</p>
+  <span class="badge">基于 s05_skill_loading.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">rglob 递归查找</a></li>
+    <li><a href="#s2">meta.get 默认值模式</a></li>
+    <li><a href="#s3">re.DOTALL 跨行匹配</a></li>
+    <li><a href="#s4">splitlines 无参调用</a></li>
+    <li><a href="#s5">SkillRegistry 完整拆解</a></li>
+    <li><a href="#s6">类 vs 实例：每个 skill 对应一个 SkillDocument</a></li>
+    <li><a href="#s7">s04 → s05 完整对比</a></li>
+    <li><a href="#s8">概念速查表</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> <code>rglob("SKILL.md")</code> — 递归文件查找</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s05_skill_loading.py#L50</pre>
+
+  <div class="callout green">
+    <strong>一句话：rglob 递归地找所有子目录中匹配模式的文件，glob 只找当前目录。</strong>
+  </div>
+
+  <pre><span class="kw">for</span> path <span class="kw">in</span> <span class="fn">sorted</span>(<span class="tp">self</span>.skills_dir.<span class="fn">rglob</span>(<span class="s">"SKILL.md"</span>)):</pre>
+
+  <h3>📍 glob vs rglob 对比</h3>
+  <table>
+    <tr><th>方法</th><th>搜索范围</th><th>示例</th></tr>
+    <tr><td><code>Path.glob("SKILL.md")</code></td><td>仅当前目录</td><td><code>skills/SKILL.md</code> ✅ <br><code>skills/sub/SKILL.md</code> ❌</td></tr>
+    <tr><td><code>Path.rglob("SKILL.md")</code></td><td><strong>递归</strong>所有子目录</td><td><code>skills/SKILL.md</code> ✅ <br><code>skills/sub/SKILL.md</code> ✅</td></tr>
+  </table>
+
+  <h3>📍 举例</h3>
+  <pre>skills/
+├── code-review/
+│   └── <span class="hl">SKILL.md</span>          <span class="cm">← rglob 找到</span>
+├── git-workflow/
+│   └── <span class="hl">SKILL.md</span>          <span class="cm">← rglob 找到</span>
+└── mcp/
+    └── builder/
+        └── <span class="hl">SKILL.md</span>       <span class="cm">← rglob 也能找到（递归）</span></pre>
+
+  <h3>📍 为什么要加 <code>sorted()</code>？</h3>
+  <p>保证加载顺序是<strong>确定性的</strong>（按路径字母排序），避免因文件系统返回顺序不确定导致行为不一致。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> <code>meta.get("name", path.parent.name)</code> — 默认值模式</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s05_skill_loading.py#L52-53</pre>
+
+  <div class="callout green">
+    <strong>一句话：优先用 frontmatter 里写的 name，没写就用目录名作为默认值。这是一种"约定优于配置"的设计。</strong>
+  </div>
+
+  <pre>name = meta.<span class="fn">get</span>(<span class="s">"name"</span>, <span class="tp">path</span>.parent.name)
+description = meta.<span class="fn">get</span>(<span class="s">"description"</span>, <span class="s">"No description"</span>)</pre>
+
+  <h3>📍 <code>dict.get(key, default)</code> 语义</h3>
+  <table>
+    <tr><th>情况</th><th>代码</th><th>结果</th></tr>
+    <tr><td>meta 里有 <code>"name"</code></td><td><code>meta.get("name", "默认值")</code></td><td>返回 <code>meta["name"]</code></td></tr>
+    <tr><td>meta 里<strong>没有</strong> <code>"name"</code></td><td><code>meta.get("name", "默认值")</code></td><td>返回 <code>"默认值"</code></td></tr>
+  </table>
+
+  <h3>📍 具体例子</h3>
+  <pre><span class="cm"># 文件 skills/my_skill/SKILL.md</span>
+<span class="cm"># frontmatter 有 name:</span>
+<span class="s">---
+name: foobar
+---</span>
+name = meta.<span class="fn">get</span>(<span class="s">"name"</span>, <span class="tp">path</span>.parent.name)  <span class="cm"># → "foobar"</span>
+
+<span class="cm"># 文件 skills/my_skill/SKILL.md</span>
+<span class="cm"># frontmatter 没有 name:</span>
+<span class="s">---
+description: some skill
+---</span>
+name = meta.<span class="fn">get</span>(<span class="s">"name"</span>, <span class="tp">path</span>.parent.name)  <span class="cm"># → "my_skill"（目录名）</span>
+<span class="cm"># path = skills/my_skill/SKILL.md</span>
+<span class="cm"># path.parent = skills/my_skill</span>
+<span class="cm"># path.parent.name = "my_skill"</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> <code>re.DOTALL</code> — 让 . 匹配换行符</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s05_skill_loading.py#L58</pre>
+
+  <div class="callout green">
+    <strong>一句话：默认 . 不匹配 \n，加上 re.DOTALL 让 . 能匹配包括换行符在内的所有字符。</strong>
+  </div>
+
+  <pre>match = re.<span class="fn">match</span>(<span class="s">r"^---\n(.*?)\n---\n(.*)"</span>, text, <span class="hl">re.DOTALL</span>)</pre>
+
+  <h3>📍 对比效果</h3>
+  <table>
+    <tr><th>标志</th><th><code>.</code> 的匹配范围</th><th><code>re.match(r"(.*)", "a\nb")</code></th></tr>
+    <tr><td>无（默认）</td><td>除 <code>\n</code> 外的所有字符</td><td>只匹配到 <code>"a"</code></td></tr>
+    <tr><td><code>re.DOTALL</code></td><td><strong>包括</strong> <code>\n</code> 的所有字符</td><td>匹配 <code>"a\nb"</code></td></tr>
+  </table>
+
+  <h3>📍 在这个场景的具体作用</h3>
+  <pre><span class="cm"># 文本内容：</span>
+<span class="s">---
+name: code-review
+description: Review code
+---
+Here is the body...</span>
+
+正则：<span class="s">r"^---\n(.*?)\n---\n(.*)"</span>
+                 <span class="hl">↑</span>         <span class="hl">↑</span>
+            group(1)     group(2)
+          (frontmatter)  (body)
+
+<span class="cm"># 没有 re.DOTALL：</span>
+<span class="cm">#   (.*?) 中 . 不能匹配换行 → 无法跨行捕获 frontmatter</span>
+
+<span class="cm"># 有 re.DOTALL：</span>
+<span class="cm">#   (.*?) 非贪婪跨行匹配 frontmatter 所有行</span>
+<span class="cm">#   (.*)  贪婪跨行匹配剩余 body 所有行</span></pre>
+
+  <h3>📍 非贪婪 <code>.*?</code> vs 贪婪 <code>.*</code></h3>
+  <table>
+    <tr><th>写法</th><th>匹配行为</th><th>在这个正则中</th></tr>
+    <tr><td><code>(.*?)</code></td><td>尽可能少匹配</td><td>遇到第一个 <code>\n---\n</code> 就停 → 正确截取 frontmatter</td></tr>
+    <tr><td><code>(.*)</code></td><td>尽可能多匹配</td><td>如果没有 <code>?</code>，可能匹配到最后一个 <code>---</code> → 出错</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>注意：</strong><code>re.DOTALL</code> 也叫 <code>re.S</code>，两者是等价的。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> <code>splitlines()</code> — 无参调用</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s05_skill_loading.py#L63</pre>
+
+  <div class="callout green">
+    <strong>一句话：splitlines() 按行拆分并去掉换行符，默认参数就是无参。</strong>
+  </div>
+
+  <pre><span class="kw">for</span> line <span class="kw">in</span> match.<span class="fn">group</span>(<span class="num">1</span>).<span class="fn">strip</span>().<span class="fn">splitlines</span>():</pre>
+
+  <h3>📍 参数区别</h3>
+  <table>
+    <tr><th>写法</th><th>是否保留换行符</th><th>示例：<code>"a\nb".split???</code></th></tr>
+    <tr><td><code>.splitlines()</code></td><td>❌ 去掉</td><td><code>["a", "b"]</code></td></tr>
+    <tr><td><code>.splitlines(True)</code></td><td>✅ 保留</td><td><code>["a\n", "b"]</code></td></tr>
+    <tr><td><code>.splitlines(keepends=True)</code></td><td>✅ 保留</td><td><code>["a\n", "b"]</code></td></tr>
+  </table>
+
+  <h3>📍 为什么这里不需要传参？</h3>
+  <p>frontmatter 里的每一行例如 <code>"name: foobar"</code>，解析 key/value 时只需要纯文本内容，不需要末尾的 <code>\n</code>。所以用默认的 <code>splitlines()</code> 最简洁正确。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> SkillRegistry 完整拆解</h2>
+
+  <h3>📍 代码位置</h3>
+  <pre>s05_skill_loading.py#L30-96</pre>
+
+  <h3>📍 整体架构</h3>
+  <div class="diagram">                    ┌──────────────────────┐
+                    │     SKILLS_DIR         │
+                    │   (skills/ 目录)        │
+                    └────────┬──────────────┘
+                             │
+                             ▼
+                    ┌──────────────────────┐
+                    │   SkillRegistry       │ ← 模块加载时自动初始化
+                    │    ._load_all()       │
+                    │    .rglob("SKILL.md") │
+                    └────────┬──────────────┘
+                             │
+                ┌────────────┼──────────────┐
+                ▼            ▼              ▼
+          ┌──────────┐ ┌──────────┐ ┌──────────┐
+          │SKILL.md  │ │SKILL.md  │ │SKILL.md  │
+          │---       │ │---       │ │---       │
+          │name: a   │ │name: b   │ │name: c   │
+          │---       │ │---       │ │---       │
+          │body...   │ │body...   │ │body...   │
+          └──────────┘ └──────────┘ └──────────┘
+                             │
+                             ▼
+                self.documents 字典
+           ┌─────┬─────┬─────┬─────┐
+           │ "a" │ "b" │ "c" │ ... │
+           └─────┴─────┴─────┴─────┘
+                             │
+                ┌────────────┴────────────┐
+                ▼                         ▼
+      describe_available()      load_full_text(name)
+      (列出技能名和描述)          (返回技能正文)
+                │                         │
+                ▼                         ▼
+           System Prompt              AI 按需加载
+           （一直可见）              （需要时才加载）</div>
+
+  <h3>📍 5.1 数据结构：<code>SkillManifest</code> + <code>SkillDocument</code></h3>
+
+  <pre><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">SkillManifest</span>:
+    name: <span class="tp">str</span>          <span class="cm"># 技能名称</span>
+    description: <span class="tp">str</span>   <span class="cm"># 技能描述</span>
+    path: <span class="tp">Path</span>         <span class="cm"># SKILL.md 文件路径</span>
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">SkillDocument</span>:
+    manifest: <span class="tp">SkillManifest</span>  <span class="cm"># 清单对象（轻量）</span>
+    body: <span class="tp">str</span>               <span class="cm"># 正文内容（昂贵）</span></pre>
+
+  <table>
+    <tr><th>类</th><th>作用</th><th>放在哪</th><th>大小</th></tr>
+    <tr><td><strong>SkillManifest</strong></td><td>技能的轻量元信息</td><td>system prompt 的目录</td><td>很小</td></tr>
+    <tr><td><strong>SkillDocument</strong></td><td>完整的技能文档（清单+正文）</td><td>调用 <code>load_skill</code> 后才进入上下文</td><td>可能很大</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>设计意图：</strong>第 1 层（manifest）轻量，常驻 system prompt；第 2 层（body）昂贵，按需加载。这就是"两层模型"。
+  </div>
+
+  <h3>📍 5.2 <code>SkillRegistry.__init__</code> — 初始化</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">__init__</span>(<span class="tp">self</span>, skills_dir: <span class="tp">Path</span>):
+    <span class="tp">self</span>.skills_dir = skills_dir
+    <span class="tp">self</span>.documents: <span class="tp">dict</span>[<span class="tp">str</span>, <span class="tp">SkillDocument</span>] = {}
+    <span class="tp">self</span>.<span class="fn">_load_all</span>()</pre>
+
+  <table>
+    <tr><th>字段</th><th>说明</th></tr>
+    <tr><td><code>self.skills_dir</code></td><td>skills 目录路径，例如 <code>Path("skills/")</code></td></tr>
+    <tr><td><code>self.documents</code></td><td>核心字典，key=技能名，value=SkillDocument 对象</td></tr>
+    <tr><td><code>self._load_all()</code></td><td>初始化时立即扫描目录加载所有技能</td></tr>
+  </table>
+
+  <p><code>skills_dir</code> 是谁传进来的？看调用处：</p>
+
+  <pre>SKILLS_DIR = WORKDIR <span class="op">/</span> <span class="s">"skills"</span>        <span class="cm"># L25: Path.cwd() / "skills"</span>
+SKILL_REGISTRY = <span class="tp">SkillRegistry</span>(SKILLS_DIR)  <span class="cm"># L93: 模块加载时自动创建</span></pre>
+
+  <h3>📍 5.3 <code>_load_all()</code> — 扫描并加载所有 SKILL.md</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">_load_all</span>(<span class="tp">self</span>) -> <span class="tp">None</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="tp">self</span>.skills_dir.<span class="fn">exists</span>():   <span class="cm"># ① 目录不存在就跳过</span>
+        <span class="kw">return</span>
+    <span class="kw">for</span> path <span class="kw">in</span> <span class="fn">sorted</span>(<span class="tp">self</span>.skills_dir.<span class="fn">rglob</span>(<span class="s">"SKILL.md"</span>)):  <span class="cm"># ② 递归找所有 SKILL.md</span>
+        meta, body = <span class="tp">self</span>.<span class="fn">_parse_frontmatter</span>(path.<span class="fn">read_text</span>())  <span class="cm"># ③ 解析 frontmatter</span>
+        name = meta.<span class="fn">get</span>(<span class="s">"name"</span>, path.parent.name)             <span class="cm"># ④ 取 name（默认目录名）</span>
+        description = meta.<span class="fn">get</span>(<span class="s">"description"</span>, <span class="s">"No description"</span>)
+        manifest = <span class="tp">SkillManifest</span>(name=name, description=description, path=path)
+        <span class="tp">self</span>.documents[name] = <span class="tp">SkillDocument</span>(manifest=manifest, body=body.<span class="fn">strip</span>())  <span class="cm"># ⑤ 存入字典</span></pre>
+
+  <table>
+    <tr><th>步骤</th><th>作用</th></tr>
+    <tr><td>① <code>if not .exists()</code></td><td>skills 目录不存在时优雅跳过，不报错</td></tr>
+    <tr><td>② <code>rglob("SKILL.md")</code></td><td>递归查找所有 SKILL.md 文件</td></tr>
+    <tr><td>③ <code>_parse_frontmatter()</code></td><td>解析 frontmatter，返回 <code>(meta字典, body字符串)</code></td></tr>
+    <tr><td>④ <code>.get(key, default)</code></td><td>取元数据，没有就用默认值（约定优于配置）</td></tr>
+    <tr><td>⑤ <code>self.documents[name] = ...</code></td><td>存入字典，同名的后覆盖前</td></tr>
+  </table>
+
+  <h3>📍 5.4 <code>_parse_frontmatter()</code> — 解析 frontmatter</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">_parse_frontmatter</span>(<span class="tp">self</span>, text: <span class="tp">str</span>) -> <span class="tp">tuple</span>[<span class="tp">dict</span>, <span class="tp">str</span>]:
+    match = re.<span class="fn">match</span>(<span class="s">r"^---\n(.*?)\n---\n(.*)"</span>, text, re.DOTALL)
+    <span class="kw">if</span> <span class="kw">not</span> match:                          <span class="cm"># 没有 frontmatter → 整个文件是 body</span>
+        <span class="kw">return</span> {}, text
+
+    meta = {}
+    <span class="kw">for</span> line <span class="kw">in</span> match.<span class="fn">group</span>(<span class="num">1</span>).<span class="fn">strip</span>().<span class="fn">splitlines</span>():  <span class="cm"># 逐行解析元数据</span>
+        <span class="kw">if</span> <span class="s">":"</span> <span class="kw">not</span> <span class="kw">in</span> line:                       <span class="cm"># 不含冒号的行跳过</span>
+            <span class="kw">continue</span>
+        key, value = line.<span class="fn">split</span>(<span class="s">":"</span>, <span class="num">1</span>)               <span class="cm"># 按第一个 : 分割</span>
+        meta[key.<span class="fn">strip</span>()] = value.<span class="fn">strip</span>()           <span class="cm"># 去除两侧空白后存储</span>
+    <span class="kw">return</span> meta, match.<span class="fn">group</span>(<span class="num">2</span>)                    <span class="cm"># 返回 (元数据字典, body)</span></pre>
+
+  <h3>📍 解析的格式</h3>
+  <pre><span class="s">---
+name: code-review
+description: Review code changes
+---
+这里是技能的正文内容...</span></pre>
+
+  <h3>📍 <code>split(":", 1)</code> 中的 <code>1</code> 是什么？</h3>
+  <p>限制只分割<strong>一次</strong>。例如：</p>
+  <pre><span class="s">"description: This is: a test"</span>.<span class="fn">split</span>(<span class="s">":"</span>)     <span class="cm"># → ["description", " This is", " a test"]  三段</span>
+<span class="s">"description: This is: a test"</span>.<span class="fn">split</span>(<span class="s">":"</span>, <span class="num">1</span>)  <span class="cm"># → ["description", " This is: a test"]  两段，value 保留内容中的 :</span></pre>
+
+  <h3>📍 为什么不直接用 YAML 解析库？</h3>
+  <p>因为 frontmatter 只有简单的 <code>key: value</code> 格式，没必要引入 PyYAML 等依赖。手写解析足够且零依赖。</p>
+
+  <h3>📍 5.5 <code>describe_available()</code> — 生成技能目录</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">describe_available</span>(<span class="tp">self</span>) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="tp">self</span>.documents:
+        <span class="kw">return</span> <span class="s">"(no skills available)"</span>
+    lines = []
+    <span class="kw">for</span> name <span class="kw">in</span> <span class="fn">sorted</span>(<span class="tp">self</span>.documents):
+        manifest = <span class="tp">self</span>.documents[name].manifest
+        lines.<span class="fn">append</span>(<span class="s">f"- {manifest.name}: {manifest.description}"</span>)
+    <span class="kw">return</span> <span class="s">"\n"</span>.<span class="fn">join</span>(lines)</pre>
+
+  <p><strong>示例输出：</strong></p>
+  <pre>- code-review: Review code changes
+- git-workflow: Branch and commit guidance
+- test-gen: Generate test cases for Python code</pre>
+
+  <p>这段文本会被注入到 <strong>system prompt</strong> 中，让 AI 知道有哪些技能可用。</p>
+
+  <h3>📍 5.6 <code>load_full_text()</code> — 按名加载技能正文</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">load_full_text</span>(<span class="tp">self</span>, name: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    document = <span class="tp">self</span>.documents.<span class="fn">get</span>(name)          <span class="cm"># 用 .get 而不是 []，避免 KeyError</span>
+    <span class="kw">if</span> <span class="kw">not</span> document:
+        know = <span class="s">", "</span>.<span class="fn">join</span>(<span class="fn">sorted</span>(<span class="tp">self</span>.documents)) <span class="kw">or</span> <span class="s">"(none)"</span>
+        <span class="kw">return</span> <span class="s">f"Error: Unknown skill '{name}'. Available skills: {know}"</span>
+
+    <span class="kw">return</span> (
+        <span class="s">f"&lt;skill name=\"{document.manifest.name}\"&gt;\n"</span>
+        <span class="s">f"{document.body}\n"</span>
+        <span class="s">"&lt;/skill&gt;"</span>
+    )</pre>
+
+  <table>
+    <tr><th>场景</th><th>返回值</th></tr>
+    <tr><td>技能存在</td><td>用 <code>&lt;skill&gt;</code> XML 标签包裹的完整正文</td></tr>
+    <tr><td>技能不存在</td><td>错误提示 + 列出所有可用技能名</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>设计意图：</strong><code>describe_available()</code> 生成轻量的目录（常驻 system prompt），<code>load_full_text()</code> 加载完整正文（按需注入）。"先轻发现，再深加载"。
+  </div>
+
+  <h3>📍 5.7 SYSTEM prompt — 注入技能目录</h3>
+
+  <pre>SYSTEM = <span class="s">f"""You are a coding agent at{WORKDIR}.
+Use load_skill when a task needs specialized instructions before you act.
+
+Skills available:
+{SKILL_REGISTRY.describe_available()}
+"""</span></pre>
+
+  <p>相比 s04 的 system prompt（仅仅是角色说明+工具提示），s05 的 system prompt 有了<strong>动态内容</strong>——技能目录是根据磁盘上的实际文件自动生成的。</p>
+
+  <h3>📍 5.8 <code>load_skill</code> 工具定义</h3>
+
+  <pre>TOOL_HANDLERS[<span class="s">"load_skill"</span>] = <span class="kw">lambda</span> **kw: SKILL_REGISTRY.<span class="fn">load_full_text</span>(kw[<span class="s">"name"</span>])</pre>
+
+  <pre>{
+    <span class="s">"name"</span>: <span class="s">"load_skill"</span>,
+    <span class="s">"description"</span>: <span class="s">"Load the full body of a named skill into the current context."</span>,
+    <span class="s">"input_schema"</span>: {
+        <span class="s">"type"</span>: <span class="s">"object"</span>,
+        <span class="s">"properties"</span>: {<span class="s">"name"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+        <span class="s">"required"</span>: [<span class="s">"name"</span>],
+    },
+}</pre>
+
+  <p>AI 模型在 system prompt 中看到技能目录后，当判断自己需要某份专门知识时，就调用 <code>load_skill("xxx")</code> 工具获取完整正文。</p>
+
+  <h3>📍 5.9 工具函数（s04 继承 + 精简）</h3>
+
+  <p><code>safe_path()</code> — 路径穿越防护：</p>
+  <pre><span class="kw">def</span> <span class="fn">safe_path</span>(p: <span class="tp">str</span>) -> <span class="tp">Path</span>:
+    path = (WORKDIR <span class="op">/</span> p).<span class="fn">resolve</span>()
+    <span class="kw">if</span> <span class="kw">not</span> path.<span class="fn">is_relative_to</span>(WORKDIR):
+        <span class="kw">raise</span> <span class="tp">ValueError</span>(<span class="s">f"Path escapes workspace: {p}"</span>)
+    <span class="kw">return</span> path</pre>
+
+  <p><code>run_read()</code> — 安全读取，支持行数限制 + 50000 字符截断：</p>
+  <pre><span class="kw">def</span> <span class="fn">run_read</span>(path: <span class="tp">str</span>, limit: <span class="tp">int</span> = <span class="kw">None</span>) -> <span class="tp">str</span>:
+    lines = <span class="fn">safe_path</span>(path).<span class="fn">read_text</span>().<span class="fn">splitlines</span>()
+    <span class="kw">if</span> limit <span class="kw">and</span> limit &lt; <span class="fn">len</span>(lines):
+        lines = lines[:limit] + [<span class="s">f"... ({len(lines) - limit} more lines)"</span>]
+    <span class="kw">return</span> <span class="s">"\n"</span>.<span class="fn">join</span>(lines)[:<span class="num">50000</span>]</pre>
+
+  <h3>📍 5.10 <code>extract_text()</code> — 文本提取工具</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">extract_text</span>(content) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">isinstance</span>(content, <span class="tp">list</span>):
+        <span class="kw">return</span> <span class="s">""</span>
+    texts = []
+    <span class="kw">for</span> block <span class="kw">in</span> content:
+        text = <span class="fn">getattr</span>(block, <span class="s">"text"</span>, <span class="kw">None</span>)
+        <span class="kw">if</span> text:
+            texts.<span class="fn">append</span>(text)
+    <span class="kw">return</span> <span class="s">"\n"</span>.<span class="fn">join</span>(texts).<span class="fn">strip</span>()</pre>
+
+  <p>相比 s04 在主循环中直接 <code>hasattr(block, "text")</code>，s05 把它提取为可复用函数，更健壮（用 <code>getattr</code> + 判空 + join）。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> 类 vs 实例：每个 skill 对应一个 SkillDocument</h2>
+
+  <div class="callout red">
+    <strong>常见困惑：</strong>SkillDocument 是个类（模板），它的所有实例是不同的对象，每个对象有自己的属性值。
+  </div>
+
+  <h3>📍 关键区分</h3>
+
+  <pre><span class="cm"># SkillDocument 是类（模板/蓝本）
+# 每次 SkillDocument(manifest=..., body=...) 都创建一个新实例</span>
+
+实例 <span class="hl">#1</span>: SkillDocument(
+    manifest=SkillManifest(name=<span class="s">"code-review"</span>, description=<span class="s">"审查代码"</span>, ...),
+    body=<span class="s">"Code review guidelines..."</span>
+)
+实例 <span class="hl">#2</span>: SkillDocument(
+    manifest=SkillManifest(name=<span class="s">"test-gen"</span>, description=<span class="s">"生成测试"</span>, ...),
+    body=<span class="s">"Test generation tips..."</span>
+)
+实例 <span class="hl">#3</span>: SkillDocument(
+    manifest=SkillManifest(name=<span class="s">"refactor"</span>, description=<span class="s">"重构建议"</span>, ...),
+    body=<span class="s">"Refactoring strategies..."</span>
+)</pre>
+
+  <h3>📍 循环 3 次后的字典状态</h3>
+
+  <pre><span class="tp">self</span>.documents = {
+    <span class="s">"code-review"</span>: <span class="tp">SkillDocument</span>(  <span class="cm">← 实例 #1</span>
+        manifest=<span class="tp">SkillManifest</span>(name=<span class="s">"code-review"</span>, description=<span class="s">"审查代码"</span>, path=<span class="tp">Path</span>(<span class="s">"skills/code-review/SKILL.md"</span>)),
+        body=<span class="s">"Code review guidelines..."</span>
+    ),
+    <span class="s">"test-gen"</span>: <span class="tp">SkillDocument</span>(  <span class="cm">← 实例 #2，不同的对象</span>
+        manifest=<span class="tp">SkillManifest</span>(name=<span class="s">"test-gen"</span>, description=<span class="s">"生成测试"</span>, path=<span class="tp">Path</span>(<span class="s">"skills/test-gen/SKILL.md"</span>)),
+        body=<span class="s">"Test generation tips..."</span>
+    ),
+    <span class="s">"refactor"</span>: <span class="tp">SkillDocument</span>(  <span class="cm">← 实例 #3，又不同的对象</span>
+        manifest=<span class="tp">SkillManifest</span>(name=<span class="s">"refactor"</span>, description=<span class="s">"重构建议"</span>, path=<span class="tp">Path</span>(<span class="s">"skills/refactor/SKILL.md"</span>)),
+        body=<span class="s">"Refactoring strategies..."</span>
+    ),
+}</pre>
+
+  <p><strong>类比：</strong><code>int</code> 是一个类，但 <code>int(1)</code>、<code>int(2)</code>、<code>int(3)</code> 是不同的值。同一个类可以创建出无数个不同的实例。每个 skill 在字典中有一个 key-value 对，value 就是独立的 SkillDocument 对象。</p>
+
+  <h3>📍 SKILL.md 文件应当放在哪里？</h3>
+
+  <pre>skills/
+├── code-review/                  <span class="cm">← 子目录名就是技能的默认 name</span>
+│   └── SKILL.md                  <span class="cm">← 必须叫 SKILL.md</span>
+├── test-gen/
+│   └── SKILL.md
+└── documentation/
+    └── SKILL.md</pre>
+
+  <p>每个 SKILL.md 的格式：</p>
+
+  <pre><span class="s">---
+name: code-review                     # 可选，省略时用目录名
+description: Review code changes      # 可选，省略时显示 "No description"
+---
+
+## Code Review Guidelines
+
+Always follow these rules when reviewing code:
+1. Check for security vulnerabilities
+2. Verify error handling
+3. Ensure proper testing</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> s04 → s05 完整对比</h2>
+
+  <h3>📍 核心差异速览</h3>
+  <table>
+    <tr><th>维度</th><th>s04（子代理）</th><th>s05（技能系统）</th></tr>
+    <tr><td>核心问题</td><td>父上下文被局部任务噪声填满</td><td>system prompt 被所有技能知识塞满</td></tr>
+    <tr><td>解决方案</td><td>子 agent 独立上下文隔离</td><td>技能按需加载（先目录，再正文）</td></tr>
+    <tr><td>代码行数</td><td>~230 行</td><td>~273 行</td></tr>
+    <tr><td>system prompt</td><td>2 个（父 + 子）</td><td><span class="tag mod">改为</span> <strong>1 个</strong>（含动态技能目录）</td></tr>
+    <tr><td>特殊工具</td><td><code>task</code>（派生子 agent）</td><td><span class="tag new">新增</span> <code>load_skill</code>（加载技能）</td></tr>
+    <tr><td>新数据结构</td><td><code>AgentTemplate</code>（未使用）</td><td><span class="tag new">新增</span> <code>SkillManifest</code> + <code>SkillDocument</code> + <code>SkillRegistry</code></td></tr>
+    <tr><td>工具列表结构</td><td><code>CHILD_TOOLS</code> + <code>PARENT_TOOLS</code> 双层</td><td><span class="tag mod">改为</span> 单层 <code>TOOLS</code></td></tr>
+    <tr><td>文本提取</td><td>内联 <code>hasattr(block, "text")</code></td><td><span class="tag new">新增</span> <code>extract_text()</code> 工具函数</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag new">新增</span> 了什么</h3>
+  <table>
+    <tr><th>新增内容</th><th>位置</th><th>为什么加</th></tr>
+    <tr><td><code>SkillManifest</code> 数据类</td><td>L30-34</td><td>技能轻量元信息（名称、描述、路径）</td></tr>
+    <tr><td><code>SkillDocument</code> 数据类</td><td>L36-37</td><td>完整技能文档（清单+正文），两层模型的核心</td></tr>
+    <tr><td><code>SkillRegistry</code> 类</td><td>L39-91</td><td>统一注册表：扫描、解析、发现、加载</td></tr>
+    <tr><td><code>_parse_frontmatter()</code></td><td>L57-71</td><td>解析 SKILL.md 中 <code>---</code> 包裹的元数据</td></tr>
+    <tr><td><code>describe_available()</code></td><td>L73-81</td><td>生成技能目录字符串，注入 system prompt</td></tr>
+    <tr><td><code>load_full_text()</code></td><td>L83-91</td><td>按名加载完整技能正文，用 <code>&lt;skill&gt;</code> 标签包裹</td></tr>
+    <tr><td><code>load_skill</code> 工具</td><td>TOOLS + TOOL_HANDLERS</td><td>AI 调用入口，加载技能到当前上下文</td></tr>
+    <tr><td><code>SKILLS_DIR</code> + <code>SKILL_REGISTRY</code></td><td>L25, L93</td><td>全局常量 + 全局注册表单例</td></tr>
+    <tr><td><code>extract_text()</code></td><td>L226-233</td><td>健壮的文本提取工具函数</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag del">删除</span> 了什么</h3>
+  <table>
+    <tr><th>删除内容</th><th>s04 中的位置/作用</th><th>为什么删</th></tr>
+    <tr><td><code>AgentTemplate</code> 类</td><td>L60-91，教学展示 agent 定义解析</td><td>s04 中未实际使用；s05 的 <code>_parse_frontmatter</code> 替代了类似功能，更聚焦</td></tr>
+    <tr><td><code>run_subagent()</code> + 子代理循环</td><td>L157-173</td><td>s05 主题是技能加载，不是子代理；两个独立关注点</td></tr>
+    <tr><td><code>SUBAGENT_SYSTEM</code></td><td>L58</td><td>不再需要子 agent</td></tr>
+    <tr><td><code>CHILD_TOOLS</code> / <code>PARENT_TOOLS</code></td><td>双层工具列表</td><td>不再需要父子分层，退化为单层 <code>TOOLS</code></td></tr>
+    <tr><td><code>task</code> 工具</td><td>PARENT_TOOLS 中的派发工具</td><td>不再需要子 agent 派发，被 <code>load_skill</code> 替代</td></tr>
+    <tr><td>agent_loop 中的 task 分支</td><td>L197-200，<code>if block.name == "task"</code></td><td>不再需要特殊派发逻辑</td></tr>
+  </table>
+
+  <h3>📍 <span class="tag mod">修改</span> 了什么</h3>
+  <table>
+    <tr><th>修改项</th><th>s04</th><th>s05</th></tr>
+    <tr><td><code>SYSTEM</code> 提示词</td><td>硬编码角色说明</td><td><strong>动态</strong>注入技能目录 + 指导使用 load_skill</td></tr>
+    <tr><td>工具总数</td><td>5 个（4 child + task）</td><td>5 个（4 文件 + load_skill）</td></tr>
+    <tr><td>agent_loop 工具处理</td><td>区分 task（派生子 agent）和其他</td><td><strong>统一</strong>走 TOOL_HANDLERS</td></tr>
+    <tr><td><code>run_bash()</code></td><td>完整的 try/except</td><td>疑似有拼写 bug（out vs output）</td></tr>
+    <tr><td>主循环文本提取</td><td><code>hasattr(block, "text")</code> 内联</td><td>通过 <code>extract_text()</code> 函数</td></tr>
+  </table>
+
+  <h3>📍 演进逻辑</h3>
+  <div class="callout">
+    <p>s04 → s05 的演进不是"替换"，而是<strong>增加了一个正交的能力</strong>：</p>
+    <p><strong>s04</strong>：谁来做？→ 派生子 agent，上下文隔离</p>
+    <p><strong>s05</strong>：用什么知识做？→ 先列目录，再按需加载技能正文</p>
+    <p>两者<strong>不冲突</strong>，未来可以组合：子 agent 也可以有自己的技能系统。</p>
+  </div>
+
+  <h3>📍 架构对比图</h3>
+  <div class="diagram">s04 架构（父子 agent 上下文隔离）：
+父 agent 循环                        子 agent 循环
+messages ──→ AI ──→ tool_use ──→ task(prompt) ──→ sub_messages（全新）
+                │                      │                 ↓
+                │                      │            执行工具...
+                │                      │                 ↓
+                │                      └── 摘要 ──→ 返回父对话
+                └── 其他工具 ──→ 执行 ──→ 结果写回 messages
+
+s05 架构（技能按需加载）：
+system prompt（含技能目录）
+       │
+       ▼
+messages ──→ AI ──→ 判断需要技能？ ──→ load_skill("xxx")
+                │                            │
+                │                            ▼
+                │                    SkillRegistry 返回完整正文
+                │                            │
+                │                    tool_result 注入当前上下文
+                │                            │
+                └── 其他工具 ──→ 执行 ──→ 结果写回 messages</div>
+
+  <h3>📍 s05 代码疑似问题</h3>
+  <div class="callout red">
+    <strong>run_bash 中的拼写问题：</strong><br>
+    s05 的 <code>run_bash()</code> 中，<code>except</code> 块外有一行 <code>output = (r.stdout + r.stderr).strip()</code>，但前面 try 块里赋值的是 <code>out</code> 变量。而且缺少 s04 中的 <code>except (FileNotFoundError, OSError)</code>。这可能是编写时的疏忽。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 概念速查表</h2>
+
+  <table>
+    <tr><th>概念</th><th>一句话</th></tr>
+    <tr><td><strong>Skill（技能）</strong></td><td>围绕某类任务的可复用说明书，告诉 agent 步骤和注意事项</td></tr>
+    <tr><td><strong>Discovery（发现）</strong></td><td>轻量目录信息（名字+描述），常驻 system prompt</td></tr>
+    <tr><td><strong>Loading（加载）</strong></td><td>按需获取技能的完整正文，注入当前上下文</td></tr>
+    <tr><td><strong>两层模型</strong></td><td>第 1 层轻量目录（manifest），第 2 层按需正文（body）</td></tr>
+    <tr><td><strong>SkillManifest</strong></td><td>技能元信息：name、description、path</td></tr>
+    <tr><td><strong>SkillDocument</strong></td><td>完整技能文档：manifest + body</td></tr>
+    <tr><td><strong>SkillRegistry</strong></td><td>统一注册表：扫描 skills 目录、管理所有技能</td></tr>
+    <tr><td><strong>Frontmatter</strong></td><td><code>---</code> 包裹的 YAML 元数据段，用于定义技能的 name、description 等</td></tr>
+    <tr><td><strong>rglob()</strong></td><td>递归 glob，在 skills 所有子目录中查找 SKILL.md</td></tr>
+    <tr><td><strong>re.DOTALL</strong></td><td>让正则的 <code>.</code> 匹配包括换行符在内的任意字符</td></tr>
+    <tr><td><strong>splitlines()</strong></td><td>按行拆分字符串，默认去掉换行符</td></tr>
+    <tr><td><strong>dict.get(key, default)</strong></td><td>安全取字典值，key 不存在时返回默认值而非抛异常</td></tr>
+    <tr><td><strong>约定优于配置</strong></td><td>frontmatter 没写 name 时，默认用目录名作为技能名</td></tr>
+    <tr><td><strong>safe_path()</strong></td><td>路径穿越防护，确保文件操作不逃逸出工作目录</td></tr>
+  </table>
+</div>
+
+</div><!-- .container -->
+
+</body>
+</html>
