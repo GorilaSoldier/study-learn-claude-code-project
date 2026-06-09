@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s06 Context Compact - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header p { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s06 · s06_context_compact.py 复习笔记</h1>
+  <p>从 s05 到 s06：当 Agent 学会管理上下文预算</p>
+  <span class="badge">基于 s06_context_compact.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">field 在 dataclass 中的用途</a></li>
+    <li><a href="#s2">CompactState — 压缩状态追踪</a></li>
+    <li><a href="#s3">辅助函数：估算 + 文件追踪 + 安全路径</a></li>
+    <li><a href="#s4">第 1 层压缩：大输出落盘</a></li>
+    <li><a href="#s5">第 2 层压缩：微压缩旧结果</a></li>
+    <li><a href="#s6">第 3 层压缩：完整历史摘要</a></li>
+    <li><a href="#s7">Python 语法细节</a></li>
+    <li><a href="#s8">s05 → s06 完整对比</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> <code>field</code> — 数据类字段的精细控制</h2>
+
+  <h3>代码位置</h3>
+  <pre>s06_context_compact.py#L14-15</pre>
+
+  <div class="callout green">
+    <strong>一句话：field 是 dataclasses 提供的函数，用于对单个字段做精细配置，最常见用途是提供可变类型的默认值。</strong>
+  </div>
+
+  <pre><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, <span class="hl">field</span></pre>
+
+  <h3>为什么需要 field？</h3>
+  <p>直接在 dataclass 里写可变默认值（如 <code>[]</code>、<code>{}</code>）会导致所有实例共享同一个对象，是一个经典的 Python 陷阱：</p>
+
+  <pre><span class="cm"># ❌ 错误写法：所有 CompactState 实例共享同一个列表</span>
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">CompactState</span>:
+    recent_files: <span class="tp">list</span>[<span class="tp">str</span>] = []  <span class="cm"># 不要这样写！</span>
+
+<span class="cm"># ✅ 正确写法：每次实例化时都创建一个新列表</span>
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">CompactState</span>:
+    recent_files: <span class="tp">list</span>[<span class="tp">str</span>] = <span class="hl">field(default_factory=list)</span></pre>
+
+  <h3>field 的常用参数</h3>
+  <table>
+    <tr><th>参数</th><th>作用</th><th>示例</th></tr>
+    <tr><td><code>default_factory</code></td><td>接收一个无参可调用对象，每次实例化时调用它生成默认值</td><td><code>field(default_factory=list)</code></td></tr>
+    <tr><td><code>default</code></td><td>提供不可变类型的默认值</td><td><code>field(default=42)</code></td></tr>
+    <tr><td><code>init=False</code></td><td>该字段不参与 <code>__init__</code></td><td><code>field(init=False)</code></td></tr>
+    <tr><td><code>repr=False</code></td><td>该字段不出现在 <code>__repr__</code> 中</td><td><code>field(repr=False)</code></td></tr>
+    <tr><td><code>compare=False</code></td><td>该字段不参与比较</td><td><code>field(compare=False)</code></td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>本质：</strong><code>field()</code> 返回一个 <code>Field</code> 对象，dataclass 的装饰器在内部识别这些对象并应用对应的行为。没有 <code>field()</code>，你就无法安全地在 dataclass 中声明列表、字典等可变类型的默认值。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> CompactState — 压缩状态追踪</h2>
+
+  <h3>代码位置</h3>
+  <pre>s06_context_compact.py#L29-L33</pre>
+
+  <div class="callout green">
+    <strong>一句话：记录压缩的历史状态，让后续压缩决策有据可依。</strong>
+  </div>
+
+  <pre><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">CompactState</span>:
+    has_compact: <span class="tp">bool</span> = <span class="hl">False</span>         <span class="cm"># 是否已经执行过完整压缩</span>
+    last_summary: <span class="tp">str</span> = <span class="s">""</span>             <span class="cm"># 最近一次压缩生成的摘要文本</span>
+    recent_files: <span class="tp">list</span>[<span class="tp">str</span>] = <span class="hl">field(default_factory=list)</span>  <span class="cm"># 最近操作过的文件（最多 5 个）</span></pre>
+
+  <table>
+    <tr><th>字段</th><th>类型</th><th>意义</th></tr>
+    <tr><td><code>has_compact</code></td><td><code>bool</code></td><td>标记是否已做过完整压缩。一开始是 <code>False</code>，执行 <code>compact_history()</code> 后设为 <code>True</code></td></tr>
+    <tr><td><code>last_summary</code></td><td><code>str</code></td><td>保存上一次压缩得出的摘要。如果需要再次压缩，可以在此基础上叠加，而不是从头开始</td></tr>
+    <tr><td><code>recent_files</code></td><td><code>list[str]</code></td><td>一个 LRU 风格的最近文件列表。记录"最近操作过的文件路径"，压缩后告诉 AI "需要重新打开这些文件"</td></tr>
+  </table>
+
+  <p><strong>为什么不用 <code>= []</code>？</strong> 因为 Python dataclass 的坑：可变默认值会被所有实例共享。用 <code>field(default_factory=list)</code> 确保每次 <code>CompactState()</code> 都得到一个全新的空列表。</p>
+
+  <div class="callout">
+    <strong>设计意图：</strong>压缩不是一次性操作，而是需要持续追踪的状态。知道"之前压缩过没有"、"压缩成了什么"、"最近碰过哪些文件"，才能在下一次压缩时做出更好的决策，而不是每次从零开始。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> 辅助函数：估算 + 文件追踪 + 安全路径</h2>
+
+  <h3>代码位置：L35-67</h3>
+
+  <!-- 3.1 -->
+  <h3>3.1 <code>estimate_context_size</code> — 上下文大小估算</h3>
+  <pre><span class="kw">def</span> <span class="fn">estimate_context_size</span>(messages: <span class="tp">list</span>) -> <span class="tp">int</span>:
+    <span class="kw">return</span> <span class="hl">len(str(messages))</span></pre>
+
+  <table>
+    <tr><th>项目</th><th>说明</th></tr>
+    <tr><td>原理</td><td>把整个消息列表转成字符串，求字符数——简单但够用的粗略估算</td></tr>
+    <tr><td>用途</td><td>判断是否超过 <code>CONTENT_LIMIT = 50000</code>，决定是否需要触发完整压缩</td></tr>
+    <tr><td>注意</td><td>这只是粗略估算，不是精确的 token 计数。教学版故意简化</td></tr>
+  </table>
+
+  <!-- 3.2 -->
+  <h3>3.2 <code>track_recent_file</code> — LRU 文件追踪</h3>
+  <pre><span class="kw">def</span> <span class="fn">track_recent_file</span>(state: <span class="tp">CompactState</span>, path: <span class="tp">str</span>) -> <span class="tp">int</span>:
+    <span class="kw">if</span> path <span class="kw">in</span> state.recent_files:
+        state.recent_files.<span class="fn">remove</span>(path)    <span class="cm"># ① 如果已存在，先移除旧记录</span>
+    state.recent_files.<span class="fn">append</span>(path)           <span class="cm"># ② 追加到末尾（标记为"最新使用"）</span>
+    <span class="kw">if</span> <span class="hl">len(state.recent_files) > 5</span>:
+        state.recent_files[:] = state.recent_files[-5:]  <span class="cm"># ③ 只保留最后 5 个（最近使用的）</span></pre>
+
+  <table>
+    <tr><th>步骤</th><th>作用</th></tr>
+    <tr><td>① <code>remove</code></td><td>如果路径已在列表中，先移除它——避免重复记录</td></tr>
+    <tr><td>② <code>append</code></td><td>追加到列表末尾，表示"最新使用的文件"</td></tr>
+    <tr><td>③ 保留后 5 个</td><td><code>recent_files[-5:]</code> 切片取最后 5 个元素，<code>[:]</code> 是原地修改（保持同一个列表对象引用）</td></tr>
+  </table>
+
+  <p><strong>为什么是 LRU 风格？</strong> 因为列表末尾总是最新的，开头总是最旧的。当列表超过 5 个时，最旧的自动被"挤出"。这就是"最近最少使用"的淘汰逻辑。</p>
+
+  <!-- 3.3 -->
+  <h3>3.3 <code>safe_path</code> — 路径安全校验</h3>
+  <pre><span class="kw">def</span> <span class="fn">safe_path</span>(p: <span class="tp">str</span>) -> <span class="tp">Path</span>:
+    path = (WORKDIR / p).<span class="fn">resolve</span>()                   <span class="cm"># ① 拼接后解析为绝对路径</span>
+    <span class="kw">if</span> <span class="kw">not</span> path.<span class="fn">is_relative_to</span>(WORKDIR):              <span class="cm"># ② 检查是否还在工作目录内</span>
+        <span class="kw">raise</span> <span class="tp">ValueError</span>(<span class="s">f"Path escapes workspace: {p}"</span>)
+    <span class="kw">return</span> path</pre>
+
+  <table>
+    <tr><th>步骤</th><th>说明</th></tr>
+    <tr><td>① <code>.resolve()</code></td><td>把路径解析为绝对路径，处理掉 <code>..</code>、<code>.</code>、符号链接</td></tr>
+    <tr><td>② <code>is_relative_to</code></td><td>检查最终路径是否以 <code>WORKDIR</code> 为前缀。防止路径穿越攻击（如传入 <code>../../etc/passwd</code>）</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>为什么需要这个？</strong>如果 AI 被恶意提示词引导去读 <code>/etc/passwd</code> 或写 <code>~/.ssh/authorized_keys</code>，<code>safe_path</code> 会拦截！所有涉及文件读写的函数（<code>run_read</code>、<code>run_write</code>、<code>run_edit</code>）都会调用它做检查。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> 第 1 层压缩：大输出落盘</h2>
+
+  <h3>代码位置：L69-87</h3>
+
+  <div class="callout green">
+    <strong>一句话：当工具输出太大时，不把全文塞进上下文，而是存到磁盘文件，只保留一段预览。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">persist_larget_output</span>(tool_use_id: <span class="tp">str</span>, output: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="hl">len(output) <= PERSIST_THRESHOLD</span>:    <span class="cm"># ≤ 30,000 字符，不做处理</span>
+        <span class="kw">return</span> output
+
+    TOOL_RESULTS_DIR.<span class="fn">mkdir</span>(parents=<span class="hl">True</span>, exist_ok=<span class="hl">True</span>)  <span class="cm"># 创建目录（如果不存在）</span>
+    stored_path = TOOL_RESULTS_DIR / <span class="s">f"{tool_use_id}.txt"</span>
+    <span class="kw">if</span> <span class="kw">not</span> stored_path.<span class="fn">exists</span>():
+        stored_path.<span class="fn">write_text</span>(output)               <span class="cm"># 完整输出写到磁盘</span>
+
+    preview = output[:PREVIEW_CHARS]                     <span class="cm"># 取前 2,000 字符作为预览</span>
+    rel_path = stored_path.<span class="fn">relative_to</span>(WORKDIR)
+    <span class="kw">return</span> (
+        <span class="s">"&lt;persisted-output&gt;\n"</span>
+        <span class="s">f"Full output saved to {rel_path}\n"</span>
+        <span class="s">"Preview:\n"</span>
+        <span class="s">f"{preview}\n"</span>
+        <span class="s">"&lt;/persisted-output&gt;"</span>
+    )</pre>
+
+  <table>
+    <tr><th>项目</th><th>值</th><th>说明</th></tr>
+    <tr><td><code>PERSIST_THRESHOLD</code></td><td>30,000</td><td>超过此字符数的工具输出才会触发落盘</td></tr>
+    <tr><td><code>PREVIEW_CHARS</code></td><td>2,000</td><td>保留前 2000 字符作为预览给 AI 参考</td></tr>
+    <tr><td>存储路径</td><td><code>.task_outputs/tool-results/&lt;tool_use_id&gt;.txt</code></td><td>以工具调用 ID 为文件名，保证唯一</td></tr>
+    <tr><td>返回格式</td><td>XML-like 标记</td><td>用 <code>&lt;persisted-output&gt;</code> 包裹，AI 能理解这不是完整输出</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>核心思想：</strong>让模型知道"发生了什么"（通过预览），但不用一直背着整份原始大输出。全文没有丢，只是搬到了磁盘。如果需要，AI 可以再通过 <code>read_file</code> 工具读取完整内容。
+  </div>
+
+  <h3>返回的消息示例</h3>
+  <pre>&lt;persisted-output&gt;
+Full output saved to .task_outputs/tool-results/toolu_abc123.txt
+Preview:
+(前 2000 字符...)
+&lt;/persisted-output&gt;</pre>
+
+  <div class="callout red">
+    <strong>注意：</strong>函数名有拼写错误，应该是 <code>persist_large_output</code>（少了一个 r）。教学代码故意保留，不影响功能。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> 第 2 层压缩：微压缩旧结果</h2>
+
+  <h3>代码位置：L89-111</h3>
+
+  <div class="callout green">
+    <strong>一句话：保留最近的 N 个工具结果完整，更早的替换为短占位符。</strong>
+  </div>
+
+  <!-- 5.1 -->
+  <h3>5.1 先找到所有工具结果</h3>
+  <pre><span class="kw">def</span> <span class="fn">collect_tool_result_blocks</span>(messages: <span class="tp">list</span>) -> <span class="tp">list</span>[<span class="tp">tuple</span>[<span class="tp">int</span>, <span class="tp">int</span>, <span class="tp">dict</span>]]:
+    blocks = []
+    <span class="kw">for</span> message_index, message <span class="kw">in</span> <span class="fn">enumerate</span>(messages):
+        content = message.<span class="fn">get</span>(<span class="s">"content"</span>)
+        <span class="cm"># 在 Anthropic API 中，tool_result 以 role="user" 返回</span>
+        <span class="kw">if</span> message.<span class="fn">get</span>(<span class="s">"role"</span>) != <span class="s">"user"</span> <span class="kw">or</span> <span class="kw">not</span> <span class="fn">isinstance</span>(content, <span class="tp">list</span>):
+            <span class="kw">continue</span>
+        <span class="kw">for</span> block_index, block <span class="kw">in</span> <span class="fn">enumerate</span>(content):
+            <span class="kw">if</span> <span class="fn">isinstance</span>(block, <span class="tp">dict</span>) <span class="kw">and</span> block.<span class="fn">get</span>(<span class="s">"type"</span>) == <span class="s">"tool_result"</span>:
+                blocks.<span class="fn">append</span>((message_index, block_index, block))  <span class="cm"># 三元组</span>
+    <span class="kw">return</span> blocks</pre>
+
+  <p>返回值是三元组列表：<code>(消息索引, 块索引, 块本身)</code>。三个元素分别定位了这个 tool_result 在整个消息列表中的精确位置。</p>
+
+  <!-- 5.2 -->
+  <h3>5.2 微压缩执行</h3>
+  <pre><span class="kw">def</span> <span class="fn">micro_compact</span>(messages: <span class="tp">list</span>) -> <span class="tp">list</span>:
+    tool_results = <span class="fn">collect_tool_result_blocks</span>(messages)
+    <span class="kw">if</span> <span class="hl">len(tool_results) <= KEEP_RECENT_TOOL_RESULTS</span>:   <span class="cm"># ≤ 3 条，不压缩</span>
+        <span class="kw">return</span> messages
+
+    <span class="kw">for</span> _, _, block <span class="kw">in</span> tool_results[:-KEEP_RECENT_TOOL_RESULTS]:  <span class="cm"># 除最后 3 条外</span>
+        content = block.<span class="fn">get</span>(<span class="s">"content"</span>, <span class="s">""</span>)
+        <span class="kw">if</span> <span class="kw">not</span> <span class="fn">isinstance</span>(content, <span class="tp">str</span>) <span class="kw">or</span> <span class="hl">len(content) <= 120</span>:  <span class="cm"># 已经很短的就不动</span>
+            <span class="kw">continue</span>
+        block[<span class="s">"content"</span>] = <span class="s">"[Earlier tool result compacted. Re-run the tool if you need full detail.]"</span>
+    <span class="kw">return</span> messages</pre>
+
+  <table>
+    <tr><th>项目</th><th>值</th><th>说明</th></tr>
+    <tr><td><code>KEEP_RECENT_TOOL_RESULTS</code></td><td>3</td><td>保留最近 3 个工具结果的完整内容</td></tr>
+    <tr><td>替换条件</td><td>长度 > 120 且是字符串</td><td>短结果本身很小，不值得压缩</td></tr>
+    <tr><td>替换内容</td><td>占位提示文本</td><td>告诉 AI "之前的工具结果已被压缩，如果需要可以重新运行工具"</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么保留最近 3 条？</strong>最新的工具结果很可能正在被 AI 用于下一步推理，不能动。更早的结果已经被 AI"消化"了，可以放心压缩。这条边界（3 条）是教学简化版，生产环境可以动态调整。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> 第 3 层压缩：完整历史摘要</h2>
+
+  <h3>代码位置：L113-158</h3>
+
+  <div class="callout green">
+    <strong>一句话：前两层还不够时，把整个对话交给 AI 自己总结成摘要，用 1 条消息替换整个历史。</strong>
+  </div>
+
+  <!-- 6.1 -->
+  <h3>6.1 存档 — <code>write_transcript</code></h3>
+  <pre><span class="kw">def</span> <span class="fn">write_transcript</span>(messages: <span class="tp">list</span>) -> <span class="tp">Path</span>:
+    TRANSCRIPT_DIR.<span class="fn">mkdir</span>(parents=<span class="hl">True</span>, exist_ok=<span class="hl">True</span>)
+    path = TRANSCRIPT_DIR / <span class="s">f"transcript_{int(time.time())}.jsonl"</span>
+    <span class="kw">with</span> path.<span class="fn">open</span>(<span class="s">"w"</span>) <span class="kw">as</span> handle:
+        <span class="kw">for</span> message <span class="kw">in</span> messages:
+            handle.<span class="fn">write</span>(<span class="fn">json.dumps</span>(message, default=<span class="tp">str</span>) + <span class="s">"\n"</span>)  <span class="cm"># JSONL 格式</span>
+    <span class="kw">return</span> path</pre>
+
+  <table>
+    <tr><th>项目</th><th>说明</th></tr>
+    <tr><td>存储位置</td><td><code>.transcripts/transcript_&lt;unix_timestamp&gt;.jsonl</code></td></tr>
+    <tr><td>格式</td><td>JSONL（JSON Lines）：每行一条 JSON 消息</td></tr>
+    <tr><td><code>default=str</code></td><td>遇到无法 JSON 序列化的对象时，用 <code>str()</code> 兜底，防止崩溃</td></tr>
+    <tr><td>目的</td><td>压缩不可逆，存档以备后查</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>重要：</strong>存档在压缩<strong>之前</strong>执行。如果摘要信息不足，人类或 AI 可以回头读取这个 JSONL 文件恢复完整历史。
+  </div>
+
+  <!-- 6.2 -->
+  <h3>6.2 AI 摘要 — <code>summarize_history</code></h3>
+  <pre><span class="kw">def</span> <span class="fn">summarize_history</span>(messages: <span class="tp">list</span>) -> <span class="tp">str</span>:
+    <span class="cm"># ① 把对话转成 JSON，只取前 8000 字符（防止请求过大）</span>
+    conversation = <span class="fn">json.dumps</span>(messages, default=<span class="tp">str</span>)[:8000]
+
+    <span class="cm"># ② 构造摘要 prompt</span>
+    prompt = (
+        <span class="s">"Summarize this coding-agent conversation so work can continue.\n"</span>
+        <span class="s">"Preserve: \n"</span>
+        <span class="s">"1. The current goal\n"</span>
+        <span class="s">"2. Important findings and decisions\n"</span>
+        <span class="s">"3. Files read or changed\n"</span>
+        <span class="s">"4. Remaining work\n"</span>
+        <span class="s">"5. User constraints and preferences\n"</span>
+        <span class="s">"Be compact but concrete.\n\n"</span>
+        <span class="s">f"{conversation}"</span>
+    )
+
+    <span class="cm"># ③ 让 AI 自己给自己写摘要</span>
+    response = client.messages.<span class="fn">create</span>(
+        model=MODEL,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
+        max_tokens=<span class="hl">2000</span>
+    )
+    <span class="kw">return</span> response.content[0].text.<span class="fn">strip</span>()</pre>
+
+  <table>
+    <tr><th>参数</th><th>值</th><th>说明</th></tr>
+    <tr><td><code>[:8000]</code></td><td>输入截断</td><td>只取对话的前 8000 字符作为 AI 的输入素材。原因：防止请求过大、节约 token</td></tr>
+    <tr><td><code>max_tokens=2000</code></td><td>输出限制</td><td>限制摘要输出最长 2000 tokens（约 1500 英文单词/800 汉字）</td></tr>
+    <tr><td>5 类保留信息</td><td>目标/决策/文件/下一步/约束</td><td>确保压缩后 AI 还能接着干活，而不是从头开始</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>注意缺陷：</strong><code>[:8000]</code> 只取了对话的<strong>开头部分</strong>（最早的消息），而对话越靠后通常越重要（最新进度）。这是一个教学版本的简化缺陷，生产环境应该使用更智能的策略，如"保留开头 + 保留结尾 + 压缩中间"。
+  </div>
+
+  <!-- 6.3 -->
+  <h3>6.3 完整压缩入口 — <code>compact_history</code></h3>
+  <pre><span class="kw">def</span> <span class="fn">compact_history</span>(messages: <span class="tp">list</span>, state: <span class="tp">CompactState</span>,
+                     focus: <span class="tp">str</span> | <span class="tp">None</span> = <span class="tp">None</span>) -> <span class="tp">list</span>:
+    <span class="cm"># ① 先存档</span>
+    transcript_path = <span class="fn">write_transcript</span>(messages)
+
+    <span class="cm"># ② AI 生成摘要</span>
+    summary = <span class="fn">summarize_history</span>(messages)
+
+    <span class="cm"># ③ 追加额外信息：focus 和 recent_files</span>
+    <span class="kw">if</span> focus:
+        summary += <span class="s">f"\nFocus to preserve next: {focus}"</span>
+    <span class="kw">if</span> state.recent_files:
+        recent_lines = <span class="s">"\n"</span>.<span class="fn">join</span>(<span class="s">f"- {path}"</span> <span class="kw">for</span> path <span class="kw">in</span> state.recent_files)
+        summary += <span class="s">f"\nRecent files to reopen if needed:\n{recent_lines}"</span>
+
+    <span class="cm"># ④ 更新压缩状态</span>
+    state.has_compact = <span class="hl">True</span>
+    state.last_summary = summary
+
+    <span class="cm"># ⑤ 返回单条消息替换整个历史</span>
+    <span class="kw">return</span> [{
+        <span class="s">"role"</span>: <span class="s">"user"</span>,
+        <span class="s">"content"</span>: (
+            <span class="s">"This is conversation was compacted so the agent can continue working.\n\n"</span>
+            <span class="s">f"{summary}"</span>
+        )
+    }]</pre>
+
+  <h3>执行流程</h3>
+  <div class="diagram">原始对话（可能 50,000+ 字符）
+         │
+         ├──① write_transcript()  → 存档到 .transcripts/
+         │
+         ├──② summarize_history() → AI 自己写摘要（max 2000 tokens）
+         │
+         ├──③ 追加 focus + recent_files 信息
+         │
+         └──④ 返回 [{role: "user", content: 摘要}]
+         │
+         ▼
+整个 messages 被替换为这条摘要消息</div>
+
+  <div class="callout purple">
+    <strong>核心思想：</strong>压缩不是删除，而是"换一种表示方式"。最关键的是：当前目标、已完成动作、修改过的文件、关键决定、下一步工作——这些信息在摘要中必须保住，否则压缩就打断了工作连续性。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> Python 语法细节</h2>
+
+  <h3>7.1 <code>for _, _, block</code> — <code>_</code> 是什么？</h3>
+
+  <pre><span class="kw">for</span> <span class="hl">_</span>, <span class="hl">_</span>, block <span class="kw">in</span> tool_results[:-KEEP_RECENT_TOOL_RESULTS]:</pre>
+
+  <p><code>tool_results</code> 中每个元素是一个三元组 <code>(message_index, block_index, block)</code>。在循环中，我们只关心 <code>block</code>（工具结果本身），不需要前两个索引值。</p>
+
+  <table>
+    <tr><th>写法</th><th>含义</th></tr>
+    <tr><td><code>_</code></td><td>Python 的通用"垃圾桶变量名"，表示"我故意不要这个值"</td></tr>
+    <tr><td><code>_, _, block</code></td><td>解包三元组，只取第三个元素，前两个丢弃</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>最佳实践：</strong>用 <code>_</code> 比用 <code>message_index, block_index, block</code>（然后从不使用前两个变量）更好——它明确告诉读者"这些值是我故意忽略的"，而且不会触发 lint 工具的"未使用变量"警告。
+  </div>
+
+  <!-- 7.2 -->
+  <h3>7.2 <code>json.dumps(message, default=str)</code></h3>
+
+  <pre>handle.<span class="fn">write</span>(<span class="fn">json.dumps</span>(message, <span class="hl">default=str</span>) + <span class="s">"\n"</span>)</pre>
+
+  <table>
+    <tr><th>参数</th><th>作用</th></tr>
+    <tr><td><code>message</code></td><td>要序列化的对象（通常是字典）</td></tr>
+    <tr><td><code>default=str</code></td><td><strong>兜底函数</strong>：当 <code>json.dumps</code> 遇到无法序列化的类型（如 <code>Path</code>、<code>datetime</code>、自定义对象）时，调用 <code>str()</code> 将其转为字符串</td></tr>
+  </table>
+
+  <p><strong>示例对比</strong>：</p>
+  <pre><span class="cm"># 没有 default=str</span>
+<span class="fn">json.dumps</span>({<span class="s">"path"</span>: <span class="tp">Path</span>(<span class="s">"/tmp/foo"</span>)})        <span class="cm"># ❌ TypeError!</span>
+
+<span class="cm"># 有 default=str</span>
+<span class="fn">json.dumps</span>({<span class="s">"path"</span>: <span class="tp">Path</span>(<span class="s">"/tmp/foo"</span>)}, default=<span class="tp">str</span>)  <span class="cm"># ✅ {"path": "/tmp/foo"}</span></pre>
+
+  <!-- 7.3 -->
+  <h3>7.3 <code>[:8000]</code> 截断 vs <code>max_tokens=2000</code></h3>
+
+  <p>这是两个<strong>不同维度</strong>的限制：</p>
+
+  <table>
+    <tr><th>位置</th><th>代码</th><th>控制什么</th><th>为什么</th></tr>
+    <tr><td><strong>输入</strong></td><td><code>json.dumps(messages)[:8000]</code></td><td>给 AI 看的素材只取前 8000 字符</td><td>防止请求过大，防止 AI 被细节淹没</td></tr>
+    <tr><td><strong>输出</strong></td><td><code>max_tokens=2000</code></td><td>AI 回复的最大长度（2000 tokens）</td><td>保证摘要足够精炼，压缩才有意义</td></tr>
+  </table>
+
+  <div class="diagram">原始对话: 50,000+ 字符
+         │
+         ▼ 截取前 8,000 字符
+  prompt: 8,000 字符
+         │
+         ▼ AI 阅读后输出精炼摘要
+  AI 输出: max_tokens=2000 (~2,500 字符)
+         │
+         ▼ 替代整个历史
+  压缩后: ~2,500 字符（缩小 20 倍）</div>
+
+  <div class="callout red">
+    <strong>但这里有个问题：</strong><code>[:8000]</code> 取的是消息列表的<strong>开头</strong>，而对话中最新的内容（可能在列表末尾）才是最重要的。后面的 42000+ 字符被直接丢弃了。这是一个教学简化妥协，生产环境应该用更好的采样策略（如保留开头 + 保留结尾，压缩中间）。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> s05 → s06 完整对比</h2>
+
+  <div class="callout green">
+    <strong>一句话：s06 把 s05 的技能系统完整移除，换上了一套三层上下文压缩系统。</strong>
+  </div>
+
+  <h3>8.1 删去了什么？</h3>
+
+  <table>
+    <tr><th>删除的代码</th><th>位置（s05）</th><th>用途</th><th>为什么删除</th></tr>
+    <tr><td><code>SkillManifest</code> 数据类</td><td>L31-34</td><td>技能元信息</td><td rowspan="4">s06 不教技能系统，而是教上下文压缩</td></tr>
+    <tr><td><code>SkillDocument</code> 数据类</td><td>L36-39</td><td>完整技能文档</td></tr>
+    <tr><td><code>SkillRegistry</code> 类</td><td>L42-96</td><td>注册、解析、加载技能</td></tr>
+    <tr><td><code>SKILLS_DIR</code>, <code>SKILL_REGISTRY</code></td><td>L25, L93</td><td>全局常量和实例</td></tr>
+    <tr><td><code>load_skill</code> 工具</td><td>TOOLS 列表</td><td>按需加载技能</td><td>被 <code>compact</code> 工具替代</td></tr>
+    <tr><td><code>TOOL_HANDLERS</code> 字典</td><td>L173-185</td><td>工具分发的 lambda 写法</td><td>需要传 <code>state</code> 参数，lambda 不方便</td></tr>
+  </table>
+
+  <h3>8.2 新增了什么？</h3>
+
+  <table>
+    <tr><th>新增内容</th><th>行数</th><th>所属层级</th></tr>
+    <tr><td>6 个常量（CONTENT_LIMIT 等）</td><td>L20-27</td><td>配置</td></tr>
+    <tr><td><code>CompactState</code> 数据类</td><td>L29-33</td><td>状态追踪</td></tr>
+    <tr><td><code>estimate_context_size</code></td><td>L35-36</td><td>辅助</td></tr>
+    <tr><td><code>track_recent_file</code></td><td>L38-45</td><td>辅助</td></tr>
+    <tr><td><code>safe_path</code></td><td>L48-52</td><td>安全</td></tr>
+    <tr><td><code>persist_larget_output</code></td><td>L54-72</td><td><strong>第 1 层</strong>：大输出落盘</td></tr>
+    <tr><td><code>collect_tool_result_blocks</code></td><td>L74-85</td><td><strong>第 2 层</strong>：搜索工具结果</td></tr>
+    <tr><td><code>micro_compact</code></td><td>L87-96</td><td><strong>第 2 层</strong>：旧结果占位</td></tr>
+    <tr><td><code>write_transcript</code></td><td>L98-104</td><td><strong>第 3 层</strong>：压缩前存档</td></tr>
+    <tr><td><code>summarize_history</code></td><td>L106-119</td><td><strong>第 3 层</strong>：AI 生成摘要</td></tr>
+    <tr><td><code>compact_history</code></td><td>L121-143</td><td><strong>第 3 层</strong>：完整压缩入口</td></tr>
+  </table>
+
+  <h3>8.3 修改了什么？</h3>
+
+  <table>
+    <tr><th>修改项</th><th>s05</th><th>s06</th><th>原因</th></tr>
+    <tr><td><code>SYSTEM</code> prompt</td><td>含技能目录的较长指令</td><td>精简版，提示使用 compact</td><td>不再需要技能系统</td></tr>
+    <tr><td><code>TOOLS</code> 列表</td><td>含 <code>load_skill</code></td><td>含 <code>compact</code></td><td>新能力替代旧能力</td></tr>
+    <tr><td><code>agent_loop</code> 签名</td><td><code>(messages: list)</code></td><td><code>(messages: list, state: CompactState)</code></td><td>需要传递压缩状态</td></tr>
+    <tr><td>工具分发方式</td><td><code>TOOL_HANDLERS</code> 字典</td><td><code>execute_tool()</code> 函数</td><td>需要传 <code>state</code> 参数</td></tr>
+    <tr><td><code>__main__</code> 入口</td><td>只创建 <code>history</code></td><td>同时创建 <code>compact_state</code></td><td>保持压缩状态</td></tr>
+    <tr><td>agent_loop 逻辑</td><td>仅任务推进</td><td>任务推进 + 上下文预算管理</td><td>现在多了一个关键责任</td></tr>
+  </table>
+
+  <h3>8.4 上下文压缩的三层架构</h3>
+
+  <div class="diagram">Tool Output
+    │
+    ├── 第 1 层：太大？
+    │   │  len(output) > 30,000
+    │   │  └─→ 写到磁盘 + 返回 2,000 字符预览
+    │   │      persist_larget_output()
+    │
+    ├── 第 2 层：太旧？
+    │   │  不是最近 3 条 tool_result
+    │   │  └─→ 替换为短占位符
+    │   │      micro_compact()
+    │
+    └── 第 3 层：整体太大？
+        │  estimate > 50,000
+        │  └─→ AI 生成摘要，替换整个历史
+        │      compact_history()
+        │
+        ▼
+   压缩后上下文继续工作</div>
+
+  <h3>8.5 agent_loop 的核心变化</h3>
+
+  <p>s06 的 <code>agent_loop</code> 不再只是"收消息→调模型→跑工具"，还多了一个关键责任：<strong>管理活跃上下文的预算</strong>。</p>
+
+  <p>s06 的伪代码逻辑变成：</p>
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(messages, state):
+    <span class="kw">while</span> <span class="hl">True</span>:
+        <span class="cm"># 新责任：每次循环先尝试微压缩</span>
+        messages = <span class="hl">micro_compact(messages)</span>
+
+        <span class="cm"># 新责任：检查上下文大小，必要时完整压缩</span>
+        <span class="kw">if</span> <span class="hl">estimate_context_size(messages) > CONTENT_LIMIT</span>:
+            messages = <span class="hl">compact_history(messages, state)</span>
+
+        <span class="cm"># 原有的：调模型→跑工具→收集结果</span>
+        response = client.messages.<span class="fn">create</span>(...)
+        ...</pre>
+
+  <div class="callout purple">
+    <strong>一句话总结：</strong>s06 的核心变化不是"加了几个函数"，而是在 agent 的主循环中引入了"上下文预算管理"这一关键责任。这是从 s05 到 s06 最重要的心智模型升级——Agent 不仅要学会做事，还要学会管理自己做事的"工作台空间"。
+  </div>
+
+  <h3>8.6 教学边界</h3>
+
+  <p>教程明确说明了这章的教学边界：</p>
+  <ul>
+    <li>✅ 什么该留在活跃上下文里</li>
+    <li>✅ 什么该搬到磁盘或占位标记里</li>
+    <li>✅ 完整压缩后，哪些连续性信息一定不能丢</li>
+    <li>❌ 不讲所有产品化压缩技巧</li>
+    <li>❌ 不讲跨会话记忆（那是 s09 memory 的范畴）</li>
+  </ul>
+
+  <p>s06 的目标是建立稳定心智：<strong>压缩不是删历史，而是把细节搬走，好让系统继续工作。</strong></p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 概念速查表 -->
+<div class="card" id="s9">
+  <h2><span class="num">+</span> 概念速查表</h2>
+
+  <table>
+    <tr><th>概念</th><th>解释</th></tr>
+    <tr><td>上下文窗口</td><td>模型这一轮能看到的输入容量，不是无限的</td></tr>
+    <tr><td>活跃上下文</td><td>当前继续工作时，模型最值得马上看到的那部分内容</td></tr>
+    <tr><td>压缩</td><td>用更短的表示方式保留继续工作所需的信息，不是 ZIP 压缩</td></tr>
+    <tr><td>大输出落盘</td><td>工具输出太长时存到磁盘，只保留预览</td></tr>
+    <tr><td>微压缩</td><td>旧工具结果替换为简短占位提示</td></tr>
+    <tr><td>历史摘要</td><td>AI 自己总结对话，用 1 条摘要替换整个历史</td></tr>
+    <tr><td>工作连续性</td><td>压缩后 AI 还能记住目标、已做工作、文件、决策、下一步</td></tr>
+    <tr><td>压缩 vs Memory</td><td>压缩解决当前会话太长；Memory 解决跨会话信息保留（s09）</td></tr>
+  </table>
+
+  <h3>关键常量一览</h3>
+  <table>
+    <tr><th>常量</th><th>值</th><th>作用</th></tr>
+    <tr><td><code>CONTENT_LIMIT</code></td><td>50,000</td><td>上下文总大小阈值，超过触发完整压缩</td></tr>
+    <tr><td><code>KEEP_RECENT_TOOL_RESULTS</code></td><td>3</td><td>微压缩时保留的最近工具结果数</td></tr>
+    <tr><td><code>PERSIST_THRESHOLD</code></td><td>30,000</td><td>超过此字符数的输出触发落盘</td></tr>
+    <tr><td><code>PREVIEW_CHARS</code></td><td>2,000</td><td>落盘后保留的预览字符数</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

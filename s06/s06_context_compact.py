@@ -12,7 +12,7 @@ active-context idea explicit and teachable.
 """
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 import subprocess
 from pathlib import Path
