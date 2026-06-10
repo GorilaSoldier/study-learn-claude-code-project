@@ -205,6 +205,8 @@
     <li><a href="#s6">第 3 层压缩：完整历史摘要</a></li>
     <li><a href="#s7">Python 语法细节</a></li>
     <li><a href="#s8">s05 → s06 完整对比</a></li>
+    <li><a href="#s9">execute_tool — 为什么不用 lambda</a></li>
+    <li><a href="#s10">概念速查表</a></li>
   </ol>
 </nav>
 
@@ -742,8 +744,102 @@ Preview:
 </div>
 
 <!-- ============================================================ -->
-<!-- 9 概念速查表 -->
+<!-- 9 -->
 <div class="card" id="s9">
+  <h2><span class="num">9</span> <code>execute_tool</code> — 为什么不用 lambda 了</h2>
+
+  <h3>代码位置</h3>
+  <pre>s06_context_compact.py#L281-292</pre>
+
+  <div class="callout green">
+    <strong>一句话：s05 的 lambda 字典靠 <code>**block.input</code> 按名字自动匹配参数；s06 需要传 <code>block.id</code> 和 <code>state</code>，这俩不在 <code>block.input</code> 里，lambda 模式就破了。</strong>
+  </div>
+
+  <h3>9.1 s05 的 lambda 为什么能工作</h3>
+
+  <pre><span class="cm"># s05 的定义</span>
+TOOL_HANDLERS = {
+    <span class="s">"bash"</span>:      <span class="kw">lambda</span> **kw: <span class="fn">run_bash</span>(kw[<span class="s">"command"</span>]),
+    <span class="s">"read_file"</span>: <span class="kw">lambda</span> **kw: <span class="fn">run_read</span>(kw[<span class="s">"path"</span>], kw.get(<span class="s">"limit"</span>)),
+    ...
+}
+
+<span class="cm"># s05 的调用</span>
+handler = TOOL_HANDLERS[block.name]   <span class="cm"># 按名字查到函数</span>
+output = <span class="hl">handler(**block.input)</span>       <span class="cm"># 字典展开成关键字参数</span></pre>
+
+  <p><code>**block.input</code> 的作用是把字典展开成关键字参数，<strong>按参数名自动匹配</strong>。例如：</p>
+
+  <table>
+    <tr><th>AI 调用</th><th><code>block.input</code> 的值</th><th><code>handler(**block.input)</code> 等价于</th></tr>
+    <tr><td><code>bash</code></td><td><code>{"command": "ls -l"}</code></td><td><code>run_bash(command="ls -l")</code></td></tr>
+    <tr><td><code>read_file</code></td><td><code>{"path": "foo.py", "limit": 100}</code></td><td><code>run_read(path="foo.py", limit=100)</code></td></tr>
+    <tr><td><code>edit_file</code></td><td><code>{"path": "foo.py", "old_text": "a", "new_text": "b"}</code></td><td><code>run_edit(path="foo.py", old_text="a", new_text="b")</code></td></tr>
+  </table>
+
+  <p>虽然各函数参数不一样，但 <code>**</code> 展开能自动按名字匹配，所以可以统一用 <code>handler(**block.input)</code> 调用。</p>
+
+  <h3>9.2 s06 为什么不行了</h3>
+
+  <p>s06 多了两个必须传、但 <code>block.input</code> 里没有的东西：</p>
+
+  <table>
+    <tr><th>参数</th><th>值</th><th>在哪儿</th><th>为什么需要</th></tr>
+    <tr><td><code>block.id</code></td><td>工具调用的唯一 ID（如 <code>"toolu_abc123"</code>）</td><td><code>block</code> 对象本身的属性</td><td>Anthropic API 要求 <code>tool_result</code> 必须带 <code>tool_use_id</code>，用于配对"调用"和"结果"</td></tr>
+    <tr><td><code>state</code></td><td><code>CompactState</code> 实例</td><td>主循环维护的变量</td><td>压缩时 <code>compact_history()</code> 需要 <code>state.recent_files</code> 把最近文件写入摘要</td></tr>
+  </table>
+
+  <p><code>block.id</code> 和 <code>state</code> 都不在 <code>block.input</code> 字典里，没法用 <code>**block.input</code> 传过去。强行用 lambda 你得写成：</p>
+
+  <pre><span class="cm"># 每个 lambda 都得写 block, state，还要手动取 block.input["xxx"]
+
+# 而且每个 lambda 参数都是 (block, state)，不再是 **kw 了</span>
+  </pre>
+
+  <p>既然 lambda 的统一接口已经保不住了，干脆用 if/elif 更直接。</p>
+
+  <h3>9.3 <code>block.id</code> 到底用在哪</h3>
+
+  <p>看 <code>agent_loop</code> 第 320 行：</p>
+
+  <pre>results.<span class="fn">append</span>({
+    <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+    <span class="hl">"tool_use_id"</span>: block.id,        <span class="cm"># ← 只在这里使用了</span>
+    <span class="s">"content"</span>: <span class="fn">str</span>(output),
+})</pre>
+
+  <div class="callout">
+    <strong>没干别的，就是：</strong>当 AI 调了工具，你把执行结果返回给 API 时，必须带上 <code>tool_use_id</code> 告诉 API "这个结果是对那次调用的回复"。<code>block.id</code> 就是那个配对用的 ID。
+  </div>
+
+  <p>至于 <code>run_bash(command, tool_use_id)</code> 这类函数签名里的 <code>tool_use_id</code> 参数——<strong>函数体里根本没用到它</strong>，是死参数。</p>
+
+  <h3>9.4 <code>state</code> 到底用在哪</h3>
+
+  <p>看 <code>agent_loop</code> 第 326 行：</p>
+
+  <pre><span class="kw">if</span> manual_compact:
+    messages[:] = <span class="hl">compact_history(messages, state, focus=compact_focus)</span></pre>
+
+  <p><code>compact_history</code> 中：</p>
+
+  <pre><span class="kw">if</span> state.recent_files:                              <span class="cm"># ← 用到了</span>
+    recent_lines = <span class="s">"\n"</span>.<span class="fn">join</span>(<span class="s">f"- {path}"</span> ...)
+    summary += <span class="s">f"\nRecent files to reopen if needed:\n{recent_lines}"</span>
+
+state.has_compact = <span class="hl">True</span>                            <span class="cm"># ← 用到了</span>
+state.last_summary = summary                          <span class="cm"># ← 用到了</span></pre>
+
+  <div class="callout">
+    <strong>state 的用途：</strong>只有 <code>compact</code> 工具被调用时才真正用到。把最近文件列表和压缩状态保存起来，确保压缩后的摘要包含足够的信息让 AI 恢复工作。
+  </div>
+
+  <p>至于 <code>run_read(path, tool_use_id, state, limit)</code> 等函数签名里的 <code>state</code>——<strong>函数体里同样没用</strong>，也是死参数。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 概念速查表 -->
+<div class="card" id="s10">
   <h2><span class="num">+</span> 概念速查表</h2>
 
   <table>

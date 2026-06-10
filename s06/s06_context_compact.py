@@ -157,7 +157,7 @@ def compact_history(messages: list, state: CompactState, focus: str | None = Non
         )
     }]
 
-def run_bash(command: str) -> str:
+def run_bash(command: str, tool_use_id: str) -> str:
     dangerous = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"]
     if any(d in command for d in dangerous):
         return "Error: Dangerous command blocked"
@@ -171,7 +171,7 @@ def run_bash(command: str) -> str:
     output = (r.stdout + r.stderr).strip()
     return output[:50000] if output else "(no output)"
 
-def run_read(path: str, limit: int = None) -> str:
+def run_read(path: str, tool_use_id: str, state: CompactState, limit: int | None = None) -> str:
     try:        
         lines = safe_path(path).read_text().splitlines()
         if limit and limit < len(lines):
@@ -180,7 +180,7 @@ def run_read(path: str, limit: int = None) -> str:
     except Exception as exc:
         return f"Error: {exc}"
     
-def run_write(path: str, content: str) -> str:
+def run_write(path: str, tool_use_id: str, state: CompactState, content: str) -> str:
     try:
         file_path = safe_path(path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,7 +189,7 @@ def run_write(path: str, content: str) -> str:
     except Exception as exc:
         return f"Error: {exc}"
     
-def run_edit(path: str, old_text: str, new_text: str) -> str:
+def run_edit(path: str, tool_use_id: str, state: CompactState, old_text: str, new_text: str) -> str:
     try:
         file_path = safe_path(path)
         content = file_path.read_text()
@@ -218,8 +218,9 @@ TOOLS = [
             "properties": {
                 "path": {"type": "string"},
                 "limit": {"type": "integer"},
+                "tool_use_id": {"type": "string"},
             },
-            "required": ["path"],
+            "required": ["path", "tool_use_id"],
         },
     },
     {
@@ -230,8 +231,9 @@ TOOLS = [
             "properties": {
                 "path": {"type": "string"},
                 "content": {"type": "string"},
+                "tool_use_id": {"type": "string"},
             },
-            "required": ["path", "content"],
+            "required": ["path", "content", "tool_use_id"],
         },
     },
     {
@@ -284,9 +286,9 @@ def execute_tool(block, state: CompactState) -> str:
     if block.name == "read_file":
         return run_read(block.input["path"], block.id, state, block.input.get("limit"))
     if block.name == "write_file":
-        return run_write(block.input["path"], block.input["content"])
+        return run_write(block.input["path"], block.id, state, block.input["content"])
     if block.name == "edit_file":
-        return run_edit(block.input["path"], block.input["old_text"], block.input["new_text"])
+        return run_edit(block.input["path"], block.id, state, block.input["old_text"], block.input["new_text"])
     if block.name == "compact":
         return "Compacting conversation..."
     return f"Unknown tool: {block.name}"

@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s07 Permission System - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s07 · s07_permission_system.py 复习笔记</h1>
+  <p class="subtitle">从 s06 到 s07：让工具调用先过安全闸门</p>
+  <span class="badge">基于 s07_permission_system.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">load_dotenv — 加载 .env 环境变量</a></li>
+    <li><a href="#s2">常量和工具分类</a></li>
+    <li><a href="#s3">BashSecrityValidator — bash 安全检查器</a></li>
+    <li><a href="#s4">正则表达式详解</a></li>
+    <li><a href="#s5">fnmatch — 通配符匹配引擎</a></li>
+    <li><a href="#s6">PermissionManager 总览</a></li>
+    <li><a href="#s7">check() — 4 步权限管线</a></li>
+    <li><a href="#s8">为什么 deny 和 allow 分两次遍历</a></li>
+    <li><a href="#s9">_matches — 规则匹配引擎</a></li>
+    <li><a href="#s10">ask_user — 交互式用户确认</a></li>
+    <li><a href="#s11">agent_loop — 权限决策执行</a></li>
+    <li><a href="#s12">主程序入口和运行时命令</a></li>
+    <li><a href="#s13">safe_path — 路径安全检查</a></li>
+    <li><a href="#s14">s06 → s07 完整对比</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> <code>load_dotenv</code> — 从 .env 文件加载环境变量</h2>
+
+  <h3>代码位置</h3>
+  <pre>s07_permission_system.py#L30-31</pre>
+
+  <div class="callout green">
+    <strong>一句话：把 <code>.env</code> 文件中的键值对读入 <code>os.environ</code>，让程序能读取配置（如 API Key 等）。</strong>
+  </div>
+
+  <pre><span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="fn">load_dotenv</span>(override=<span class="hl">True</span>)</pre>
+
+  <h3>参数 <code>override=True</code> 的含义</h3>
+  <table>
+    <tr><th>参数值</th><th>行为</th></tr>
+    <tr><td><code>override=False</code>（默认）</td><td>系统中已存在的环境变量<strong>不会被</strong> <code>.env</code> 覆盖</td></tr>
+    <tr><td><code>override=True</code></td><td><code>.env</code> 中的值<strong>强制覆盖</strong>系统中已有的同名变量</td></tr>
+  </table>
+
+  <h3>为什么需要它？</h3>
+  <p>后续代码中使用了 <code>os.getenv("ANTHROPIC_BASE_URL")</code> 和 <code>os.environ["MODEL_ID"]</code> 来读取配置。如果不先调用 <code>load_dotenv()</code>，这些环境变量不会被加载到 <code>os.environ</code> 中，<code>os.getenv</code> 读到的一律是 <code>None</code>。</p>
+
+  <p><code>.env</code> 文件的大致内容：</p>
+  <pre>ANTHROPIC_BASE_URL=https://your-api-endpoint
+MODEL_ID=claude-sonnet-4-20260514</pre>
+
+  <div class="callout">
+    <strong>常见用途：</strong>开发环境中把敏感配置（API Key、数据库密码）放在 <code>.env</code> 中，不上传到 Git。生产环境则通过系统环境变量注入。<code>load_dotenv</code> 让开发体验和产线体验一致。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 常量和工具分类</h2>
+
+  <h3>代码位置：L37-44</h3>
+
+  <pre><span class="kw">MODES</span> = (<span class="s">"default"</span>, <span class="s">"plan"</span>, <span class="s">"auto"</span>)
+
+<span class="kw">READ_ONLY_TOOLS</span> = {<span class="s">"read_file"</span>, <span class="s">"bash_readonly"</span>}
+
+<span class="kw">WRITE_TOOLS</span> = {<span class="s">"write_file"</span>, <span class="s">"edit_file"</span>, <span class="s">"bash"</span>}</pre>
+
+  <h3>2.1 <code>MODES</code> — 三种权限模式</h3>
+  <table>
+    <tr><th>模式</th><th>含义</th><th>适用场景</th></tr>
+    <tr><td><code>default</code></td><td>未命中规则时询问用户</td><td>日常交互，安全中等的默认模式</td></tr>
+    <tr><td><code>plan</code></td><td>只允许读，不允许写</td><td>计划、审查、分析——AI 只能看不能改</td></tr>
+    <tr><td><code>auto</code></td><td>简单安全操作自动过，危险操作再问</td><td>高流畅度探索，信任度较高的场景</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>设计意图：</strong>教学版只做三种模式，让读者先理解"模式"这个概念本身。不要一上来做 6 个模式、10 个策略源。
+  </div>
+
+  <h3>2.2 <code>READ_ONLY_TOOLS</code> 和 <code>WRITE_TOOLS</code></h3>
+  <p>用集合（<code>set</code>）存放，因为集合的<strong>查找速度是 O(1)</strong>，比列表快。</p>
+
+  <table>
+    <tr><th>集合</th><th>包含的工具</th><th>为什么这样归类</th></tr>
+    <tr><td><code>READ_ONLY_TOOLS</code></td><td><code>read_file</code>, <code>bash_readonly</code></td><td>这些工具不会修改任何数据，只是读取</td></tr>
+    <tr><td><code>WRITE_TOOLS</code></td><td><code>write_file</code>, <code>edit_file</code>, <code>bash</code></td><td>这些工具会修改文件或执行命令，有潜在风险</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>注意：</strong><code>bash</code> 被归类为写入工具！因为 bash 能做任何事（包括删除文件、修改配置），不能当作只读工具对待。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> BashSecrityValidator — bash 安全检查器</h2>
+
+  <h3>代码位置：L46-84</h3>
+
+  <div class="callout green">
+    <strong>一句话：在执行 bash 命令之前，用正则表达式检测它有没有危险操作。</strong>
+    <br>课程核心思想：<strong>"bash 不是普通文本，而是可执行动作描述。"</strong>
+  </div>
+
+  <h3>3.1 5 个危险模式</h3>
+  <pre><span class="kw">VALIDATORS</span> = [
+    (<span class="s">"shell_metachar"</span>,    <span class="s">r"[;&|`$]"</span>),              <span class="cm"># shell 元字符（连接多条命令）</span>
+    (<span class="s">"sudo"</span>,              <span class="s">r"\bsudo\b"</span>),              <span class="cm"># 提权操作（sudo）</span>
+    (<span class="s">"rm_rf"</span>,             <span class="s">r"\brm\s+(-[a-zA-Z]*)?r"</span>), <span class="cm"># 递归删除（rm -r）</span>
+    (<span class="s">"cmd_substitution"</span>,  <span class="s">r"\$\("</span>),                  <span class="cm"># 命令替换（$(...)）</span>
+    (<span class="s">"ifs_injection"</span>,     <span class="s">r"\bIFS\s*="</span>),            <span class="cm"># IFS 变量操纵</span>
+]</pre>
+
+  <table>
+    <tr><th>名称</th><th>正则</th><th>匹配什么</th><th>示例</th></tr>
+    <tr><td><code>shell_metachar</code></td><td><code>[;&|`$]</code></td><td>shell 元字符，用于连接多条命令</td><td><code>ls ; rm -rf</code>、<code>kill -9 $PID</code></td></tr>
+    <tr><td><code>sudo</code></td><td><code>\bsudo\b</code></td><td>提权操作</td><td><code>sudo apt install</code></td></tr>
+    <tr><td><code>rm_rf</code></td><td><code>\brm\s+(-[a-zA-Z]*)?r</code></td><td>递归删除（带 <code>-r</code> 标志）</td><td><code>rm -rf /</code>、<code>rm -r ./</code></td></tr>
+    <tr><td><code>cmd_substitution</code></td><td><code>\$\(</code></td><td>命令替换，执行嵌套命令</td><td><code>echo $(whoami)</code></td></tr>
+    <tr><td><code>ifs_injection</code></td><td><code>\bIFS\s*=</code></td><td>修改 IFS 变量（shell 注入手段）</td><td><code>IFS=/</code></td></tr>
+  </table>
+
+  <h3>3.2 三个核心方法</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">validate</span>(self, command: <span class="tp">str</span>) -> <span class="tp">list</span>:
+    <span class="s">"""返回匹配到的所有危险模式列表。空列表 = 安全。"""</span>
+    failures = []
+    <span class="kw">for</span> name, pattern <span class="kw">in</span> self.VALIDATORS:
+        <span class="kw">if</span> <span class="hl">re.search(pattern, command)</span>:
+            failures.append((name, pattern))
+    <span class="kw">return</span> failures</pre>
+
+  <table>
+    <tr><th>方法</th><th>返回类型</th><th>说明</th></tr>
+    <tr><td><code>validate(command)</code></td><td><code>list[tuple]</code></td><td>返回 <code>[(名称, 正则), ...]</code>，空列表表示安全</td></tr>
+    <tr><td><code>is_safe(command)</code></td><td><code>bool</code></td><td>便捷方法，<code>True</code> 表示所有验证都通过</td></tr>
+    <tr><td><code>describe_failures(command)</code></td><td><code>str</code></td><td>生成人类可读的描述，如 <code>"Security flags: rm_rf (pattern: ...)"</code></td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>严重级别区分：</strong>在 <code>check()</code> 中，命中 <code>sudo</code> 或 <code>rm_rf</code> 直接拒绝（不可绕过）；命中其他模式则改为询问用户（用户可以手动批准）。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> 正则表达式详解</h2>
+
+  <h3>代码位置涉及的正则：L57-61</h3>
+
+  <!-- 4.1 -->
+  <h3>4.1 <code>\b</code> — 单词边界</h3>
+  <div class="callout green">
+    <strong>一句话：不匹配任何字符，只匹配一个"单词和非单词字符之间的缝隙"。</strong>
+  </div>
+
+  <table>
+    <tr><th>表达式</th><th>匹配 "sudo"</th><th>匹配 "sudoer"</th><th>原因</th></tr>
+    <tr><td><code>sudo</code></td><td>✅</td><td>✅（会匹配前4个字符）</td><td>无边界限制</td></tr>
+    <tr><td><code>\bsudo\b</code></td><td>✅</td><td>❌</td><td><code>o</code> 后面是 <code>e</code>（单词字符），没有边界</td></tr>
+  </table>
+
+  <p>所以 <code>\bsudo\b</code> 是为了<strong>精确匹配 <code>sudo</code> 这个单词</strong>，而不是 <code>sudoer</code>、<code>sudoapt</code>。</p>
+
+  <!-- 4.2 -->
+  <h3>4.2 <code>\$</code> — 转义的美元符号</h3>
+  <p>在正则中，<code>$</code> 有特殊含义——匹配字符串末尾。但我们想匹配的是<strong>字面上的 <code>$</code> 符号</strong>（如 <code>$HOME</code>、<code>$(whoami)</code>），所以要用 <code>\$</code> 转义。</p>
+
+  <!-- 4.3 -->
+  <h3>4.3 <code>\(</code> — 转义的左括号</h3>
+  <p><code>(</code> 在正则有特殊含义——创建捕获组。要匹配字面上的 <code>(</code>，用 <code>\(</code> 转义。</p>
+
+  <p>所以 <code>\$\(</code> 连起来匹配 <code>$(</code> 这两个字符——正是 shell 中<strong>命令替换</strong>的语法：</p>
+  <pre>echo $(whoami)    <span class="cm"># 执行 whoami，把结果嵌入到命令中</span></pre>
+
+  <h4>常用转义对照表</h4>
+  <table>
+    <tr><th>字符</th><th>特殊含义</th><th>转义写法</th><th>匹配的字面量</th></tr>
+    <tr><td><code>.</code></td><td>匹配任意字符</td><td><code>\.</code></td><td>句点 <code>.</code></td></tr>
+    <tr><td><code>*</code></td><td>重复 0 次或多次</td><td><code>\*</code></td><td>星号 <code>*</code></td></tr>
+    <tr><td><code>$</code></td><td>行尾</td><td><code>\$</code></td><td>美元符号 <code>$</code></td></tr>
+    <tr><td><code>(</code></td><td>分组开始</td><td><code>\(</code></td><td>左括号 <code>(</code></td></tr>
+  </table>
+
+  <!-- 4.4 -->
+  <h3>4.4 <code>re.search</code> vs <code>re.match</code></h3>
+  <table>
+    <tr><th>函数</th><th>行为</th><th>打个比方</th></tr>
+    <tr><td><code>re.match(pattern, string)</code></td><td>从<strong>字符串开头</strong>匹配，开头对不上就放弃</td><td>检查"名字是否以'张'开头"</td></tr>
+    <tr><td><code>re.search(pattern, string)</code></td><td>在<strong>整个字符串中搜索</strong>，哪里能匹配就从哪里算</td><td>"在全文里找'张'这个字"</td></tr>
+  </table>
+
+  <pre><span class="kw">import</span> re
+
+text = <span class="s">"hello, my name is zhangsan"</span>
+
+<span class="fn">re.match</span>(<span class="s">r"hello"</span>, text)   <span class="cm"># ✅ 匹配，因为开头就是 hello</span>
+<span class="fn">re.match</span>(<span class="s">r"name"</span>, text)    <span class="cm"># ❌ 不匹配，开头是 hello 不是 name</span>
+
+<span class="fn">re.search</span>(<span class="s">r"name"</span>, text)   <span class="cm"># ✅ 匹配，在中间找到了</span></pre>
+
+  <div class="callout purple">
+    <strong>代码中用 search 的原因：</strong>要检查命令中<strong>任何位置</strong>是否出现危险模式，而不是只在开头检查。
+  </div>
+
+  <p><code>re.search</code> 的返回值：匹配成功返回 <strong>Match 对象</strong>（布尔上下文中为 <code>True</code>），失败返回 <code>None</code>。</p>
+  <pre><span class="kw">if</span> <span class="fn">re.search</span>(pattern, command):    <span class="cm"># 匹配到 → 布尔 True → 进入分支</span>
+    failures.append(...)</pre>
+
+  <!-- 4.5 -->
+  <h3>4.5 <code>\brm\s+(-[a-zA-Z]*)?r</code> 详细拆解</h3>
+
+  <p>这个正则的目标是匹配<strong>带 <code>-r</code> 标志（递归）的 <code>rm</code> 命令</strong>。</p>
+
+  <h4>分解图</h4>
+  <pre>\b       rm       \s+       (           -[a-zA-Z]*          )?       r
+│        │         │         │               │               │       │
+│        │         │         │               │               │       │
+单词    字面      至少1个    分组开始       破折号后跟      整个    字面
+边界    "rm"     空白符                   0个或多个字母    分组    "r"
+                                               │          可选
+                                               │
+                                            -r, -rf, -rfv 等</pre>
+
+  <h4>关键机制：正则回溯</h4>
+  <p><code>[a-zA-Z]*</code> 默认<strong>贪婪匹配</strong>（尽可能多吞字符），但正则引擎在遇到后续匹配失败时会<strong>回溯</strong>（吐出字符再试）。</p>
+
+  <p>以 <code>rm -rf /tmp</code> 为例，匹配过程：</p>
+  <pre>字符串:  r  m     -  r  f     /  t  m  p
+
+步骤1: \b rm 匹配前3个字符 ✅
+
+步骤2:  \s+ 匹配空格 ✅
+
+步骤3: 进入 (-[a-zA-Z]*)?r
+  尝试A（贪婪）：(-[a-zA-Z]*) 吞 "-rf"，然后 r 需要匹配 " " → ❌
+  尝试B（回溯）：(-[a-zA-Z]*) 吞 "-r"，然后 r 需要匹配 "f" → ❌
+  尝试C（再回）：(-[a-zA-Z]*) 吞 "-"（[a-zA-Z]* 吞空串），然后 r 匹配 "r" → ✅！
+</pre>
+
+  <h4>匹配结果</h4>
+  <table>
+    <tr><th>命令</th><th>匹配？</th><th>说明</th></tr>
+    <tr><td><code>rm -rf /tmp</code></td><td>✅ 匹配</td><td>匹配 <code>rm -r</code>，<code>f /tmp</code> 剩余部分不要求匹配完</td></tr>
+    <tr><td><code>rm -r dir</code></td><td>✅ 匹配</td><td>匹配 <code>rm -r</code></td></tr>
+    <tr><td><code>rm -fr</code></td><td>✅ 匹配</td><td><code>[a-zA-Z]*</code> 吞 "f"，最后的 <code>r</code> 匹配后面的 <code>r</code></td></tr>
+    <tr><td><code>rm file.txt</code></td><td>❌ 不匹配</td><td>没有 <code>-</code> 号，最后的 <code>r</code> 也找不到</td></tr>
+    <tr><td><code>rm -f file.txt</code></td><td>❌ 不匹配</td><td>有 <code>-f</code> 但没有 <code>r</code></td></tr>
+    <tr><td><code>germ -rf</code></td><td>❌ 不匹配</td><td><code>\b</code> 阻止了 <code>germ</code> 中的 <code>rm</code></td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> fnmatch — 通配符匹配引擎</h2>
+
+  <h3>代码位置：L226-229（_matches 中使用）</h3>
+
+  <div class="callout green">
+    <strong>一句话：fnmatch 是 Python 内置库（File Name Match），用文件通配符规则做字符串匹配。</strong>
+    <br>代码中用于匹配规则中的 <code>path</code> 和 <code>content</code>，让用户能写简单的通配符规则，不用学正则。
+  </div>
+
+  <h3>5.1 支持的通配符</h3>
+  <table>
+    <tr><th>符号</th><th>含义</th><th>匹配举例</th></tr>
+    <tr><td><code>*</code></td><td>匹配任意数量字符（包括 0 个）</td><td><code>*.py</code> → <code>a.py</code> ✅、<code>a.txt</code> ❌</td></tr>
+    <tr><td><code>?</code></td><td>匹配恰好 1 个字符</td><td><code>?.py</code> → <code>a.py</code> ✅、<code>ab.py</code> ❌</td></tr>
+    <tr><td><code>[abc]</code></td><td>匹配方括号内任意 1 个字符</td><td><code>[ab].py</code> → <code>a.py</code> ✅、<code>c.py</code> ❌</td></tr>
+    <tr><td><code>[!abc]</code></td><td>匹配不在方括号内的任意 1 个字符</td><td><code>[!ab].py</code> → <code>c.py</code> ✅、<code>a.py</code> ❌</td></tr>
+  </table>
+
+  <h3>5.2 常用函数</h3>
+  <pre><span class="kw">import</span> fnmatch
+
+<span class="cm"># 1. fnmatch — 单个匹配（最常用）</span>
+fnmatch.<span class="fn">fnmatch</span>(<span class="s">"hello.txt"</span>, <span class="s">"*.txt"</span>)      <span class="cm"># ✅ True</span>
+fnmatch.<span class="fn">fnmatch</span>(<span class="s">"hello.txt"</span>, <span class="s">"*.py"</span>)       <span class="cm"># ❌ False</span>
+
+<span class="cm"># 2. filter — 批量过滤列表</span>
+files = [<span class="s">"a.py"</span>, <span class="s">"b.py"</span>, <span class="s">"c.txt"</span>]
+fnmatch.<span class="fn">filter</span>(files, <span class="s">"*.py"</span>)                 <span class="cm"># ['a.py', 'b.py']</span></pre>
+
+  <h3>5.3 代码中的实际用法</h3>
+
+  <h4>匹配路径：</h4>
+  <pre><span class="cm"># 规则中 path = "*.py" → 所有 Python 文件</span>
+<span class="cm"># 规则中 path = "/tmp/*" → /tmp 下的所有文件</span>
+<span class="kw">if</span> <span class="s">"path"</span> <span class="kw">in</span> rule <span class="kw">and</span> rule[<span class="s">"path"</span>] != <span class="s">"*"</span>:
+    path = tool_input.<span class="fn">get</span>(<span class="s">"path"</span>, <span class="s">""</span>)
+    <span class="kw">if</span> <span class="kw">not</span> <span class="hl">fnmatch.fnmatch(path, rule["path"])</span>:
+        <span class="kw">return</span> <span class="hl">False</span></pre>
+
+  <h4>匹配命令：</h4>
+  <pre><span class="cm"># 规则中 content = "sudo *" → 所有 sudo 开头的命令</span>
+<span class="cm"># 规则中 content = "rm -rf /" → 精确匹配删根目录</span>
+<span class="kw">if</span> <span class="s">"content"</span> <span class="kw">in</span> rule:
+    command = tool_input.<span class="fn">get</span>(<span class="s">"command"</span>, <span class="s">""</span>)
+    <span class="kw">if</span> <span class="kw">not</span> <span class="hl">fnmatch.fnmatch(command, rule["content"])</span>:
+        <span class="kw">return</span> <span class="hl">False</span></pre>
+
+  <div class="callout">
+    <strong>fnmatch vs 正则：</strong>fnmatch 内部也是用正则实现的（<code>fnmatch.translate(pattern)</code>），但语法更简单——只需要懂通配符。代码中 fnmatch 用于<strong>用户可配置的规则</strong>，正则用于<strong>内部硬编码的安全检查</strong>。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> PermissionManager 总览</h2>
+
+  <h3>代码位置：L106-232</h3>
+
+  <div class="callout green">
+    <strong>一句话：管理工具调用的权限决策，实现"意图不能直接变成执行"的 4 步管线。</strong>
+  </div>
+
+  <h3>6.1 类结构总览</h3>
+  <div class="diagram">PermissionManager
+  │
+  ├─ __init__(mode, rules)
+  │   初始化模式 + 规则 + 拒绝计数
+  │
+  ├─ check(tool_name, tool_input)
+  │   核心：4 步管线 → 返回 decision
+  │   ├─ Step 0: Bash 安全预检
+  │   ├─ Step 1: Deny 规则
+  │   ├─ Step 2: 模式检查
+  │   ├─ Step 3: Allow 规则
+  │   └─ Step 4: 询问用户
+  │
+  ├─ ask_user(tool_name, tool_input)
+  │   交互式确认：y/n/always
+  │
+  └─ _matches(rule, tool_name, tool_input)
+      规则匹配引擎：工具名 → 路径 → 内容</div>
+
+  <h3>6.2 三种可能的决策</h3>
+  <table>
+    <tr><th>决策</th><th>含义</th><th>原因示例</th></tr>
+    <tr><td><code>allow</code></td><td>✅ 放行</td><td>匹配了 allow 规则，或 plan 模式下是读取操作</td></tr>
+    <tr><td><code>deny</code></td><td>❌ 拒绝</td><td>匹配了 deny 规则，或 bash 预检命中高危模式</td></tr>
+    <tr><td><code>ask</code></td><td>❓ 询问用户</td><td>没有规则匹配，或 bash 预检命中低危模式</td></tr>
+  </table>
+
+  <h3>6.3 拼写错误</h3>
+  <table>
+    <tr><th>行号</th><th>错误</th><th>应该是什么</th></tr>
+    <tr><td>L120</td><td><code>consecutive_denails</code></td><td><code>consecutive_denials</code></td></tr>
+    <tr><td>L121</td><td><code>max_consecutive_denails</code></td><td><code>max_consecutive_denials</code></td></tr>
+    <tr><td>Step 1</td><td><code>"behavoir"</code>（少 i）</td><td><code>"behavior"</code></td></tr>
+    <tr><td>Step 3</td><td>正确 <code>"behavior"</code> 与 Step 1 不一致</td><td>两者应一致</td></tr>
+    <tr><td>L175</td><td><code>_matches(rule, tool_name, <strong>tool_name</strong>, tool_input)</code></td><td>多传了一个参数，会报错</td></tr>
+  </ul>
+
+  <div class="callout red">
+    <strong>注意：</strong>Step 1 的 key 是 <code>"behavoir"</code>（拼错），但 DEFAULT_RULES 中的 key 是 <code>"behavior"</code>（正确），所以 Step 1 在运行时实际会报 <code>KeyError</code>！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> check() — 4 步权限管线</h2>
+
+  <h3>代码位置：L126-186</h3>
+
+  <div class="callout green">
+    <strong>一句话：这是整个权限系统的核心，工具调用请求按 4 步顺序走，命中任意一步就返回决策。</strong>
+  </div>
+
+  <div class="diagram">                    check(tool_name, tool_input)
+                             │
+                    ┌────────┴────────┐
+                    │ Step 0: Bash    │ → 高危(deny) / 低危(ask)
+                    │ 安全预检        │
+                    └────────┬────────┘
+                             │ 通过
+                    ┌────────┴────────┐
+                    │ Step 1: Deny    │ → 匹配 → return deny
+                    │ 规则遍历        │
+                    └────────┬────────┘
+                             │ 没匹配
+                    ┌────────┴────────┐
+                    │ Step 2: 模式    │ → plan(deny写,allow读)
+                    │ 检查            │   auto(allow读,继续往下)
+                    └────────┬────────┘   default(继续往下)
+                             │
+                    ┌────────┴────────┐
+                    │ Step 3: Allow   │ → 匹配 → return allow
+                    │ 规则遍历        │
+                    └────────┬────────┘
+                             │ 没匹配
+                    ┌────────┴────────┐
+                    │ Step 4: 询问    │ → return ask
+                    │ 用户            │
+                    └─────────────────┘</div>
+
+  <h3>Step 0: Bash 安全预检（L130-148）</h3>
+  <pre><span class="kw">if</span> tool_name == <span class="s">"bash"</span>:
+    command = tool_input.<span class="fn">get</span>(<span class="s">"command"</span>, <span class="s">""</span>)
+    failures = bash_validator.<span class="fn">validate</span>(command)
+    <span class="kw">if</span> failures:
+        severe = {<span class="s">"sudo"</span>, <span class="s">"rm_rf"</span>}
+        severe_hits = [f <span class="kw">for</span> f <span class="kw">in</span> failures <span class="kw">if</span> f[0] <span class="kw">in</span> severe]
+        <span class="kw">if</span> severe_hits:
+            <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"deny"</span>, ...}    <span class="cm"># 高危直接拒绝</span>
+        <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"ask"</span>, ...}         <span class="cm"># 低危询问用户</span></pre>
+
+  <p>写在规则系统之外、最前面的硬编码检查。分成两个级别：</p>
+  <table>
+    <tr><th>级别</th><th>包含模式</th><th>处理方式</th></tr>
+    <tr><td>高危</td><td><code>sudo</code>、<code>rm_rf</code></td><td>直接 <strong>deny</strong>，不给用户放行机会</td></tr>
+    <tr><td>低危</td><td>shell 元字符、命令替换、IFS 注入</td><td>改为 <strong>ask</strong>，用户可以手动批准</td></tr>
+  </table>
+
+  <h3>Step 1: Deny 规则（L149-157）</h3>
+  <pre><span class="kw">for</span> rule <span class="kw">in</span> self.rules:
+    <span class="kw">if</span> rule[<span class="s">"behavior"</span>] != <span class="s">"deny"</span>:     <span class="cm"># 只处理 deny 类型的规则</span>
+        <span class="kw">continue</span>
+    <span class="kw">if</span> self._matches(rule, tool_name, tool_input):
+        <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"deny"</span>, ...}</pre>
+
+  <p>遍历所有规则，只处理 <code>behavior == "deny"</code> 的规则。匹配到任意一条就立即返回拒绝。</p>
+
+  <h3>Step 2: 模式检查（L159-171）</h3>
+  <table>
+    <tr><th>模式</th><th>行为</th></tr>
+    <tr><td><code>plan</code></td><td>写入工具（<code>write_file</code>, <code>edit_file</code>, <code>bash</code>）→ deny；读取工具 → allow</td></tr>
+    <tr><td><code>auto</code></td><td>只读工具 → allow；其他 → 继续往下走（<code>pass</code>）</td></tr>
+    <tr><td><code>default</code></td><td>两个 <code>if</code> 都不进，直接继续往下走</td></tr>
+  </table>
+
+  <h3>Step 3: Allow 规则（L172-181）</h3>
+  <pre><span class="kw">for</span> rule <span class="kw">in</span> self.rules:
+    <span class="kw">if</span> rule[<span class="s">"behavior"</span>] != <span class="s">"allow"</span>:     <span class="cm"># 只处理 allow 类型的规则</span>
+        <span class="kw">continue</span>
+    <span class="kw">if</span> self._matches(rule, tool_name, tool_input):
+        self.consecutive_denials = <span class="num">0</span>
+        <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"allow"</span>, ...}</pre>
+
+  <p>类似 Step 1，但只处理 <code>behavior == "allow"</code> 的规则。匹配到就放行，同时重置连续拒绝计数器。</p>
+
+  <div class="callout purple">
+    <strong>核心设计：</strong>deny 始终优先于 allow。无论规则在列表中的顺序如何，deny 规则都先遍历，确保安全策略不被绕过。
+  </div>
+
+  <h3>Step 4: 询问用户（L183-186）</h3>
+  <pre><span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"ask"</span>,
+        <span class="s">"reason"</span>: <span class="s">f"No rule matched for {tool_name}, asking user"</span>}</pre>
+
+  <p>所有规则都没匹配 + 模式检查也没做决定 → 交给用户判断。这是"默认安全"的设计——宁可多问，不要擅自执行。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 为什么 deny 和 allow 要分两次遍历</h2>
+
+  <h3>对应代码：L149-157（deny 循环）和 L172-181（allow 循环）</h3>
+
+  <div class="callout green">
+    <strong>一句话：因为 deny 的优先级必须高于 allow，分两次遍历确保 deny 永远优先，不受规则顺序影响。</strong>
+  </div>
+
+  <h3>错误做法：一个循环同时处理</h3>
+  <pre><span class="cm"># ❌ 错误：规则顺序决定优先级</span>
+<span class="kw">for</span> rule <span class="kw">in</span> self.rules:
+    <span class="kw">if</span> self._matches(rule, tool_name, tool_input):
+        <span class="kw">if</span> rule[<span class="s">"behavior"</span>] == <span class="s">"deny"</span>:
+            <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"deny"</span>, ...}
+        <span class="k">else</span>:
+            <span class="kw">return</span> {<span class="s">"behavior"</span>: <span class="s">"allow"</span>, ...}</pre>
+
+  <p>如果规则列表是：</p>
+  <pre>[
+    {<span class="s">"tool"</span>: <span class="s">"bash"</span>, <span class="s">"path"</span>: <span class="s">"*"</span>,          <span class="s">"behavior"</span>: <span class="s">"allow"</span>},  <span class="cm"># allow 在前面</span>
+    {<span class="s">"tool"</span>: <span class="s">"bash"</span>, <span class="s">"content"</span>: <span class="s">"sudo *"</span>,  <span class="s">"behavior"</span>: <span class="s">"deny"</span>},   <span class="cm"># deny 在后面</span>
+]</pre>
+
+  <p>执行 <code>sudo rm -rf /</code>：</p>
+  <ul>
+    <li>第一个循环：规则 0（allow）匹配 ✅ → 返回 allow — <strong>危险命令被放行了！</strong></li>
+  </ul>
+
+  <h3>正确做法：分两次遍历</h3>
+  <p>Step 1（deny 循环）：</p>
+  <ul>
+    <li>规则 0：<code>behavior != "deny"</code> → <code>continue</code> 跳过</li>
+    <li>规则 1：<code>behavior == "deny"</code>，<code>sudo *</code> 匹配 ✅ → <strong>返回 deny</strong></li>
+  </ul>
+
+  <p>Step 3（allow 循环）：</p>
+  <ul>
+    <li><strong>根本不会执行到</strong>（Step 1 已经 return 了）</li>
+  </ul>
+
+  <div class="callout">
+    <strong>本质：</strong>deny = 黑名单模式，allow = 白名单模式。先对所有请求做黑名单过滤，再对剩下的请求做白名单匹配。黑名单永远优先于白名单——这就是"拒绝优先"原则。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> _matches — 规则匹配引擎（含实际运行例子）</h2>
+
+  <h3>代码位置：L224-232</h3>
+
+  <div class="callout green">
+    <strong>一句话：判断"一条规则是否管当前这个工具调用"。只负责匹配判断，不关心匹配后是 allow 还是 deny。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">_matches</span>(self, rule: <span class="tp">dict</span>, tool_name: <span class="tp">str</span>, tool_input: <span class="tp">dict</span>) -> <span class="tp">bool</span>:
+    <span class="cm"># 第 1 步：检查工具名</span>
+    <span class="kw">if</span> rule.<span class="fn">get</span>(<span class="s">"tool"</span>) <span class="kw">and</span> rule[<span class="s">"tool"</span>] != <span class="s">"*"</span>:
+        <span class="kw">if</span> rule[<span class="s">"tool"</span>] != tool_name:
+            <span class="kw">return</span> <span class="hl">False</span>
+
+    <span class="cm"># 第 2 步：检查路径</span>
+    <span class="kw">if</span> <span class="s">"path"</span> <span class="kw">in</span> rule <span class="kw">and</span> rule[<span class="s">"path"</span>] != <span class="s">"*"</span>:
+        path = tool_input.<span class="fn">get</span>(<span class="s">"path"</span>, <span class="s">""</span>)
+        <span class="kw">if</span> <span class="kw">not</span> fnmatch.<span class="fn">fnmatch</span>(path, rule[<span class="s">"path"</span>]):
+            <span class="kw">return</span> <span class="hl">False</span>
+
+    <span class="cm"># 第 3 步：检查内容（命令）</span>
+    <span class="kw">if</span> <span class="s">"content"</span> <span class="kw">in</span> rule:
+        command = tool_input.<span class="fn">get</span>(<span class="s">"command"</span>, <span class="s">""</span>)
+        <span class="kw">if</span> <span class="kw">not</span> fnmatch.<span class="fn">fnmatch</span>(command, rule[<span class="s">"content"</span>]):
+            <span class="kw">return</span> <span class="hl">False</span>
+
+    <span class="kw">return</span> <span class="hl">True</span>  <span class="cm"># 全部通过 → 匹配成功</span></pre>
+
+  <h3>三步匹配流程</h3>
+  <table>
+    <tr><th>步骤</th><th>匹配条件</th><th>代码逻辑</th></tr>
+    <tr><td>① 工具名</td><td>规则指定了 <code>tool</code> 且不是 <code>"*"</code></td><td>当前工具名必须和规则一致</td></tr>
+    <tr><td>② 路径</td><td>规则指定了 <code>path</code> 且不是 <code>"*"</code></td><td>从参数中取 <code>path</code> 字段，用 <code>fnmatch</code> 匹配</td></tr>
+    <tr><td>③ 内容</td><td>规则指定了 <code>content</code></td><td>从参数中取 <code>command</code> 字段，用 <code>fnmatch</code> 匹配</td></tr>
+  </table>
+
+  <h3>实际运行例子 1：执行 <code>bash</code> + <code>sudo rm -rf /</code></h3>
+
+  <p><code>DEFAULT_RULES</code> 中有 3 条规则。我们追踪 Step 1（deny 循环）中每次 <code>_matches</code> 调用：</p>
+
+  <h4>第 1 轮：规则 0 <code>{"tool": "bash", "content": "rm -rf /", "behavior": "deny"}</code></h4>
+  <pre><span class="fn">_matches</span>(
+    rule       = {<span class="s">"tool"</span>: <span class="s">"bash"</span>, <span class="s">"content"</span>: <span class="s">"rm -rf /"</span>},
+    tool_name  = <span class="s">"bash"</span>,
+    tool_input = {<span class="s">"command"</span>: <span class="s">"sudo rm -rf /"</span>}
+)</pre>
+
+  <pre><span class="cm"># 第 1 步：工具名</span>
+rule[<span class="s">"tool"</span>] = <span class="s">"bash"</span> == <span class="s">"bash"</span> ✅ → 通过
+
+<span class="cm"># 第 2 步：路径（规则没有 path 字段 → 跳过）</span>
+
+<span class="cm"># 第 3 步：内容</span>
+command = <span class="s">"sudo rm -rf /"</span>
+fnmatch(<span class="s">"sudo rm -rf /"</span>, <span class="s">"rm -rf /"</span>) → ❌ False
+<span class="cm"># "sudo rm -rf /" 不以 "rm" 开头，不匹配</span>
+<span class="kw">return</span> <span class="hl">False</span></pre>
+
+  <h4>第 2 轮：规则 1 <code>{"tool": "bash", "content": "sudo *", "behavior": "deny"}</code></h4>
+  <pre><span class="cm"># 第 1 步：工具名 ✅ 通过</span>
+<span class="cm"># 第 2 步：跳过</span>
+<span class="cm"># 第 3 步：内容</span>
+command = <span class="s">"sudo rm -rf /"</span>
+fnmatch(<span class="s">"sudo rm -rf /"</span>, <span class="s">"sudo *"</span>) → ✅ True
+<span class="kw">return</span> <span class="hl">True</span></pre>
+
+  <p>匹配成功 → 回到 Step 1，返回 <code>{"behavior": "deny", "reason": "Blocked by deny rule: ..."}</code>。第 3 轮（规则 2，allow）<strong>不会执行到</strong>。</p>
+
+  <h3>实际运行例子 2：执行 <code>read_file</code> + <code>/tmp/test.py</code>（default 模式）</h3>
+
+  <p>调用 <code>check("read_file", {"path": "/tmp/test.py"})</code>。</p>
+
+  <p><strong>Step 1（deny 循环）：</strong></p>
+  <table>
+    <tr><th>轮次</th><th>规则</th><th>是 deny？</th><th>_matches 结果</th></tr>
+    <tr><td>规则 0</td><td><code>tool: bash</code></td><td>是</td><td><code>"bash" != "read_file"</code> → ❌ False</td></tr>
+    <tr><td>规则 1</td><td><code>tool: bash</code></td><td>是</td><td>同上 → ❌ False</td></tr>
+    <tr><td>规则 2</td><td><code>tool: read_file</code></td><td><strong>否</strong> → <code>continue</code></td><td>不执行</td></tr>
+  </table>
+
+  <p><strong>Step 2：</strong>default 模式 → 两个 <code>if</code> 都不进 → 继续</p>
+
+  <p><strong>Step 3（allow 循环）：</strong></p>
+  <table>
+    <tr><th>轮次</th><th>规则</th><th>是 allow？</th><th>_matches 结果</th></tr>
+    <tr><td>规则 0</td><td><code>behavior: deny</code></td><td>否 → <code>continue</code></td><td>不执行</td></tr>
+    <tr><td>规则 1</td><td><code>behavior: deny</code></td><td>否 → <code>continue</code></td><td>不执行</td></tr>
+    <tr><td>规则 2</td><td><code>{tool: read_file, path: "*", behavior: "allow"}</code></td><td>是</td><td>工具名匹配 ✅ + path 通配 ✅ → ✅ True</td></tr>
+  </table>
+
+  <p>返回 <code>{"behavior": "allow", "reason": "Matched allow rule: ..."}</code></p>
+
+  <h3>实际运行例子 3：执行 <code>bash</code> + <code>ls -la</code>（default 模式，没有规则匹配）</h3>
+
+  <p><strong>Step 1：</strong>规则 0 和规则 1 都匹配失败，规则 2 被跳过 → 没匹配</p>
+  <p><strong>Step 2：</strong>default 模式 → 继续</p>
+  <p><strong>Step 3：</strong>规则 0 和规则 1 被跳过，规则 2 工具名 <code>"read_file" ≠ "bash"</code> → ❌ False</p>
+  <p><strong>Step 4：</strong>返回 <code>{"behavior": "ask", "reason": "No rule matched for bash, asking user"}</code></p>
+
+  <div class="callout purple">
+    <strong>所以不是"除了 deny 就是 allow"：</strong>还有一个 <code>ask</code>。没被任何规则匹配的请求，既不自动拒绝也不自动放行，而是交给用户判断。这是"默认安全"的设计。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> ask_user — 交互式用户确认</h2>
+
+  <h3>代码位置：L188-213</h3>
+
+  <div class="callout green">
+    <strong>一句话：当权限管线走到 Step 4 时，在终端打印工具调用详情，让用户选择允许、拒绝或永久允许。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">ask_user</span>(self, tool_name: <span class="tp">str</span>, tool_input: <span class="tp">dict</span>) -> <span class="tp">bool</span>:
+    <span class="cm"># ① 展示工具调用内容（JSON 格式，截取前 200 字符）</span>
+    preview = json.<span class="fn">dumps</span>(tool_input, ensure_ascii=<span class="hl">False</span>)[:<span class="num">200</span>]
+    <span class="fn">print</span>(<span class="s">f"\n [permission] {tool_name}: {preview}"</span>)
+
+    <span class="cm"># ② 读取用户输入（捕获 Ctrl+C / Ctrl+D）</span>
+    <span class="kw">try</span>:
+        answer = <span class="fn">input</span>(<span class="s">" Allow? (y/n/always): "</span>).strip().lower()
+    <span class="kw">except</span> (<span class="tp">EOFError</span>, <span class="tp">KeyboardInterrupt</span>):
+        <span class="kw">return</span> <span class="hl">False</span>
+
+    <span class="cm"># ③ always → 添加永久 allow 规则到列表末尾</span>
+    <span class="kw">if</span> answer == <span class="s">"always"</span>:
+        self.rules.append({<span class="s">"tool"</span>: tool_name, <span class="s">"path"</span>: <span class="s">"*"</span>, <span class="s">"behavior"</span>: <span class="s">"allow"</span>})
+        self.consecutive_denials = <span class="num">0</span>
+        <span class="kw">return</span> <span class="hl">True</span>
+
+    <span class="cm"># ④ y/yes → 只本次允许，不添加规则</span>
+    <span class="kw">if</span> answer <span class="kw">in</span> (<span class="s">"y"</span>, <span class="s">"yes"</span>):
+        self.consecutive_denials = <span class="num">0</span>
+        <span class="kw">return</span> <span class="hl">True</span>
+
+    <span class="cm"># ⑤ 拒绝 → 增加计数器，触发"断路器"提醒</span>
+    self.consecutive_denials += <span class="num">1</span>
+    <span class="kw">if</span> self.consecutive_denials >= self.max_consecutive_denials:
+        <span class="fn">print</span>(<span class="s">f"  [{self.consecutive_denials} consecutive denials -- "</span>
+              <span class="s">"consider switching to plan mode]"</span>)
+    <span class="kw">return</span> <span class="hl">False</span></pre>
+
+  <table>
+    <tr><th>用户输入</th><th>效果</th></tr>
+    <tr><td><code>y</code> / <code>yes</code></td><td>只本次允许，不改变规则列表</td></tr>
+    <tr><td><code>always</code></td><td>本次允许 + 添加一条永久 allow 规则，之后同样的工具不再询问</td></tr>
+    <tr><td><code>n</code> 或其他</td><td>拒绝，增加连续拒绝计数器</td></tr>
+    <tr><td>Ctrl+C / Ctrl+D</td><td>视为拒绝</td></tr>
+  </table>
+
+  <h3>"断路器"提醒</h3>
+  <p>如果用户连续 3 次拒绝 AI 的请求，系统会打印提示：</p>
+  <pre>[3 consecutive denials -- consider switching to plan mode]</pre>
+  <p>意思是"AI 一直在请求你不想让它做的事，不如切换到 plan 模式，先让 AI 做计划给你看"。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> agent_loop — 权限决策执行分支</h2>
+
+  <h3>代码位置：L388-416</h3>
+
+  <div class="callout green">
+    <strong>一句话：在收到 LLM 的工具请求后，插入权限检查，根据结果走三个分支（deny/ask/allow）。</strong>
+  </div>
+
+  <div class="diagram">        for block in response.content:
+            if block.type != "tool_use": continue
+
+            decision = perms.check(block.name, block.input or {})
+
+            if deny ──────→ 构造拒绝消息，打日志
+            |
+            elif ask ─────→ ask_user() → y/always → 执行工具
+            |                              n       → 构造拒绝消息
+            |
+            else (allow) ─→ 直接执行工具
+
+            results.append({type: "tool_result", ...})
+
+        messages.append({"role": "user", "content": results})</div>
+
+  <h3>每个分支的详细逻辑</h3>
+
+  <h4>分支 1：deny（L399-401）</h4>
+  <pre>output = <span class="s">f"Perssion denied: {decision['reason']}"</span>
+<span class="fn">print</span>(<span class="s">f" [DENIED][block.name]: {decision['reason']}"</span>)</pre>
+  <p>拒绝消息作为工具结果返回给 LLM，LLM 看到后可以调整行为重试。</p>
+
+  <h4>分支 2：ask（L403-410）</h4>
+  <pre><span class="kw">elif</span> decision[<span class="s">"behavior"</span>] == <span class="s">"ask"</span>:
+    <span class="kw">if</span> perms.<span class="fn">ask_user</span>(block.name, block.input <span class="kw">or</span> {}):
+        <span class="cm"># 用户同意 → 执行工具</span>
+        handler = TOOL_HANDLERS.<span class="fn">get</span>(block.name)
+        output = <span class="fn">handler</span>(**(block.input <span class="kw">or</span> {})) <span class="kw">if</span> handler <span class="kw">else</span> <span class="s">f"Unknown: {block.name}"</span>
+    <span class="kw">else</span>:
+        <span class="cm"># 用户拒绝 → 返回拒绝消息</span>
+        output = <span class="s">f"Permission denied by user for {block.name}"</span></pre>
+
+  <table>
+    <tr><th>用户选择</th><th>流程</th></tr>
+    <tr><td>同意（y/always）</td><td>从 <code>TOOL_HANDLERS</code> 获取处理函数并执行 → <code>output</code> 保存结果</td></tr>
+    <tr><td>拒绝（n）</td><td>直接构造拒绝消息，工具不执行</td></tr>
+  </table>
+
+  <h4>分支 3：allow（L412-416）</h4>
+  <pre><span class="kw">else</span>:  <span class="cm"># allow</span>
+    handler = TOOL_HANDLERS.<span class="fn">get</span>(block.name)
+    output = <span class="fn">handler</span>(**(block.input <span class="kw">or</span> {})) <span class="kw">if</span> handler <span class="kw">else</span> <span class="s">f"Unknown: {block.name}"</span></pre>
+
+  <p>和 <code>ask</code> 中用户同意后的逻辑完全一样——直接执行工具。区别是 <code>allow</code> 不询问用户，直接执行。</p>
+
+  <h3>TOOL_HANDLERS 字典</h3>
+  <pre>TOOL_HANDLERS = {
+    <span class="s">"bash"</span>:       <span class="kw">lambda</span> **kw: <span class="fn">run_bash</span>(kw[<span class="s">"command"</span>]),
+    <span class="s">"read_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_read</span>(kw[<span class="s">"path"</span>], kw.<span class="fn">get</span>(<span class="s">"limit"</span>)),
+    <span class="s">"write_file"</span>: <span class="kw">lambda</span> **kw: <span class="fn">run_write</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"content"</span>]),
+    <span class="s">"edit_file"</span>:  <span class="kw">lambda</span> **kw: <span class="fn">run_edit</span>(kw[<span class="s">"path"</span>], kw[<span class="s">"old_text"</span>], kw[<span class="s">"new_text"</span>]),
+}</pre>
+
+  <p><code>handler(**(block.input or {}))</code> 把工具参数字典解包后传给对应函数：</p>
+  <ul>
+    <li>例如 <code>block.name = "read_file"</code>，<code>block.input = {"path": "/tmp/test.py"}</code></li>
+    <li>相当于调用 <code>handler(path="/tmp/test.py")</code></li>
+  </ul>
+
+  <div class="callout red">
+    <strong>s06 的 agent_loop 没有权限检查</strong>——LLM 请求调用工具就直接执行了。s07 在"收到工具请求"和"执行工具"之间，插入了 <code>perms.check()</code> 这层安全闸门。这是 s06 → s07 最重要的变化。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> 主程序入口和运行时命令</h2>
+
+  <h3>代码位置：L424-466</h3>
+
+  <div class="callout green">
+    <strong>一句话：启动时选择权限模式，运行时可通过 <code>/mode</code> 切换模式、<code>/rules</code> 查看规则。</strong>
+  </div>
+
+  <h3>12.1 启动时选择模式（L426-433）</h3>
+  <pre><span class="fn">print</span>(<span class="s">"Permission modes: default, plan, auto"</span>)
+mode_input = <span class="fn">input</span>(<span class="s">"MODE (default): "</span>).strip().lower() <span class="kw">or</span> <span class="s">"default"</span>
+<span class="kw">if</span> mode_input <span class="kw">not</span> <span class="kw">in</span> MODES:
+    mode_input = <span class="s">"default"</span>
+
+perms = <span class="tp">PermissionManager</span>(mode=mode_input)</pre>
+
+  <p>用户启动程序时可以选模式，直接回车默认用 <code>"default"</code>。</p>
+
+  <h3>12.2 <code>/mode</code> 命令（L443-450）</h3>
+  <pre><span class="kw">if</span> query.<span class="fn">startswith</span>(<span class="s">"/mode"</span>):
+    parts = query.<span class="fn">split</span>()                     <span class="cm"># ["/mode", "plan"]</span>
+    <span class="kw">if</span> <span class="fn">len</span>(parts) == <span class="num">2</span> <span class="kw">and</span> parts[<span class="num">1</span>] <span class="kw">in</span> MODES:
+        perms.mode = parts[<span class="num">1</span>]                  <span class="cm"># 运行时切换模式</span>
+        <span class="fn">print</span>(<span class="s">f"[Switched to mode: {parts[1]} mode]"</span>)</pre>
+
+  <p><code>query.split()</code> 按空格分割：</p>
+  <table>
+    <tr><th>用户输入</th><th><code>parts</code></th><th><code>len(parts)</code></th><th><code>parts[1]</code></th></tr>
+    <tr><td><code>/mode plan</code></td><td><code>["/mode", "plan"]</code></td><td>2</td><td><code>"plan"</code></td></tr>
+    <tr><td><code>/mode auto</code></td><td><code>["/mode", "auto"]</code></td><td>2</td><td><code>"auto"</code></td></tr>
+    <tr><td><code>/mode</code></td><td><code>["/mode"]</code></td><td>1</td><td>❌ 不存在</td></tr>
+  </table>
+
+  <p><code>len(parts) == 2</code> 确保用户只传了 1 个参数——多传或少传都算格式错误。</p>
+
+  <p><code>perms.mode = parts[1]</code> 只是修改了 <code>PermissionManager</code> 实例的 <code>mode</code> 属性，下一次调用 <code>check()</code> 时就会按新模式决策，<strong>不需要重启程序</strong>。</p>
+
+  <h3>12.3 <code>/rules</code> 命令（L452-456）</h3>
+  <pre><span class="kw">if</span> query.strip() == <span class="s">"/rules"</span>:
+    <span class="kw">for</span> i, rule <span class="kw">in</span> <span class="fn">enumerate</span>(perms.rules):
+        <span class="fn">print</span>(<span class="s">f" {i}: {rule}"</span>)
+    <span class="kw">continue</span></pre>
+
+  <p>打印当前所有规则：</p>
+  <pre> 0: {<span class="s">'tool'</span>: <span class="s">'bash'</span>, <span class="s">'content'</span>: <span class="s">'rm -rf /'</span>, <span class="s">'behavior'</span>: <span class="s">'deny'</span>}
+ 1: {<span class="s">'tool'</span>: <span class="s">'bash'</span>, <span class="s">'content'</span>: <span class="s">'sudo *'</span>, <span class="s">'behavior'</span>: <span class="s">'deny'</span>}
+ 2: {<span class="s">'tool'</span>: <span class="s">'read_file'</span>, <span class="s">'path'</span>: <span class="s">'*'</span>, <span class="s">'behavior'</span>: <span class="s">'allow'</span>}</pre>
+
+  <div class="callout">
+    <strong>为什么新增这些命令？</strong>s06 没有运行时控制命令。s07 新增 <code>/mode</code> 和 <code>/rules</code> 让用户可以：运行时切换安全策略、随时查看生效中的规则。这对于调试和学习权限系统非常有帮助。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> safe_path — 路径安全检查</h2>
+
+  <h3>代码位置：L241-246</h3>
+
+  <div class="callout green">
+    <strong>一句话：防止路径穿越攻击——确保所有文件操作都限制在项目工作目录内。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">safe_path</span>(p: <span class="tp">str</span>) -> <span class="tp">Path</span>:
+    path = (WORKDIR / p).<span class="fn">resolve</span>()                    <span class="cm"># ① 拼接后解析为绝对路径</span>
+    <span class="kw">if</span> <span class="kw">not</span> path.<span class="fn">is_relative_to</span>(WORKDIR):               <span class="cm"># ② 检查是否还在工作目录内</span>
+        <span class="kw">raise</span> <span class="tp">ValueError</span>(<span class="s">f"Path escapes workspace: {p}"</span>)
+    <span class="kw">return</span> path</pre>
+
+  <table>
+    <tr><th>步骤</th><th>说明</th></tr>
+    <tr><td>① <code>(WORKDIR / p).resolve()</code></td><td>把路径拼接到工作目录后面，再解析为绝对路径。例如 <code>/home/project/../etc/passwd</code> → <code>/home/etc/passwd</code></td></tr>
+    <tr><td>② <code>is_relative_to(WORKDIR)</code></td><td>检查最终路径是否以 <code>WORKDIR</code> 为前缀。如果用户传了 <code>../../etc/shadow</code>，解析后跑出了工作目录，就拒绝并报错</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>经典攻击场景：</strong>如果 AI 被恶意提示词引导去读 <code>/etc/passwd</code> 或写 <code>~/.ssh/authorized_keys</code>，<code>safe_path</code> 会拦截！所有涉及文件读写的函数（<code>run_read</code>、<code>run_write</code>、<code>run_edit</code>）都会调用它做检查。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> s06 → s07 完整对比</h2>
+
+  <h3>核心思想变化</h3>
+  <table>
+    <tr><th>维度</th><th>s06</th><th>s07</th></tr>
+    <tr><td><strong>安全模型</strong></td><td>执行时检查（<code>run_bash</code> 里硬编码危险命令列表）</td><td>执行前检查（独立权限管线，可配置规则）</td></tr>
+    <tr><td><strong>工具执行流程</strong></td><td>请求 → 执行</td><td>请求 → <strong>权限检查</strong> → 执行</td></tr>
+    <tr><td><strong>bash 安全</strong></td><td>简单列表匹配，执行时拦截</td><td>正则匹配，执行前拦截，分严重级别</td></tr>
+    <tr><td><strong>用户参与</strong></td><td>无（LLM 说了算）</td><td>三层：deny（系统强制）/ allow（规则匹配）/ ask（用户决定）</td></tr>
+    <tr><td><strong>可配置性</strong></td><td>无（安全逻辑硬编码）</td><td>有（规则可扩展，模式可切换）</td></tr>
+    <tr><td><strong>代码量</strong></td><td>~345 LOC</td><td>~466 LOC（增加了约 120 行）</td></tr>
+  </table>
+
+  <h3>删除的内容（约 120 行）</h3>
+  <table>
+    <tr><th>删除的内容</th><th>说明</th></tr>
+    <tr><td><code>CompactState</code> 数据类</td><td>上下文压缩的状态追踪，s07 主题不涉及</td></tr>
+    <tr><td>压缩常量（<code>CONTENT_LIMIT</code>、<code>PERSIST_THRESHOLD</code> 等）</td><td>压缩策略调参，与权限无关</td></tr>
+    <tr><td><code>.transcripts</code> / <code>.task_outputs</code> 目录定义</td><td>存对话记录和工具输出的目录</td></tr>
+    <tr><td><code>persist_larget_output()</code></td><td>大输出落盘到磁盘</td></tr>
+    <tr><td><code>micro_compact()</code> + <code>collect_tool_result_blocks()</code></td><td>微压缩旧工具结果</td></tr>
+    <tr><td><code>write_transcript()</code> + <code>summarize_history()</code> + <code>compact_history()</code></td><td>完整历史摘要压缩</td></tr>
+    <tr><td><code>extract_text()</code></td><td>提取文本块的辅助函数</td></tr>
+    <tr><td><code>compact</code> 工具定义</td><td>s06 的手动压缩工具</td></tr>
+    <tr><td><code>execute_tool()</code> 函数</td><td>改为 <code>TOOL_HANDLERS</code> 字典替代</td></tr>
+  </table>
+
+  <h3>新增的内容（约 240 行）</h3>
+  <table>
+    <tr><th>新增的内容</th><th>说明</th></tr>
+    <tr><td><code>MODES</code> / <code>READ_ONLY_TOOLS</code> / <code>WRITE_TOOLS</code></td><td>3 种权限模式和工具分类</td></tr>
+    <tr><td><code>BashSecrityValidator</code> 类</td><td>5 个正则危险模式 + 3 个方法</td></tr>
+    <tr><td><code>is_workspace_trusted()</code></td><td>工作区信任标记检测</td></tr>
+    <tr><td><code>DEFAULT_RULES</code></td><td>3 条默认规则（2 deny + 1 allow）</td></tr>
+    <tr><td><code>PermissionManager</code> 类（~120 行）</td><td>整个权限系统的核心</td></tr>
+    <tr><td><code>TOOL_HANDLERS</code> 字典</td><td>替代 s06 的 <code>execute_tool()</code></td></tr>
+    <tr><td>权限决策三个分支</td><td>deny / ask / allow 分别处理</td></tr>
+    <tr><td><code>/mode</code> 和 <code>/rules</code> 命令</td><td>运行时控制</td></tr>
+    <tr><td><code>SYSTEM</code> 提示词更新</td><td>告知 LLM 存在权限控制</td></tr>
+  </table>
+
+  <h3>保留不变的内容（核心基础设施）</h3>
+  <pre><span class="cm"># 文件头 / 导入</span>
+<span class="kw">import</span> os, subprocess, json
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+<span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="cm"># 环境初始化</span>
+<span class="fn">load_dotenv</span>(override=<span class="hl">True</span>)
+WORKDIR = <span class="tp">Path</span>.<span class="fn">cwd</span>()
+client = <span class="tp">Anthropic</span>(...)
+MODEL = os.environ[<span class="s">"MODEL_ID"</span>]
+
+<span class="cm"># 4 个基础工具实现</span>
+<span class="fn">safe_path</span>()      <span class="cm"># 路径安全检查</span>
+<span class="fn">run_bash</span>()       <span class="cm"># 执行 bash 命令</span>
+<span class="fn">run_read</span>()       <span class="cm"># 读文件</span>
+<span class="fn">run_write</span>()      <span class="cm"># 写文件</span>
+<span class="fn">run_edit</span>()       <span class="cm"># 编辑文件</span>
+
+<span class="cm"># 工具定义 + REPL 主循环骨架</span></pre>
+
+  <div class="callout purple">
+    <strong>一句话总结 s06 → s07：</strong>s06 的 agent 是"LLM 说什么就做什么"，s07 的 agent 变成了"LLM 说什么 → 先过一个 4 步安全闸门 → 再决定做不做"。新增了一个完整的权限系统，删除了上下文压缩的所有代码，让每一章聚焦于一个核心概念。
+  </div>
+</div>
+
+</div> <!-- /container -->
+
+</body>
+</html>

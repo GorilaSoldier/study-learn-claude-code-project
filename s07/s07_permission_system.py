@@ -17,6 +17,7 @@ burying readers under every advanced policy branch on day one.
 Key insight: "Safety is a pipeline, not a boolean."
 """
 
+import fnmatch
 import json
 from dataclasses import dataclass
 import os
@@ -83,7 +84,7 @@ class BashSecrityValidator:
         return f"Security flags: " + ", ".join(parts)
 
 def is_workspace_trusted(workspace: Path) -> bool:
-     """
+    """
     Check if a workspace has been explicitly marked as trusted.
     The teaching version uses a simple marker file. A more complete system
     can layer richer trust flows on top of the same idea.
@@ -94,33 +95,160 @@ def is_workspace_trusted(workspace: Path) -> bool:
 
 bash_validator = BashSecrityValidator()
 
+DEFAULT_RULES = [
+    # Always deny dangerous patterns
+    {"tool": "bash", "content": "rm -rf /", "behavior": "deny"},
+    {"tool": "bash", "content": "sudo *", "behavior": "deny"},
+    # Allow reading anything
+    {"tool": "read_file", "path": "*", "behavior": "allow"},
+]
+
+class PermissionManager:
+    """
+    Manages permission decisions for tool calls.
+    Pipeline: deny_rules -> mode_check -> allow_rules -> ask_user
+    The teaching version keeps the decision path short on purpose so readers
+    can implement it themselves before adding more advanced policy layers.
+    """
+    
+    def __init__(self, mode: str = "default", rules: list = None):
+        if mode not in MODES:
+            raise ValueError(f"Unknown mode: {mode}. Choose from {MODES}")
+        self.mode = mode
+        self.rules = rules or list(DEFAULT_RULES)
+        # Simple denial tracking helps surface when the agent is repeatedly
+        # asking for actions the system will not allow.
+        self.consecutive_denials = 0
+        self.max_consecutive_denials = 3
+    
+    def check(self, tool_name: str, tool_input: dict) -> dict:
+        """
+        Returns: {"behavior": "allow"|"deny"|"ask", "reason": str}
+        """
+        # Step 0: Bash security validation (before deny rules)
+        # Teaching version checks early for clarity.
+        if tool_name == "bash":
+            command = tool_input.get("command", "")
+            failures = bash_validator.validate(command)
+            if failures:
+                severe = {"sudo", "rm_rf"}
+                severe_hits = [f for f in failures if f[0] in severe]
+                if severe_hits:
+                    desc = bash_validator.describe_failures(command)
+                    return {
+                        "behavior": "deny",     
+                        "reason": f"Bash validator: {desc}"
+                    }
+                # Other patterns escalate to ask (user can still approve)
+                desc = bash_validator.describe_failures(command)
+                return {
+                    "behavior": "ask",
+                    "reason": f"Bash validator flagger: {desc}"
+                }
+        # Step 1: Deny rules (bypass-immune, checked first always)
+        for rule in self.rules:
+            if rule["behavior"] != "deny":
+                continue
+            if self._matches(rule, tool_name, tool_input):
+                return {
+                    "behavior": "deny",
+                    "reason": f"Blocked by deny rule: {rule}"
+                }
+            
+        # Step 2: Mode-based decisions
+        if self.mode == "plan":
+            # Plan mode: deny all write operations, allow reads
+            if tool_name in WRITE_TOOLS:
+                return {
+                    "behavior": "deny",
+                    "reason": "Plan mode: write operations are blocked"
+                }
+            return {
+                "behavior": "allow",
+                "reason": "Plan mode: read-only allowed"
+            }
+        
+        if self.mode == "auto":
+            # Auto mode: auto-allow read-only tools, ask for writes
+            if tool_name in READ_ONLY_TOOLS or tool_name == "read_file":
+                return {
+                    "behavior": "allow",
+                    "reason": "Auto mode: read-only tool auto-approved"
+                }
+            # Teaching: fall through to allow rules, then ask
+            pass
+        
+        # Step 3: Allow rules
+        for rule in self.rules:
+            if rule["behavior"] != "allow":
+                continue
+            if self._matches(rule, tool_name, tool_input):
+                self.consecutive_denials = 0
+                return {
+                    "behavior": "allow",
+                    "reason": f"Matched allow rule: {rule}"
+                }
+        
+        # Step 4: Ask user (default behavior for unmatched tools)
+                return {
+                    "behavior": "ask",
+                    "reason": f"No rule matched for {tool_name}, asking user"
+                }
+
+    def ask_user(self, tool_name: str, tool_input: dict) -> bool:
+        """Interactive approval prompt. Returns True if approved."""
+        preview = json.dumps(tool_input, ensure_ascii=False)[:200]
+        print(f"\n [permission] {tool_name}: {preview}")
+        try:
+            answer = input(" Allow? (y/n/always): ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return False
+        
+        if answer == "always":
+            # Add permanent allow rule for this tool
+            self.rules.append({"tool": tool_name, "path": "*", "behavior": "allow"})
+            self.consecutive_denials = 0
+            return True
+        if answer in ("y", "yes"):
+            self.consecutive_denials = 0
+            return True
+        
+        # Track denials for circuit breaker
+        self.consecutive_denials += 1
+        if self.consecutive_denials >= self.max_consecutive_denials:
+            print(f"  [{self.consecutive_denials} consecutive denials -- "
+                  "consider switching to plan mode]")
+        return False
+    
+    def _matches(self, rule: dict, tool_name: str, tool_input: dict) -> bool:
+        """Check if a rule matches the tool call."""
+        # Tool name match
+        if rule.get("tool") and rule["tool"] != "*":
+            if rule["tool"] != tool_name:
+                return False
+        # Path pattern match
+        if "path" in rule and rule["path"] != "*":
+            path = tool_input.get("path", "")
+            if not fnmatch(path, rule["path"]):
+                return False
+        # Content pattern match (for bash commands)
+        if "content" in rule:
+            command = tool_input.get("command", "")
+            if not fnmatch(command, rule["content"]):
+                return False
+        return True
+
+# -- Tool implementations --
+def safe_path(p: str) -> Path:
+    path = (WORKDIR / p).resolve()
+    if not path.is_relative_to(WORKDIR):
+        raise ValueError(f"Path escapes workspace: {p}")
+    return path
+
 SYSTEM = (
     f"You are a coding agent at {WORKDIR}. "
     "Keep working step by step, and use compact if the conversation gets too long."
 )
-
-CONTENT_LIMIT = 50000
-KEEP_RECENT_TOOL_RESULTS = 3
-PERSIST_THRESHOLD = 30000
-PREVIEW_CHARS = 2000
-TRANSCRIPT_DIR = WORKDIR / ".transcripts"
-TOOL_RESULTS_DIR = WORKDIR / ".task_outputs" / "tool-results"
-
-@dataclass
-class CompactState:
-    has_compact: bool = False
-    last_summary: str = ""
-    recent_files: list[str] = field(default_factory=list)
-
-def estimate_context_size(messages: list) -> int:
-    return len(str(messages))
-
-def track_recent_file(state: CompactState, path: str) -> int:
-    if path in state.recent_files:
-        state.recent_files.remove(path)
-    state.recent_files.append(path)
-    if len(state.recent_files) > 5:
-        state.recent_files[:] = state.recent_files[-5:]
 
 # -- Tool implementations shared by parent and child --
 def safe_path(p: str) -> Path:
@@ -128,99 +256,6 @@ def safe_path(p: str) -> Path:
     if not path.is_relative_to(WORKDIR):
         raise ValueError(f"Path escapes workspace: {p}")
     return path
-
-def persist_larget_output(tool_use_id: str, output: str) -> str:
-    if len(output) <= PERSIST_THRESHOLD:
-        return output
-
-    TOOL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    stored_path = TOOL_RESULTS_DIR / f"{tool_use_id}.txt"
-    if not stored_path.exists():
-        stored_path.write_text(output)
-
-    preview = output[:PREVIEW_CHARS]
-    rel_path = stored_path.relative_to(WORKDIR)
-    return (
-        "<persisted-output>\n"
-        f"Full output saved to {rel_path}\n"
-        "Preview:\n"
-        f"{preview}\n"
-        "</persisted-output>"
-    )
-
-def collect_tool_result_blocks(messages: list) -> list[tuple[int, int, dict]]:
-    blocks = []
-    for message_index, message in enumerate(messages):
-        content = message.get("content")
-        if message.get("role") != "user" or not isinstance(content, list):
-            continue
-        for block_index, block in enumerate(content):
-            if isinstance(block, dict) and block.get("type") == "tool_result":
-                blocks.append((message_index, block_index, block))
-    return blocks
-
-
-def micro_compact(messages: list) -> list:
-    tool_results = collect_tool_result_blocks(messages)
-    if len(tool_results) <= KEEP_RECENT_TOOL_RESULTS:
-        return messages
-    
-    for  _, _, block in tool_results[:-KEEP_RECENT_TOOL_RESULTS]:
-        content = block.get("content", "")
-        if not isinstance(content, str) or len(content) <= 120:
-            continue
-        block["content"] = "[Earlier tool result compacted.Re-run the tool if you need full detail.]"
-    return messages
-
-def write_transcript(messages: list) -> Path:
-    TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
-    path = TRANSCRIPT_DIR / f"transcript_{int(time.time())}.jsonl"
-    with path.open("w") as handle:
-        for message in messages:
-            handle.write(json.dumps(message, default=str) + "\n")
-    return path
-
-def summarize_history(messages: list) -> str:
-    conversation = json.dumps(messages, default=str)[:8000]
-    prompt = (
-        "Summarize this coding-agent conversation so work can continue.\n"
-        "Preserve: \n"
-        "1. The current goal\n"
-        "2. Important findings and decisions\n"
-        "3. Files read or changed\n"
-        "4. Remaining work\n"
-        "5. User constraints and preferences\n"
-        "Be compact but concrete.\n\n"
-        f"{conversation}"
-    )
-    response = client.messages.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=2000
-    )
-    return response.content[0].text.strip()
-
-def compact_history(messages: list, state: CompactState, focus: str | None = None) -> list:
-    transcript_path = write_transcript(messages)
-    print(f"[transcript saved: {transcript_path}]")
-
-    summary = summarize_history(messages)
-    if focus:
-        summary += f"\n\Focus to preserve next: {focus}"
-    if state.recent_files:
-        recent_lines = "\n".join(f"- {path}" for path in state.recent_files)
-        summary += f"\n\Recent files to reopen if needed:\n{recent_lines}"
-
-    state.has_compact = True
-    state.last_summary = summary
-
-    return [{
-        "role": "user",
-        "content": (
-            "This is conversation was compacted so the agent can continue working.\n\n"
-            f"{summary}"
-        )
-    }]
 
 def run_bash(command: str) -> str:
     dangerous = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"]
@@ -232,9 +267,6 @@ def run_bash(command: str) -> str:
         out = (r.stdout + r.stderr).strip()
     except subprocess.TimeoutExpired:
         return "Error: Timeout (120s)"
-
-    output = (r.stdout + r.stderr).strip()
-    return output[:50000] if output else "(no output)"
 
 def run_read(path: str, limit: int = None) -> str:
     try:        
@@ -264,6 +296,13 @@ def run_edit(path: str, old_text: str, new_text: str) -> str:
         return f"Edited {path}"
     except Exception as exc:
         return f"Error: {exc}"
+
+TOOL_HANDLERS = {
+    "bash":       lambda **kw: run_bash(kw["command"]),
+    "read_file":  lambda **kw: run_read(kw["path"], kw.get("limit")),
+    "write_file": lambda **kw: run_write(kw["path"], kw["content"]),
+    "edit_file":  lambda **kw: run_edit(kw["path"], kw["old_text"], kw["new_text"]),
+}
 
 TOOLS = [
     {
@@ -321,42 +360,21 @@ TOOLS = [
             "required": ["name"],
         },
     },
-    {
-        "name": "compact",
-        "description": "Summarize earlier conversation so work can continue in a smaller context.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "focus": {"type": "string"},
-            },
-        },
-    },
 ]
 
-def extract_text(content) -> str:
-    if not isinstance(content, list):
-        return ""
-    texts = []
-    for block in content:
-        text = getattr(block, "text", None)
-        if text:
-            texts.append(text)
-    return "\n".join(texts).strip()
+SYSTEM = f"""You are a coding agent at {WORKDIR}. Use tools to solve tasks.
+The user controls permissions. Some tool calls may be denied."""
 
-def execute_tool(block, state: CompactState) -> str:
-    if block.name == "bash":
-        return run_bash(block.input["command"], block.id)
-    if block.name == "read_file":
-        return run_read(block.input["path"], block.id, state, block.input.get("limit"))
-    if block.name == "write_file":
-        return run_write(block.input["path"], block.input["content"])
-    if block.name == "edit_file":
-        return run_edit(block.input["path"], block.input["old_text"], block.input["new_text"])
-    if block.name == "compact":
-        return "Compacting conversation..."
-    return f"Unknown tool: {block.name}"
 
-def agent_loop(messages: list, state: CompactState) -> None:
+def agent_loop(messages: list, perms: PermissionManager) -> None:
+    """
+    The permission-aware agent loop.
+    For each tool call:
+      1. LLM requests tool use
+      2. Permission pipeline checks: deny_rules -> mode -> allow_rules -> ask
+      3. If allowed: execute tool, return result
+      4. If denied: return rejection message to LLM
+    """
     while True:
         response = client.messages.create(
             model=MODEL, system=SYSTEM,
@@ -370,29 +388,50 @@ def agent_loop(messages: list, state: CompactState) -> None:
         
         results = []
         for block in response.content:
-            if block.type == "tool_use":
+            if block.type != "tool_use":
                 continue
 
-            output = execute_tool(block, state)
-            if block.name == "compact":
-                manual_compact = True
-                compact_focus = (block.input or {}).get("focus")
-
-            print(f"> {block.name}: {str(output)[:200]}")
+            # -- Permission check --
+            decision = perms.check(block.name, block.input or {})
+            
+            if decision["behavior"] == "deny":
+                output = f"Permission denied: {decision['reason']}"
+                print(f" [DENIED][block.name]: {decision['reason']}")
+                
+            elif decision["behavior"] == "ask":
+                if perms.ask_user(block.name, block.input or {}):
+                    handler = TOOL_HANDLERS.get(block.name)
+                    output = handler(**(block.input or {})) if handler else f"Unknown: {block.name}" 
+                    print(f"> {block.name}: {str(output)[:200]}")
+                else:
+                    output = f"Permission denied by user for {block.name}"
+                    print(f" [USER DENIED] {block.name}")
+            
+            else:  # allow
+                handler = TOOL_HANDLERS.get(block.name)
+                output = handler(**(block.input or {})) if handler else f"Unknown: {block.name}"
+                print(f"> {block.name}: {str(output)[:200]}")
+                
             results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,
                 "content": str(output),
             })
+
         messages.append({"role": "user", "content": results})
-        if manual_compact:
-            print("[manual compact]")
-            messages[:] = compact_history(messages, state, focus=compact_focus)
+
 
 if __name__ == "__main__":
+    # Choose permission mode at startup
+    print("Permission modes: default, plan, auto")
+    mode_input = input("MODE (default): ").strip().lower() or "default"
+    if mode_input not in MODES:
+        mode_input = "default"
+    
+    perms = PermissionManager(mode=mode_input)
+    print(f"[Permission_mode: {mode_input}]")
+    
     history = []
-    compact_state = CompactState()
-
     while True:
         try:
             query = input("\033[36ms04 >> \033[0m")
@@ -401,10 +440,27 @@ if __name__ == "__main__":
         if query.strip().lower() in ("q", "exit", ""):
             break
         
+        # /mode command to switch modes at runtime
+        if query.startswith("/mode"):
+            parts = query.split()
+            if len(parts) == 2 and parts[1] in MODES:
+                perms.mode = parts[1]
+                print(f"[Switched to mode: {parts[1]} mode]")
+            else:
+                print(f"Usage: /mode <{'|'.join(MODES)}>")
+            continue
+        
+        # /rules command to show current rules
+        if query.strip() == "/rules":
+            for i, rule in enumerate(perms.rules):
+                print(f" {i}: {rule}")
+            continue
+        
         history.append({"role": "user", "content": query})
-        agent_loop(history, compact_state)
-
-        final_text = extract_text(history[-1]["content"])
-        if final_text:
-            print(final_text)
+        agent_loop(history, perms)
+        response_content = history[-1]["content"]
+        if isinstance(response_content, list):
+            for block in response_content:
+                if hasattr(block, "text"):
+                    print(block.text)
         print()
