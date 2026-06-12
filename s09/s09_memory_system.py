@@ -108,7 +108,7 @@ class MemoryManager:
                     sections.append(mem["content"].strip())
                 sections.append("")
                 
-            return "\n".join(sections)
+        return "\n".join(sections)
         
     def save_memory(self, name: str, description: str, mem_type: str, content: str) -> str:
         """
@@ -156,7 +156,7 @@ class MemoryManager:
         for name, mem in self.memories.items():
             lines.append(f"- {name}: {mem['description']} [{mem['type']}]")
             if len(lines) >= MAX_INDEX_LINES:
-                lines.append(f"... (trybcated at {MAX_INDEX_LINES} lines)")
+                lines.append(f"... (truncated at {MAX_INDEX_LINES} lines)")
                 break
         self.memory_dir.mkdir(parents=True, exist_ok=True)
         MEMORY_INDEX.write_text("\n".join(lines) + "\n")
@@ -213,11 +213,11 @@ class DreamConsolidator:
         
         # Gate 1: enabled flag
         if not self.enabled:
-            return False, "Gate 1: consilidation is disable"
+            return False, "Gate 1: consolidation is disabled"
         
-        # Gate2: memory director exists and has memory files
+        # Gate2: memory directory exists and has memory files
         if not self.memory_dir.exists():
-            return False, "Gate 2: memory director does not exist"
+            return False, "Gate 2: memory directory does not exist"
         memory_files = list(self.memory_dir.glob("*.md"))
         # Exclude MEMORY.md itself from the count
         memory_files = [f for f in memory_files if f.name != "MEMORY.md"]
@@ -229,10 +229,10 @@ class DreamConsolidator:
             return False, "Gate 3: plan mode does not allow consolidation"
         
         # Gate 4: 24-hour cooldown since last consolidation
-        time_since_last = now - self.last_consolidation_time
+        time_since_last = now - self._last_consolidation_time
         if time_since_last < self.COOLDOWN_SECONDS:
-            remaing = int(self.COOLDOWN_SECONDS - time_since_last)
-            return False, f"Gate 4: cooldown active, {remaing}s remaining"
+            remaining = int(self.COOLDOWN_SECONDS - time_since_last)
+            return False, f"Gate 4: cooldown active, {remaining}s remaining"
         
         # Gate 5: 10-minute throttle since last scan attempt
         time_since_scan = now - self._last_scan_time
@@ -242,7 +242,7 @@ class DreamConsolidator:
         
         # Gate 6: need at least 5 sessions worth of data
         if self.session_count < self.MIN_SESSION_COUNT:
-            return False, f"Gate 6: need at least {self.session_count} sessions, need {self.MIN_SESSION_COUNT}"
+            return False, f"Gate 6: need at least {self.MIN_SESSION_COUNT} sessions, only have {self.session_count}"
         
         # Gate 7: no active lock file (check PID staleness)
         if not self._acquire_lock():
@@ -264,14 +264,14 @@ class DreamConsolidator:
             return []
         
         print("[Dream] Starting consolidation...")
-        self.last_scan_time = time.time()
+        self._last_scan_time = time.time()
 
         completed_phases = []
         for i, phase in enumerate(self.PHASE, 1):
             print(f"[Dream] phase {i}/4 : {phase}")
             completed_phases.append(phase)
             
-        self.last_consolidation_time = time.time()
+        self._last_consolidation_time = time.time()
         self._release_lock()
         print(f"[Dream] Consolidation complete: {len(completed_phases)} phases executed")
         return completed_phases

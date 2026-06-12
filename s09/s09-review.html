@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s09 Memory System - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+  .tag.bug  { background: #ffebe9; color: #cf222e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s09 · s09_memory_system.py 复习笔记</h1>
+  <p class="subtitle">从 s08 到 s09：让 agent 跨会话记住重要信息</p>
+  <span class="badge">基于 s09_memory_system.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">整体架构与核心概念</a></li>
+    <li><a href="#s2">4 类记忆与存储布局</a></li>
+    <li><a href="#s3">MemoryManager — 记忆管理器总览</a></li>
+    <li><a href="#s4">load_all() — 从磁盘加载记忆</a></li>
+    <li><a href="#s5">load_memory_prompt() — 构建提示词记忆区</a></li>
+    <li><a href="#s6">save_memory() — 保存记忆到磁盘</a></li>
+    <li><a href="#s7">_rebuild_index() — 重建索引文件</a></li>
+    <li><a href="#s8">_parse_frontmatter() — 解析元数据</a></li>
+    <li><a href="#s9">DreamConsolidator 总览</a></li>
+    <li><a href="#s10">should_consolidate() — 7 道关卡</a></li>
+    <li><a href="#s11">consolidate() — 执行 4 阶段合并</a></li>
+    <li><a href="#s12">_acquire_lock / _release_lock — PID 锁机制</a></li>
+    <li><a href="#s13">全局工具与系统提示词组装</a></li>
+    <li><a href="#s14">基础知识点详解</a></li>
+    <li><a href="#s15">已识别的 Bug 汇总</a></li>
+    <li><a href="#s16">s08 → s09 完整对比</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 整体架构与核心概念</h2>
+
+  <div class="callout green">
+    <strong>一句话：记忆系统让 AI agent 可以跨会话记住用户偏好、项目约定等长期信息，而不是每次新会话都从零开始。</strong>
+  </div>
+
+  <h3>核心原则</h3>
+  <p>s09 强调一个关键边界：<strong>不是所有信息都该进 memory</strong>。只有满足以下条件的才值得保存：</p>
+  <ul>
+    <li><strong>跨会话仍然有价值</strong> — 当前对话结束后，下次重开还能用到</li>
+    <li><strong>不能轻易从当前仓库状态重新推导</strong> — 比如用户偏好、合规原因等</li>
+  </ul>
+
+  <h3>整体文件结构</h3>
+  <div class="diagram">s09_memory_system.py（约 550 行）
+│
+├── 常量定义（L51-54）
+│   ├── MEMORY_DIR, MEMORY_INDEX
+│   ├── MEMORY_TYPES, MAX_INDEX_LINES
+│
+├── MemoryManager 类（L56-175）
+│   ├── __init__()
+│   ├── load_all()
+│   ├── load_memory_prompt()
+│   ├── save_memory()
+│   ├── _rebuild_index()
+│   └── _parse_frontmatter()
+│
+├── DreamConsolidator 类（L178-326）
+│   ├── should_consolidate() — 7 道关卡
+│   ├── consolidate() — 4 阶段（教学模拟）
+│   ├── _acquire_lock()
+│   └── _release_lock()
+│
+├── 工具函数（L330-380）
+│   ├── safe_path(), run_bash(), run_read()
+│   ├── run_write(), run_edit()
+│   └── run_save_memory()
+│
+├── TOOL_HANDLERS / TOOLS（L383-452）
+│
+├── MEMORY_GUIDANCE + build_system_prompt()（L455-482）
+│
+├── agent_loop()（L484-513）
+│
+└── __main__ 入口（L515-548）</div>
+
+  <h3>磁盘存储布局</h3>
+  <div class="diagram">.memory/
+├── MEMORY.md               ← 索引文件（目录）
+├── prefer_tabs.md           ← 具体的记忆文件（书）
+├── review_style.md
+└── incident_board.md</div>
+
+  <div class="callout purple">
+    <strong>核心类比：</strong> <code>.memory/xxx.md</code> 是书（完整内容），<code>MEMORY.md</code> 是图书目录（只有摘要）。目录让你快速浏览有哪些记忆，想看详情再打开具体的书。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 4 类记忆与存储布局</h2>
+
+  <h3>代码位置：L52-53</h3>
+
+  <pre>MEMORY_TYPES = (<span class="s">"user"</span>, <span class="s">"feedback"</span>, <span class="s">"project"</span>, <span class="s">"reference"</span>)</pre>
+
+  <h3>4 种记忆类型</h3>
+  <table>
+    <tr><th>类型</th><th>含义</th><th>示例</th></tr>
+    <tr><td><code>user</code></td><td>用户偏好</td><td>"我喜欢用 tab 缩进"、"回答请简洁"</td></tr>
+    <tr><td><code>feedback</code></td><td>用户纠正过的内容</td><td>"不要 mock 太重的测试"、"上次那个方法错了"</td></tr>
+    <tr><td><code>project</code></td><td>非显而易见的项目约定</td><td>"这个目录受合规限制不能动"、"团队决定用 pytest"</td></tr>
+    <tr><td><code>reference</code></td><td>外部资源指针</td><td>"看板地址：https://xxx"、"API 文档在 docs/"</td></tr>
+  </table>
+
+  <h3>不该存进 memory 的内容</h3>
+  <table>
+    <tr><th>不要存</th><th>原因</th></tr>
+    <tr><td>文件结构、函数签名、目录布局</td><td>可以重新读代码得到</td></tr>
+    <tr><td>当前任务进度</td><td>属于 task/plan，不属于 memory</td></tr>
+    <tr><td>临时分支名、当前 PR 号</td><td>很快会过时</td></tr>
+    <tr><td>修 bug 的具体代码细节</td><td>代码和提交记录才是准确信息</td></tr>
+    <tr><td>密钥、密码、凭证</td><td>安全风险</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>这条边界一定要稳：</strong>否则 memory 会从"帮助系统长期变聪明"变成"帮助系统长期产生幻觉"。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> MemoryManager — 记忆管理器总览</h2>
+
+  <h3>代码位置：L56-175</h3>
+
+  <div class="callout green">
+    <strong>一句话：MemoryManager 是记忆系统的核心，负责加载、保存、索引、格式化记忆。</strong>
+  </div>
+
+  <h3>7 个方法一览</h3>
+  <table>
+    <tr><th>方法</th><th>功能</th><th>关键点</th></tr>
+    <tr><td><code>__init__()</code></td><td>初始化存储目录和空字典</td><td>定义 <code>self.memories = {}</code></td></tr>
+    <tr><td><code>load_all()</code></td><td>从磁盘扫描所有 <code>.md</code> 文件加载到内存</td><td>跳过 <code>MEMORY.md</code> 自身</td></tr>
+    <tr><td><code>load_memory_prompt()</code></td><td>格式化为 Markdown 供注入 system prompt</td><td>按类型分组展示</td></tr>
+    <tr><td><code>save_memory()</code></td><td>保存一条新记忆到磁盘并更新索引</td><td>净化文件名、写 frontmatter</td></tr>
+    <tr><td><code>_rebuild_index()</code></td><td>重建 <code>MEMORY.md</code> 索引</td><td>200 行上限</td></tr>
+    <tr><td><code>_parse_frontmatter()</code></td><td>解析 Markdown 的 <code>---</code> 元数据</td><td>正则提取 header 和 body</td></tr>
+  </table>
+
+  <h3>self.memories 的数据结构</h3>
+  <pre>self.memories = {
+    <span class="s">"prefer_tabs"</span>: {                    <span class="cm"># key = 记忆名称</span>
+        <span class="s">"description"</span>: <span class="s">"User prefers tabs"</span>,
+        <span class="s">"type"</span>: <span class="s">"user"</span>,
+        <span class="s">"content"</span>: <span class="s">"用户说用 tab 缩进..."</span>,
+        <span class="s">"file"</span>: <span class="s">"prefer_tabs.md"</span>
+    },
+    <span class="s">"api_endpoint"</span>: { ... }
+}</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> load_all() — 从磁盘加载记忆</h2>
+
+  <h3>代码位置：L71-91</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">load_all</span>(self):
+    self.memories = {}                              <span class="cm"># ① 先清空，保证幂等性</span>
+    <span class="kw">if</span> <span class="kw">not</span> self.memory_dir.exists():
+        <span class="kw">return</span>
+
+    <span class="kw">for</span> md_file <span class="kw">in</span> <span class="fn">sorted</span>(self.memory_dir.<span class="fn">glob</span>(<span class="s">"*.md"</span>)):    <span class="cm"># ② 扫描所有 .md 文件</span>
+        <span class="kw">if</span> md_file.name == <span class="s">"MEMORY.md"</span>:
+            <span class="kw">continue</span>                                   <span class="cm"># ③ 跳过索引文件</span>
+        parsed = self._parse_frontmatter(md_file.<span class="fn">read_text</span>())
+        <span class="kw">if</span> parsed:
+            name = parsed.<span class="fn">get</span>(<span class="s">"name"</span>, md_file.stem)         <span class="cm"># ④ 没 name 就用文件名</span>
+            self.memories[name] = {
+                <span class="s">"description"</span>: parsed.<span class="fn">get</span>(<span class="s">"description"</span>, <span class="s">""</span>),
+                <span class="s">"type"</span>: parsed.<span class="fn">get</span>(<span class="s">"type"</span>, <span class="s">"project"</span>),
+                <span class="s">"content"</span>: parsed.<span class="fn">get</span>(<span class="s">"content"</span>, <span class="s">""</span>),
+                <span class="s">"file"</span>: md_file.name                     <span class="cm"># ⑤ 记录文件名</span>
+            }
+
+    count = <span class="fn">len</span>(self.memories)
+    <span class="kw">if</span> count &gt; <span class="num">0</span>:
+        <span class="fn">print</span>(<span class="s">f"[Memory loaded: {count} memories from {self.memory_dir}]"</span>)</pre>
+
+  <h3>关键问题解答</h3>
+
+  <h4>Q：为什么 __init__ 和 load_all() 里都有 self.memories = {}？</h4>
+  <p><strong>目的不同：</strong></p>
+  <ul>
+    <li><code>__init__</code> 中的是<strong>初始化</strong>，确保刚创建 <code>MemoryManager()</code> 时属性存在</li>
+    <li><code>load_all()</code> 中的是<strong>重新加载前清空</strong>，避免多次调用 <code>load_all()</code> 时旧数据和新数据混在一起</li>
+  </ul>
+
+  <p>如果不先清空，连续调用两次 <code>load_all()</code> 会导致记忆数量翻倍：</p>
+  <pre>mm = MemoryManager()
+mm.load_all()     <span class="cm"># 加载了 3 条</span>
+mm.load_all()     <span class="cm"># 不清空的话就变成 6 条</span></pre>
+
+  <h4>Q：glob("*.md") 是什么用法？</h4>
+  <p><code>Path.glob()</code> 是 <code>pathlib</code> 的模式匹配方法，类似终端执行 <code>ls *.md</code>。它返回一个<strong>生成器（generator）</strong>，一次遍历后就空了。所以代码中先用 <code>sorted()</code> 把它转成列表再遍历。</p>
+
+  <h4>Q：md_file 是什么格式？md_file.stem 是什么？</h4>
+  <p><code>md_file</code> 是 <code>Path</code> 对象。它的几个常用属性：</p>
+  <table>
+    <tr><th>属性</th><th>示例值（Path(".memory/prefer_tabs.md")）</th></tr>
+    <tr><td><code>.name</code></td><td><code>"prefer_tabs.md"</code> — 完整文件名</td></tr>
+    <tr><td><code>.stem</code></td><td><code>"prefer_tabs"</code> — 去掉后缀的主干</td></tr>
+    <tr><td><code>.suffix</code></td><td><code>".md"</code> — 文件扩展名</td></tr>
+    <tr><td><code>.parent</code></td><td><code>Path(".memory")</code> — 父目录</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>注意：</strong><code>Path</code> 对象只是"路径的表示"，不代表文件真实存在。只有调用了 <code>.read_text()</code>、<code>.write_text()</code>、<code>.exists()</code> 等方法，才真正与磁盘交互。就像一张写着地址的纸条，不等于那栋房子。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> load_memory_prompt() — 构建提示词记忆区</h2>
+
+  <h3>代码位置：L93-113</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">load_memory_prompt</span>(self) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> self.memories:
+        <span class="kw">return</span> <span class="s">""</span>
+
+    sections = []
+    sections.append(<span class="s">"# Memories (persistent across sessions)"</span>)
+    sections.append(<span class="s">""</span>)
+
+    <span class="cm"># 按类型分组展示</span>
+    <span class="kw">for</span> mem_type <span class="kw">in</span> MEMORY_TYPES:                    <span class="cm"># user → feedback → project → reference</span>
+        typed = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> self.memories.items() <span class="kw">if</span> v[<span class="s">"type"</span>] == mem_type}
+        <span class="kw">if</span> <span class="kw">not</span> typed:
+            <span class="kw">continue</span>
+        sections.append(<span class="s">f"## [{mem_type}]"</span>)
+        <span class="kw">for</span> name, mem <span class="kw">in</span> typed.items():
+            sections.append(<span class="s">f"### {name}: {mem['description']}"</span>)
+            <span class="kw">if</span> mem[<span class="s">"content"</span>].strip():
+                sections.append(mem[<span class="s">"content"</span>].strip())
+            sections.append(<span class="s">""</span>)
+
+    <span class="kw">return</span> <span class="s">"\n"</span>.<span class="fn">join</span>(sections)</pre>
+
+  <h3>功能</h3>
+  <p>把内存中的记忆格式化为 Markdown 字符串，供注入到系统提示词中。输出示例：</p>
+
+  <pre><span class="cm"># Memories (persistent across sessions)</span>
+
+<span class="cm">## [user]</span>
+<span class="cm">### prefer_tabs: User prefers tabs for indentation</span>
+<span class="cm">The user explicitly stated they use tabs for Python code.</span>
+
+<span class="cm">## [project]</span>
+<span class="cm">### api_endpoint: Production API base URL</span>
+<span class="cm">https://api.example.com</span></pre>
+
+  <h3>详细解释：字典推导式</h3>
+  <pre>typed = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> self.memories.items() <span class="kw">if</span> v[<span class="s">"type"</span>] == mem_type}</pre>
+
+  <p>这行代码是<strong>字典推导式（dict comprehension）</strong>，等同于：</p>
+  <pre>typed = {}
+<span class="kw">for</span> k, v <span class="kw">in</span> self.memories.items():
+    <span class="kw">if</span> v[<span class="s">"type"</span>] == mem_type:
+        typed[k] = v</pre>
+
+  <p><code>items()</code> 是字典的方法，返回 <code>(key, value)</code> 对的视图：</p>
+  <pre>d = {<span class="s">"a"</span>: <span class="num">1</span>, <span class="s">"b"</span>: <span class="num">2</span>}
+<span class="kw">for</span> k, v <span class="kw">in</span> d.items():
+    <span class="fn">print</span>(k, v)   <span class="cm"># a 1 \n b 2</span></pre>
+
+  <p><strong>具体执行例子</strong>，假设 <code>mem_type = "user"</code>：</p>
+  <table>
+    <tr><th>遍历到的 k</th><th>v["type"]</th><th>匹配？</th></tr>
+    <tr><td><code>"prefer_tabs"</code></td><td><code>"user"</code></td><td>✅ 加入 typed</td></tr>
+    <tr><td><code>"api_base_url"</code></td><td><code>"project"</code></td><td>❌ 跳过</td></tr>
+    <tr><td><code>"likes_detail"</code></td><td><code>"feedback"</code></td><td>❌ 跳过</td></tr>
+  </table>
+
+  <p>结果：只筛选出 type 为 <code>"user"</code> 的记忆。这样可以让记忆按类型分组展示，增加可读性。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> save_memory() — 保存记忆到磁盘</h2>
+
+  <h3>代码位置：L115-155</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">save_memory</span>(self, name: <span class="tp">str</span>, description: <span class="tp">str</span>, mem_type: <span class="tp">str</span>, content: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    <span class="kw">if</span> mem_type <span class="kw">not</span> <span class="kw">in</span> MEMORY_TYPES:
+        <span class="kw">return</span> <span class="s">f"Error: type must be one of {MEMORY_TYPES}"</span>  <span class="cm"># ① 类型校验</span>
+
+    safe_name = <span class="fn">re.sub</span>(<span class="s">r"[^a-zA-Z0-9_-]"</span>, <span class="s">"_"</span>, name.lower())   <span class="cm"># ② 净化文件名</span>
+    <span class="kw">if</span> <span class="kw">not</span> safe_name:
+        <span class="kw">return</span> <span class="s">"Error: invalid memory name"</span>
+
+    self.memory_dir.<span class="fn">mkdir</span>(parents=<span class="hl">True</span>, exist_ok=<span class="hl">True</span>)          <span class="cm"># ③ 确保目录存在</span>
+
+    frontmatter = (                                       <span class="cm"># ④ 构建 frontmatter</span>
+        <span class="s">f"---\n"</span>
+        <span class="s">f"name: {name}\n"</span>
+        <span class="s">f"description: {description}\n"</span>
+        <span class="s">f"type: {mem_type}\n"</span>
+        <span class="s">f"---\n"</span>
+        <span class="s">f"{content}\n"</span>
+    )
+    file_name = <span class="s">f"{safe_name}.md"</span>
+    file_path = self.memory_dir / file_name
+    file_path.<span class="fn">write_text</span>(frontmatter)                        <span class="cm"># ⑤ 写入文件</span>
+
+    self.memories[name] = {                                <span class="cm"># ⑥ 更新内存</span>
+        <span class="s">"description"</span>: description,
+        <span class="s">"type"</span>: mem_type, <span class="s">"content"</span>: content, <span class="s">"file"</span>: file_name
+    }
+
+    self._rebuild_index()                                  <span class="cm"># ⑦ 重建索引</span>
+    <span class="kw">return</span> <span class="s">f"Saved memory '{name}' [{mem_type}] to {file_path.relative_to(WORKDIR)}"</span></pre>
+
+  <h3>逐段详解</h3>
+
+  <h4>文件名净化：<code>re.sub(r"[^a-zA-Z0-9_-]", "_", name.lower())</code></h4>
+  <p>把记忆名称中所有不能出现在文件名中的"脏"字符替换为下划线：</p>
+  <table>
+    <tr><th>原 name</th><th><code>name.lower()</code></th><th><code>re.sub</code> 后</th></tr>
+    <tr><td><code>"User's Preference!@#"</code></td><td><code>"user's preference!@#"</code></td><td><code>"user_s_preference___"</code></td></tr>
+    <tr><td><code>"API Endpoint URL"</code></td><td><code>"api endpoint url"</code></td><td><code>"api_endpoint_url"</code></td></tr>
+  </table>
+
+  <p><code>re.sub(pattern, replacement, string)</code> 是正则替换函数。<code>[^a-zA-Z0-9_-]</code> 中 <code>^</code> 在 <code>[]</code> 里表示"取反"，所以匹配<strong>任何不是字母、数字、下划线、短横线的字符</strong>，替换为下划线。</p>
+
+  <h4><code>mkdir(parents=True, exist_ok=True)</code></h4>
+  <table>
+    <tr><th>参数</th><th>含义</th><th>类比</th></tr>
+    <tr><td><code>parents=True</code></td><td>递归创建父目录。如果 <code>.memory/</code> 的父目录也不存在，一并创建</td><td><code>mkdir -p</code></td></tr>
+    <tr><td><code>exist_ok=True</code></td><td>目录已存在时不报错</td><td>安全创建，有就算了</td></tr>
+  </table>
+
+  <h4><code>relative_to()</code> 用法</h4>
+  <pre>file_path = <span class="tp">Path</span>(<span class="s">"/home/user/project/.memory/prefer_tabs.md"</span>)
+file_path.<span class="fn">relative_to</span>(WORKDIR)   <span class="cm"># → Path(".memory/prefer_tabs.md")</span></pre>
+  <p>返回相对路径，让输出信息更简洁，比如 <code>"Saved memory 'prefer_tabs' [user] to .memory/prefer_tabs.md"</code>。</p>
+
+  <h4>为什么 save_memory 要调用 _rebuild_index()？</h4>
+  <p>为了保证索引文件和实际记忆文件<strong>始终保持一致</strong>。每次保存新记忆后，都重新生成 <code>MEMORY.md</code>，让它包含最新所有记忆的摘要。如果不调用，索引文件会永远停留在旧状态。</p>
+  <div class="callout green">
+    <strong>类比：</strong>你往书架上放了一本新书（保存 .md 文件），同时也要更新图书目录（MEMORY.md），这样别人查目录时才能找到它。
+  </div>
+
+  <h3>生成的 .md 文件示例（.memory/prefer_tabs.md）</h3>
+  <pre>---
+name: prefer_tabs
+description: User prefers tabs for indentation
+type: user
+---
+The user explicitly stated they use tabs for Python code.</pre>
+  <p>这里的 <code>---</code> 包裹的部分叫做 <strong>frontmatter</strong>，是放在正文前面的结构化元数据，让系统先知道这条记忆叫什么、大致是什么、属于哪一类。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> _rebuild_index() — 重建索引文件</h2>
+
+  <h3>代码位置：L157-168</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">_rebuild_index</span>(self):
+    lines = [<span class="s">"# Memory Index"</span>, <span class="s">""</span>]
+    <span class="kw">for</span> name, mem <span class="kw">in</span> self.memories.items():
+        lines.append(<span class="s">f"- {name}: {mem['description']} [{mem['type']}]"</span>)
+        <span class="kw">if</span> <span class="fn">len</span>(lines) &gt;= MAX_INDEX_LINES:        <span class="cm"># 200 行上限</span>
+            lines.append(<span class="s">f"... (truncated at {MAX_INDEX_LINES} lines)"</span>)
+            <span class="kw">break</span>
+    self.memory_dir.<span class="fn">mkdir</span>(parents=<span class="hl">True</span>, exist_ok=<span class="hl">True</span>)
+    MEMORY_INDEX.<span class="fn">write_text</span>(<span class="s">"\n"</span>.<span class="fn">join</span>(lines) + <span class="s">"\n"</span>)</pre>
+
+  <h3>为什么不加 content？</h3>
+  <p>索引文件的定位是<strong>快速一览</strong>，就像书的目录只列标题和页码，不会把整章内容都写在目录里。如果想看完整内容，去 <code>.memory/</code> 下打开对应的 <code>.md</code> 文件。</p>
+
+  <p><strong>实际上加了 type</strong>：<code>[{mem['type']}]</code> 这部分就是 type，放在方括号里展示。</p>
+
+  <p>生成的 <code>MEMORY.md</code> 示例：</p>
+  <pre><span class="cm"># Memory Index</span>
+
+- prefer_tabs: User prefers tabs for indentation [user]
+- review_style: User likes detailed reviews [feedback]
+- api_endpoint: Production API base URL [project]</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> _parse_frontmatter() — 解析元数据</h2>
+
+  <h3>代码位置：L170-175</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">_parse_frontmatter</span>(self, text: <span class="tp">str</span>) -> <span class="tp">dict</span> <span class="kw">|</span> <span class="hl">None</span>:
+    match = <span class="fn">re.match</span>(<span class="s">r"^---\s*\n(.*?)\n---\s*\n(.*?)"</span>, text, <span class="hl">re.DOTALL</span>)
+    <span class="kw">if</span> <span class="kw">not</span> match:
+        <span class="kw">return</span> <span class="hl">None</span>
+    header, body = match.<span class="fn">group</span>(<span class="num">1</span>), match.<span class="fn">group</span>(<span class="num">2</span>)
+    result = {<span class="s">"content"</span>: body.strip()}
+    <span class="kw">for</span> line <span class="kw">in</span> header.<span class="fn">splitlines</span>():
+        <span class="kw">if</span> <span class="s">":"</span> <span class="kw">in</span> line:
+            key, _, value = line.<span class="fn">partition</span>(<span class="s">":"</span>)
+            result[key.strip()] = value.strip()
+    <span class="kw">return</span> result</pre>
+
+  <h3>正则详解</h3>
+  <pre>r<span class="s">"^---\s*\n(.*?)\n---\s*\n(.*?)"</span></pre>
+
+  <table>
+    <tr><th>部分</th><th>含义</th></tr>
+    <tr><td><code>^---</code></td><td>以 <code>---</code> 开头</td></tr>
+    <tr><td><code>\s*\n</code></td><td>可能有的空白 + 换行</td></tr>
+    <tr><td><code>(.*?)</code></td><td>捕获组1（header）：非贪婪匹配所有内容，直到遇到 <code>\n---</code></td></tr>
+    <tr><td><code>\n---\s*\n</code></td><td>第二个 <code>---</code> 分隔符</td></tr>
+    <tr><td><code>(.*?)</code></td><td>捕获组2（body）：非贪婪匹配剩余内容</td></tr>
+    <tr><td><code>re.DOTALL</code></td><td>让 <code>.</code> 可以匹配换行符</td></tr>
+  </table>
+
+  <h3>parse 的具体例子</h3>
+  <p>输入：</p>
+  <pre>---
+name: prefer_tabs
+description: User prefers tabs
+type: user
+---
+Some content here</pre>
+
+  <table>
+    <tr><th>变量</th><th>值</th></tr>
+    <tr><td><code>match.group(1)</code>（header）</td><td><code>"name: prefer_tabs\ndescription: User prefers tabs\ntype: user"</code></td></tr>
+    <tr><td><code>match.group(2)</code>（body）</td><td><code>"Some content here"</code></td></tr>
+    <tr><td><code>result</code></td><td><code>{"content": "Some content here", "name": "prefer_tabs", "description": "User prefers tabs", "type": "user"}</code></td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>partition 比 split 更安全：</strong><code>line.partition(":")</code> 返回 <code>(key, ":", value)</code> 三元组，只在第一个 <code>:</code> 处分隔。如果 description 里包含 <code>:</code>（比如 <code>"time: 10:30"</code>），用 <code>split(":")</code> 会拆出3段，而 <code>partition</code> 只拆成2段，不会出错。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> DreamConsolidator 总览</h2>
+
+  <h3>代码位置：L178-326</h3>
+
+  <div class="callout green">
+    <strong>一句话：DreamConsolidator 是记忆的"后台整理机制"，灵感来自"人在快速眼动睡眠（REM）期间大脑会整理、巩固、清理记忆"这一生物学概念。</strong>
+  </div>
+
+  <h3>类常量</h3>
+  <table>
+    <tr><th>常量</th><th>值</th><th>含义</th></tr>
+    <tr><td><code>COOLDOWN_SECONDS</code></td><td>86400（24小时）</td><td>两次 consolidate 之间至少间隔 24 小时</td></tr>
+    <tr><td><code>SCAN_THROTTLE_SECONDS</code></td><td>600（10分钟）</td><td>两次检查之间至少间隔 10 分钟</td></tr>
+    <tr><td><code>MIN_SESSION_COUNT</code></td><td>5</td><td>至少积累 5 次会话数据才合并</td></tr>
+    <tr><td><code>LOCK_STALE_SECONDS</code></td><td>3600（1小时）</td><td>锁文件超过 1 小时视为过期</td></tr>
+  </table>
+
+  <h3>4 阶段（教学模拟，无实际处理）</h3>
+  <table>
+    <tr><th>阶段</th><th>描述文本</th><th>实际该做什么</th></tr>
+    <tr><td>1. Orient</td><td>扫描 MEMORY.md 索引</td><td>读取索引，了解当前记忆的分类情况</td></tr>
+    <tr><td>2. Gather</td><td>读取每个详细文件</td><td>读取所有 <code>*.md</code> 获取完整内容</td></tr>
+    <tr><td>3. Consolidate</td><td>合并相关、移除过时</td><td>调用 LLM 判断哪些可以合并、哪些过时了</td></tr>
+    <tr><td>4. Prune</td><td>将索引控制在 200 行</td><td>删除超出 <code>MAX_INDEX_LINES</code> 的旧条目</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>重要：</strong>当前 consolidate() 只是打印阶段描述文本，没有真正的处理逻辑。这是教学版本的设计——先搭好框架，后续可以插入真正的 LLM 调用。就像画了一张流程图，标好了每个步骤该干什么，但按钮还没连上真正的机器。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> should_consolidate() — 7 道关卡</h2>
+
+  <h3>代码位置：L207-248</h3>
+
+  <div class="callout green">
+    <strong>一句话：逐一检查 7 个条件，全部通过才能执行合并操作。任何一个不通过就立即返回失败原因。</strong>
+  </div>
+
+  <div class="diagram">Gate 1: enabled?                → ❌ "合并已禁用"
+Gate 2: 目录有记忆文件?         → ❌ "没有记忆文件"
+Gate 3: 不是 plan 模式?         → ❌ "plan模式不允许合并"
+Gate 4: 距离上次合并 &gt;24小时?   → ❌ "冷却中，还剩 X 秒"
+Gate 5: 距离上次检查 &gt;10分钟?   → ❌ "节流中，还剩 X 秒"
+Gate 6: 会话数 &gt;= 5?           → ❌ "会话数不足"
+Gate 7: 能获取锁?               → ❌ "锁被其他进程持有"
+    │
+全部通过 → (True, "All 7 gates passed")</div>
+
+  <h3>COOLDOWN vs THROTTLE 区别</h3>
+  <table>
+    <tr><th></th><th>COOLDOWN_SECONDS (Gate 4)</th><th>SCAN_THROTTLE_SECONDS (Gate 5)</th></tr>
+    <tr><td><strong>值</strong></td><td>86400 秒（24小时）</td><td>600 秒（10分钟）</td></tr>
+    <tr><td><strong>限制对象</strong></td><td>真正执行合并 <code>consolidate()</code></td><td>仅仅是检查能否合并 <code>should_consolidate()</code></td></tr>
+    <tr><td><strong>类比</strong></td><td>你每天最多跑一次步</td><td>你每 10 分钟可以看一下手表评估"现在该跑步了吗？"</td></tr>
+  </table>
+
+  <p>为什么需要两个限制？如果只有 24 小时的限制，每次检查都发现"才过了1小时，不行"，退回——但 1 秒后又来检查，又退回……反复浪费资源。所以加一个 10 分钟的"检查频率限制"来避免这个问题。</p>
+
+  <div class="callout bug">
+    <strong>Bug 提醒：</strong>Gate 6 的报错信息写反了——<code>f"need at least {self.session_count} sessions, need {self.MIN_SESSION_COUNT}"</code> 打印的是当前会话数而不是所需的最小会话数。应该是 <code>f"need at least {self.MIN_SESSION_COUNT} sessions, only have {self.session_count}"</code>。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> consolidate() — 执行 4 阶段合并</h2>
+
+  <h3>代码位置：L250-277</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">consolidate</span>(self) -> <span class="tp">list</span>[<span class="tp">str</span>]:
+    can_run, reason = self.<span class="fn">should_consolidate</span>()        <span class="cm"># ① 先过 7 道关卡</span>
+    <span class="kw">if</span> <span class="kw">not</span> can_run:
+        <span class="fn">print</span>(<span class="s">f"[Dream] Cannot consolidate: {reason}"</span>)
+        <span class="kw">return</span> []
+
+    <span class="fn">print</span>(<span class="s">"[Dream] Starting consolidation..."</span>)
+    self._last_scan_time = time.<span class="fn">time</span>()
+
+    completed_phases = []
+    <span class="kw">for</span> i, phase <span class="kw">in</span> <span class="fn">enumerate</span>(self.PHASE, <span class="hl">1</span>):            <span class="cm"># ② 遍历 4 阶段</span>
+        <span class="fn">print</span>(<span class="s">f"[Dream] phase {i}/4 : {phase}"</span>)
+        completed_phases.append(phase)                      <span class="cm"># ③ 只记录描述文本</span>
+
+    self._last_consolidation_time = time.<span class="fn">time</span>()             <span class="cm"># ④ 更新冷却时间</span>
+    self._release_lock()                                     <span class="cm"># ⑤ 释放锁</span>
+    <span class="kw">return</span> completed_phases</pre>
+
+  <h3>enumerate(self.PHASE, 1) — 为什么加 1？</h3>
+  <p><code>enumerate()</code> 同时获取索引和元素。默认从 0 开始，加 <code>1</code> 后从 1 开始，打印时显示 <code>"phase 1/4"</code>、"phase 2/4"……对人类更自然。</p>
+
+  <table>
+    <tr><th>写法</th><th>输出</th></tr>
+    <tr><td><code>enumerate(PHASE)</code></td><td><code>"phase 0/4: Orient..."</code></td></tr>
+    <tr><td><code>enumerate(PHASE, 1)</code></td><td><code>"phase 1/4: Orient..."</code> ✅</td></tr>
+  </table>
+
+  <div class="callout bug">
+    <strong>Bug 提醒：</strong>L271 中 <code>self.last_scan_time = time.time()</code> 少了一个下划线（应为 <code>self._last_scan_time</code>），导致 Gate 5 的节流逻辑永远失效——因为 <code>should_consolidate()</code> 检查的是 <code>self._last_scan_time</code>，而这个属性从未被更新。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> _acquire_lock / _release_lock — PID 锁机制</h2>
+
+  <h3>代码位置：L274-326</h3>
+
+  <div class="callout green">
+    <strong>一句话：用文件系统做跨进程互斥锁，防止多个进程同时执行合并。锁文件是 .memory/.dream_lock。</strong>
+  </div>
+
+  <h3>锁文件内容格式</h3>
+  <pre><span class="s">"12345:1684567890.123456"</span>
+  ↑pid     ↑时间戳</pre>
+
+  <h3>_acquire_lock() 的完整流程</h3>
+  <div class="diagram">_acquire_lock()
+    │
+    ├── 锁文件不存在？
+    │       └── 写入当前 PID:时间戳 → 返回 True（获取锁成功）
+    │
+    └── 锁文件存在？
+            ├── 读取 PID 和时间戳
+            │
+            ├── 情况 A：锁已过期（&gt;1小时）
+            │       └── 删除旧锁 → 写入新锁 → True
+            │
+            ├── 情况 B：锁持有者还活着
+            │       └── os.kill(pid, 0) 不抛异常 → 返回 False
+            │
+            └── 情况 C：锁文件损坏
+                    └── 捕获异常 → 删除 → 写新锁 → True</div>
+
+  <h3>os.kill(pid, 0) — 为什么不会杀死进程？</h3>
+  <p>这是 Unix/Linux 中最常用的<strong>"探活"技巧</strong>。信号编号 0 是特殊信号 <code>SIGNULL</code>，内核<strong>只做权限检查和进程是否存在检查，不向进程发送任何信号</strong>。</p>
+
+  <pre><span class="kw">try</span>:
+    os.kill(pid, <span class="num">0</span>)      <span class="cm"># 相当于问内核：这个进程还活着吗？</span>
+    <span class="cm"># 没抛异常 → 进程存在</span>
+    <span class="kw">return</span> <span class="hl">False</span>          <span class="cm"># 锁有效，获取失败</span>
+<span class="kw">except</span> <span class="tp">OSError</span>:
+    <span class="cm"># 抛异常 → 进程已死</span>
+    self.lock_file.<span class="fn">unlink</span>()   <span class="cm"># 清理孤儿锁</span></pre>
+
+  <p><code>unlink()</code> 是 Path 对象的删除文件方法。Unix 设计哲学中文件名是指向文件数据的"链接"（link），删除文件就是解除这个链接（unlink）。</p>
+
+  <h3>锁文件是怎么产生的？</h3>
+  <p>锁文件不是"天上掉下来的"，是 <code>_acquire_lock()</code> 方法中写进去的：</p>
+  <pre>self.lock_file.<span class="fn">write_text</span>(<span class="s">f"{os.getpid()}:{time.time()}"</span>)</pre>
+  <p>锁文件的生命周期：<code>_acquire_lock() 写入</code> → 文件存在磁盘 → <code>_release_lock() 删除</code></p>
+
+  <h3>_release_lock() 的安全检查</h3>
+  <pre><span class="kw">if</span> <span class="fn">int</span>(pid_str) == os.<span class="fn">getpid</span>():      <span class="cm"># 只有锁是当前进程的才删除</span>
+    self.lock_file.<span class="fn">unlink</span>()</pre>
+  <p>这个判断防止误删其他进程的锁。只有锁文件中记录的 PID 等于当前进程的 PID 时，才执行删除。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> 全局工具与系统提示词组装</h2>
+
+  <h3>代码位置：L376-482</h3>
+
+  <h3>全局记忆管理器（L376-380）</h3>
+  <pre><span class="cm"># 模块级别创建单例</span>
+memory_mgr = MemoryManager()
+
+<span class="cm"># 适配器函数，统一接口</span>
+<span class="kw">def</span> <span class="fn">run_save_memory</span>(name, description, type, content):
+    <span class="kw">return</span> memory_mgr.<span class="fn">save_memory</span>(name, description, type, content)</pre>
+
+  <p>为什么要有包装函数？让 <code>MemoryManager.save_memory()</code> 的接口和 <code>run_bash</code>、<code>run_read</code> 等工具函数保持一致，方便 <code>TOOL_HANDLERS</code> 统一调用。</p>
+
+  <h3>TOOLS 中的 save_memory 定义（L438-452）</h3>
+  <pre>{
+    <span class="s">"name"</span>: <span class="s">"save_memory"</span>,
+    <span class="s">"description"</span>: <span class="s">"Save a persistent memory that survives across sessions."</span>,
+    <span class="s">"input_schema"</span>: {
+        <span class="s">"properties"</span>: {
+            <span class="s">"type"</span>: {<span class="s">"enum"</span>: [<span class="s">"user"</span>, <span class="s">"feedback"</span>, <span class="s">"project"</span>, <span class="s">"reference"</span>]}
+        },
+        <span class="s">"required"</span>: [<span class="s">"name"</span>, <span class="s">"description"</span>, <span class="s">"type"</span>, <span class="s">"content"</span>]
+    }
+}</pre>
+
+  <p>这段不是给程序看的，是<strong>给 AI 模型看的</strong>。它告诉 AI：有一个叫 <code>save_memory</code> 的工具，接受4个必填参数，其中 <code>type</code> 只能从 4 个枚举值中选一个。</p>
+
+  <h3>MEMORY_GUIDANCE（L455-474）</h3>
+  <p>给 AI 的<strong>行为准则</strong>，告诉它什么时候该存记忆、什么时候不该存：</p>
+
+  <pre><span class="cm"># 该存的时候：</span>
+- 用户说"我喜欢 tab"             → type: user
+- 用户纠正你"不要那样做"          → type: feedback
+- 你发现一个非代码可见的项目约定   → type: project
+- 你知道了一个外部文档 URL        → type: reference
+
+<span class="cm"># 不该存的时候：</span>
+- 能从代码直接看出来的（函数签名、文件结构）
+- 临时任务状态（当前分支、PR 号）
+- 敏感信息（API key、密码）</pre>
+
+  <h3>build_system_prompt()（L476-482）</h3>
+  <pre><span class="kw">def</span> <span class="fn">build_system_prompt</span>() -> <span class="tp">str</span>:
+    parts = [<span class="s">f"You are a coding agent at {WORKDIR}. Use tools to solve tasks."</span>]
+    memory_section = memory_mgr.<span class="fn">load_memory_prompt</span>()
+    <span class="kw">if</span> memory_section:
+        parts.append(memory_section)
+    parts.append(MEMORY_GUIDANCE)
+    <span class="kw">return</span> <span class="s">"\n\n"</span>.<span class="fn">join</span>(parts)</pre>
+
+  <p><strong>为什么每次循环都重新构建？</strong>如果 AI 在这一轮调用了 <code>save_memory</code> 保存了一条新记忆，下一轮构建 system prompt 时就能把这条新记忆包含进去，AI 立即就能"看到"自己刚刚保存的内容。</p>
+
+  <div class="diagram">build_system_prompt()
+    │
+    ├── 基础角色设定
+    │   "You are a coding agent at /home/... Use tools."
+    │
+    ├── 记忆内容（如果有）
+    │   "# Memories (persistent across sessions)"
+    │   "## [user]"
+    │   "### prefer_tabs: ..."
+    │
+    └── 记忆使用指南
+        "When to save memories: ..."
+        "When NOT to save: ..."</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 基础知识点详解</h2>
+
+  <h3>14.1 items() 方法</h3>
+  <p>返回字典中所有 <code>(key, value)</code> 对的视图，用于同时遍历键和值：</p>
+  <pre>d = {<span class="s">"a"</span>: <span class="num">1</span>, <span class="s">"b"</span>: <span class="num">2</span>}
+<span class="kw">for</span> k, v <span class="kw">in</span> d.items():
+    <span class="fn">print</span>(k, v)   <span class="cm"># a 1 \n b 2</span>
+
+<span class="cm"># 不调 items() 只能拿到 key</span>
+<span class="kw">for</span> k <span class="kw">in</span> d:       <span class="cm"># 等价于 for k in d.keys()</span>
+    <span class="fn">print</span>(k)     <span class="cm"># 只能拿到 a, b</span></pre>
+
+  <h3>14.2 list() 函数</h3>
+  <p>把一个<strong>可迭代对象</strong>转成<strong>列表</strong>。因为 <code>glob()</code> 返回的是生成器，只能遍历一次，转成列表后可以反复使用和取下标：</p>
+  <pre>files = <span class="fn">list</span>(self.memory_dir.<span class="fn">glob</span>(<span class="s">"*.md"</span>))
+<span class="fn">print</span>(files[<span class="num">0</span>])    <span class="cm"># 可以取下标 ✅</span>
+<span class="fn">print</span>(<span class="fn">len</span>(files))  <span class="cm"># 可以数个数 ✅</span></pre>
+
+  <h3>14.3 列表推导式 — 过滤而非删除</h3>
+  <pre>memory_files = [f <span class="kw">for</span> f <span class="kw">in</span> memory_files <span class="kw">if</span> f.name != <span class="s">"MEMORY.md"</span>]</pre>
+  <p>这不是在原列表上"删除"元素，而是创建了一个<strong>新列表</strong>，只包含不符合过滤条件的元素。就像用筛子筛面粉——不是把石头从面粉里拿出来，而是让面粉漏下去，石头留在筛子上。</p>
+
+  <h3>14.4 mkdir() 参数详解</h3>
+  <table>
+    <tr><th>写法</th><th>结果</th></tr>
+    <tr><td><code>Path("a/b/c").mkdir()</code></td><td>如果 <code>a/</code> 不存在 → 报错。如果 <code>a/b/c/</code> 已存在 → 报错</td></tr>
+    <tr><td><code>Path("a/b/c").mkdir(parents=True, exist_ok=True)</code></td><td>安全创建，类似 <code>mkdir -p</code>，目录存在也不报错</td></tr>
+  </table>
+
+  <h3>14.5 re.sub() 详解</h3>
+  <p><code>re.sub(pattern, replacement, string)</code> 是正则替换函数。在文件名净化中的应用：</p>
+  <pre>name = <span class="s">"User's Preference!@#"</span>
+<span class="fn">re.sub</span>(<span class="s">r"[^a-zA-Z0-9_-]"</span>, <span class="s">"_"</span>, name.lower())
+<span class="cm"># 结果: "user_s_preference___"</span></pre>
+  <p><code>[^a-zA-Z0-9_-]</code> 中 <code>^</code> 在 <code>[]</code> 里表示"取反"，所以匹配任何<strong>不是</strong>字母、数字、下划线、短横线的字符，替换为下划线。确保生成的文件名在任何操作系统上都合法。</p>
+
+  <h3>14.6 relative_to() 用法</h3>
+  <p>返回路径相对于另一个路径的部分：</p>
+  <pre>file_path = <span class="tp">Path</span>(<span class="s">"/home/user/project/.memory/prefer_tabs.md"</span>)
+file_path.<span class="fn">relative_to</span>(<span class="tp">Path</span>(<span class="s">"/home/user/project"</span>))
+<span class="cm"># 结果: Path(".memory/prefer_tabs.md")</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15 -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> 已识别的 Bug 汇总</h2>
+
+  <table>
+    <tr><th>位置</th><th>问题</th><th>影响</th></tr>
+    <tr><td>L113</td><td><code>load_memory_prompt()</code> 中的 <code>return</code> 位于 <code>for</code> 循环内（<strong>原代码缩进错误</strong>）</td><td>只输出第一个非空类型的记忆后就提前退出，后面的类型不会被展示</td></tr>
+    <tr><td>L167</td><td>拼写 <code>trybcated</code> 应为 <code>truncated</code></td><td>仅在索引截断时显示错误文本</td></tr>
+    <tr><td>L271</td><td><code>self.last_scan_time</code> 应为 <code>self._last_scan_time</code>（少了下划线前缀）</td><td>Gate 5 的节流逻辑永远失效，检查从未更新</td></tr>
+    <tr><td>L245</td><td>Gate 6 报错信息打印了 <code>{self.session_count}</code> 而非 <code>{self.MIN_SESSION_COUNT}</code></td><td>用户看到的错误信息有误导性</td></tr>
+    <tr><td>L220</td><td>拼写 <code>consilidation is disable</code> 应为 <code>consolidation is disabled</code></td><td>仅在报错信息中显示</td></tr>
+    <tr><td>L222</td><td>拼写 <code>director</code> 应为 <code>directory</code></td><td>同上</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16 -->
+<div class="card" id="s16">
+  <h2><span class="num">16</span> s08 → s09 完整对比</h2>
+
+  <h3>总体变化</h3>
+  <table>
+    <tr><th>维度</th><th>s08（Hook 系统）</th><th>s09（记忆系统）</th></tr>
+    <tr><td><strong>核心主题</strong></td><td>扩展性 — 在不修改主循环的前提下注入行为</td><td>持久性 — 跨会话记住重要信息</td></tr>
+    <tr><td><strong>核心新类</strong></td><td><code>HookManager</code></td><td><code>MemoryManager</code> + <code>DreamConsolidator</code></td></tr>
+    <tr><td><strong>代码量</strong></td><td>353 行</td><td>约 550 行</td></tr>
+    <tr><td><strong>工具数量</strong></td><td>4 个（bash/read/write/edit）</td><td>5 个（+ save_memory）</td></tr>
+    <tr><td><strong>System Prompt</strong></td><td>固定常量 <code>SYSTEM</code></td><td>动态 <code>build_system_prompt()</code></td></tr>
+    <tr><td><strong>agent_loop 参数</strong></td><td><code>(messages, hooks)</code></td><td><code>(messages)</code></td></tr>
+    <tr><td><strong>main 提示符</strong></td><td><code>s04 &gt;&gt;</code></td><td><code>s09 &gt;&gt;</code></td></tr>
+  </table>
+
+  <h3>删除的内容</h3>
+  <table>
+    <tr><th>删除的内容</th><th>说明</th></tr>
+    <tr><td><code>HookManager</code> 整个类（~120 行）</td><td>hook 加载、信任检查、事件驱动执行</td></tr>
+    <tr><td><code>HOOK_EVENTS</code> / <code>HOOK_TIMEOUT</code> / <code>TRUST_MARKER</code></td><td>hook 系统专属配置</td></tr>
+    <tr><td><code>agent_loop</code> 中的 PreToolUse / PostToolUse 逻辑</td><td>~30 行的钩子处理代码</td></tr>
+    <tr><td><code>agent_loop</code> 的 <code>hooks</code> 参数</td><td>不再需要传入 HookManager</td></tr>
+    <tr><td><code>__main__</code> 中的 SessionStart 钩子调用</td><td>被 <code>memory_mgr.load_all()</code> 替代</td></tr>
+  </table>
+
+  <h3>新增的内容</h3>
+  <table>
+    <tr><th>新增的内容</th><th>说明</th></tr>
+    <tr><td><code>import re</code></td><td>用于文件名净化和 frontmatter 解析</td></tr>
+    <tr><td>记忆存储常量（<code>MEMORY_DIR</code>、<code>MEMORY_TYPES</code> 等）</td><td>定义存储位置和记忆分类</td></tr>
+    <tr><td><code>MemoryManager</code> 类（~120 行）</td><td>整个记忆系统的核心，7 个方法</td></tr>
+    <tr><td><code>DreamConsolidator</code> 类（~110 行）</td><td>后台记忆整理框架，7 道关卡 + 4 阶段</td></tr>
+    <tr><td><code>run_save_memory()</code> + 全局 <code>memory_mgr</code></td><td>适配器模式，对齐工具调用接口</td></tr>
+    <tr><td><code>save_memory</code> 工具定义</td><td>给 AI 的第 5 个工具，含 JSON schema</td></tr>
+    <tr><td><code>MEMORY_GUIDANCE</code> + <code>build_system_prompt()</code></td><td>动态构建带记忆内容的 system prompt</td></tr>
+    <tr><td><code>run_bash</code> 输出截断 <code>[:50000]</code></td><td>防止超长输出导致 API 失败</td></tr>
+  </table>
+
+  <h3>保留不变的内容</h3>
+  <pre><span class="cm"># 文件头 / 导入</span>
+<span class="kw">import</span> json, os, subprocess
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+<span class="kw">from</span> dotenv <span class="kw">import</span> load_dotenv
+
+<span class="cm"># 环境初始化</span>
+<span class="fn">load_dotenv</span>(override=<span class="hl">True</span>)
+WORKDIR = <span class="tp">Path</span>.<span class="fn">cwd</span>()
+client = <span class="tp">Anthropic</span>(base_url=...)
+MODEL = os.environ[<span class="s">"MODEL_ID"</span>]
+
+<span class="cm"># 4 个基础工具实现</span>
+<span class="fn">safe_path</span>()   <span class="fn">run_bash</span>()   <span class="fn">run_read</span>()   <span class="fn">run_write</span>()   <span class="fn">run_edit</span>()
+
+<span class="cm"># TOOLS 列表骨架 + agent_loop + REPL 主循环</span></pre>
+
+  <div class="callout purple">
+    <strong>一句话总结 s08 → s09：</strong>s08 关注"如何在不改循环的前提下扩展行为"（Hook），s09 关注"如何让 agent 跨会话记住信息"（Memory）。两章的教学目标不同，所以 <code>HookManager</code> 被整个移除，<code>MemoryManager + DreamConsolidator</code> 被整个新增，而基础设施（工具函数、路径安全、TOOLS 列表）保持不变。
+  </div>
+</div>
+
+</div> <!-- /container -->
+
+</body>
+</html>
