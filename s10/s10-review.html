@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s10 System Prompt - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+  .tag.bug  { background: #ffebe9; color: #cf222e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s10 · s10_system_prompt.py 复习笔记</h1>
+  <p class="subtitle">从 s09 到 s10：把 system prompt 从"一段大文本"升级为"组装流水线"</p>
+  <span class="badge">基于 s10_system_prompt.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">整体架构：6段组装流水线</a></li>
+    <li><a href="#s2">__init__ 与 6 个 _build_xxx 方法串讲</a></li>
+    <li><a href="#s3">build() — 总装车间与 DYNAMIC_BOUNDARY</a></li>
+    <li><a href="#s4">meta 字典与 frontmatter 解析</a></li>
+    <li><a href="#s5">partition 与 "k, _, v" 详解</a></li>
+    <li><a href="#s6">Path.cwd() 用法</a></li>
+    <li><a href="#s7">_build_claude_md() 中的 label 和 content</a></li>
+    <li><a href="#s8">datetime.date.today().isoformat()</a></li>
+    <li><a href="#s9">os.uname().sysname</a></li>
+    <li><a href="#s10">build_system_reminder() — 本轮提醒</a></li>
+    <li><a href="#s11">count("\n\n") 段的计量</a></li>
+    <li><a href="#s12">/sections 调试命令</a></li>
+    <li><a href="#s13">System Prompt 的本质：每轮重建</a></li>
+    <li><a href="#s14">静态段缓存的理论</a></li>
+    <li><a href="#s15">s09 → s10 完整变更对比</a></li>
+    <li><a href="#s16">基础知识点汇总</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 整体架构：6段组装流水线</h2>
+
+  <div class="callout green">
+    <strong>核心思想：</strong>system prompt 不是一整块硬编码的字符串，而是由多个独立来源按清晰边界组装而成的"输入流水线"。
+  </div>
+
+  <h3>教学定位</h3>
+  <p>s10 是一个<strong>汇合点</strong>：s05（skills）、s09（memory）都会汇进来。s10 不添加新的独立功能，而是把前几章长出来的功能组织成一份清晰的系统输入。</p>
+
+  <h3>6 段结构总览</h3>
+  <div class="diagram">┌──────────────────────────────────────────────┐
+│  1. 核心指令 (core)         身份 + 行为准则    │
+│  2. 工具列表 (tools)        可用工具清单       │
+│  3. 技能元数据 (skills)     .skills/ 目录      │ ← s05 汇入
+│  4. 持久记忆 (memory)       .memory/ 目录      │ ← s09 汇入
+│  5. CLAUDE.md 指令链        三级规则文件        │
+├──────────────────────────────────────────────┤
+│  === DYNAMIC_BOUNDARY ===                     │  ← 静态/动态分界
+├──────────────────────────────────────────────┤
+│  6. 动态上下文 (dynamic)    日期/目录/模型/平台 │
+└──────────────────────────────────────────────┘</div>
+
+  <h3>为什么不能硬编码成一个大字符串</h3>
+  <ol>
+    <li><strong>不好维护</strong> — 哪段来自哪里？该改哪一部分？</li>
+    <li><strong>不好测试</strong> — 工具说明生成得对不对？memory 是否被正确拼入？</li>
+    <li><strong>不好做缓存</strong> — 稳定内容每轮重新生成浪费 token，临时内容又只该活一轮</li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> __init__ 与 6 个 _build_xxx 方法串讲</h2>
+
+  <h3>__init__ — 初始化（L48-52）</h3>
+  <pre><span class="kw">def</span> <span class="fn">__init__</span>(self, workdir: Path = <span class="tp">None</span>, tools: list = <span class="tp">None</span>):
+    self.workdir = workdir <span class="kw">or</span> WORKDIR     <span class="cm"># 工作目录</span>
+    self.tools = tools <span class="kw">or</span> []              <span class="cm"># 工具列表</span>
+    self.skills_dir = self.workdir / <span class="s">".skills"</span>  <span class="cm"># 技能目录</span>
+    self.memory_dir = self.workdir / <span class="s">".memory"</span>  <span class="cm"># 记忆目录</span></pre>
+
+  <table>
+    <tr><th>属性</th><th>含义</th><th>被谁使用</th></tr>
+    <tr><td><code>self.workdir</code></td><td>agent 在哪个项目里干活</td><td>_build_core, _build_dynamic_context</td></tr>
+    <tr><td><code>self.tools</code></td><td>agent 可用的工具定义列表</td><td>_build_tool_listing</td></tr>
+    <tr><td><code>self.skills_dir</code></td><td>技能元数据目录</td><td>_build_skill_listing</td></tr>
+    <tr><td><code>self.memory_dir</code></td><td>持久化记忆目录</td><td>_build_memory_section</td></tr>
+  </table>
+
+  <h3>方法 1：_build_core() — 核心指令（L54-59）</h3>
+  <pre><span class="kw">def</span> <span class="fn">_build_core</span>(self) -> <span class="tp">str</span>:
+    <span class="kw">return</span> (
+        <span class="s">f"You are a coding agent operating in {self.workdir}.\n"</span>
+        <span class="s">"Use the provided tools to explore, read, write, and edit files.\n"</span>
+        <span class="s">"Always verify before assuming. Prefer reading files over guessing."</span>
+    )</pre>
+
+  <ul>
+    <li>告诉模型：你是谁（coding agent）、在哪（workdir）、怎么干活（用工具验证）</li>
+    <li>这是 prompt 的"宪法层"——所有行为约束的基础</li>
+  </ul>
+
+  <h3>方法 2：_build_tool_listing() — 工具清单（L61-69）</h3>
+  <pre><span class="kw">def</span> <span class="fn">_build_tool_listing</span>(self) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> self.tools:
+        <span class="kw">return</span> <span class="s">""</span>
+    lines = [<span class="s">"# Available Tools"</span>]
+    <span class="kw">for</span> tool <span class="kw">in</span> self.tools:
+        props = tool.<span class="fn">get</span>(<span class="s">"input_schema"</span>, {}).<span class="fn">get</span>(<span class="s">"properties"</span>, {})
+        params = <span class="s">", "</span>.<span class="fn">join</span>(props.keys())
+        lines.append(<span class="s">f"- {tool['name']}({params}): {tool['description']}"</span>)
+    <span class="kw">return</span> <span class="s">"\n"</span>.<span class="fn">join</span>(lines)</pre>
+
+  <ul>
+    <li>把工具列表格式化成 Markdown 列表，让模型知道它能调用什么</li>
+    <li><code>tool.get("input_schema", {}).get("properties", {})</code> 使用链式 <code>get()</code> 防御性地提取参数名，防止 KeyError</li>
+  </ul>
+
+  <h3>方法 3：_build_skill_listing() — 技能元数据（L71-93）</h3>
+  <pre><span class="kw">def</span> <span class="fn">_build_skill_listing</span>(self) -> <span class="tp">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> self.skills_dir.<span class="fn">exists</span>():
+        <span class="kw">return</span> <span class="s">""</span>
+    skills = []
+    <span class="kw">for</span> skill_dir <span class="kw">in</span> <span class="fn">sorted</span>(self.skills_dir.<span class="fn">iterdir</span>()):
+        skill_md = skill_dir / <span class="s">"SKILL.md"</span>
+        <span class="kw">if</span> <span class="kw">not</span> skill_md.<span class="fn">exists</span>():
+            <span class="kw">continue</span>
+        <span class="cm"># ... 解析 frontmatter 提取 name + description ...</span>
+        skills.append(<span class="s">f"- {name}: {desc}"</span>)
+    <span class="kw">return</span> <span class="s">"# Available skills\n"</span> + <span class="s">"\n"</span>.<span class="fn">join</span>(skills)</pre>
+
+  <ul>
+    <li>扫描 <code>.skills/</code> 下每个子目录中的 <code>SKILL.md</code> 文件</li>
+    <li>解析 frontmatter 提取 name 和 description</li>
+    <li>这是 s05（技能系统）的汇入点</li>
+  </ul>
+
+  <h3>方法 4：_build_memory_section() — 持久记忆（L95-121）</h3>
+  <ul>
+    <li>扫描 <code>.memory/</code> 下所有 <code>.md</code> 文件（跳过 <code>MEMORY.md</code> 自身）</li>
+    <li>解析 frontmatter 提取 name, type, description + 正文</li>
+    <li>这是 s09（记忆系统）的汇入点</li>
+    <li>s10 只保留"读"的能力，删除了 s09 的 <code>MemoryManager</code> 类和 <code>save_memory</code> 工具</li>
+  </ul>
+
+  <h3>方法 5：_build_claude_md() — CLAUDE.md 指令链（L123-155）</h3>
+  <p>从三级位置加载 CLAUDE.md（全量包含，不覆盖）：</p>
+  <table>
+    <tr><th>优先级</th><th>路径</th><th>作用</th></tr>
+    <tr><td>1</td><td><code>~/.claude/CLAUDE.md</code></td><td>用户全局偏好（个人编码习惯）</td></tr>
+    <tr><td>2</td><td><code>&lt;project-root&gt;/CLAUDE.md</code></td><td>项目规范（团队约定）</td></tr>
+    <tr><td>3</td><td><code>&lt;current-subdir&gt;/CLAUDE.md</code></td><td>当前模块特殊说明</td></tr>
+  </table>
+
+  <h3>方法 6：_build_dynamic_context() — 动态上下文（L157-165）</h3>
+  <pre><span class="kw">def</span> <span class="fn">_build_dynamic_context</span>(self) -> <span class="tp">str</span>:
+    lines = [
+        <span class="s">f"Current date: {datetime.date.today().isoformat()}"</span>,
+        <span class="s">f"Working directory: {self.workdir}"</span>,
+        <span class="s">f"Model: {MODEL}"</span>,
+        <span class="s">f"Platform: {os.uname().sysname}"</span>,
+    ]
+    <span class="kw">return</span> <span class="s">"# Dynamic Context\n"</span> + <span class="s">"\n"</span>.<span class="fn">join</span>(lines)</pre>
+
+  <ul>
+    <li>每轮都会变化的信息：日期、工作目录、模型名、操作系统</li>
+    <li>无法提前缓存，每次都得重新获取</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> build() — 总装车间与 DYNAMIC_BOUNDARY</h2>
+
+  <h3>代码位置：L167-213</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">build</span>(self) -> <span class="tp">str</span>:
+    sections = []
+
+    core = self._build_core()
+    <span class="kw">if</span> core:
+        sections.append(core)
+
+    tools = self._build_tool_listing()
+    <span class="kw">if</span> tools:
+        sections.append(tools)
+
+    skills = self._build_skill_listing()
+    <span class="kw">if</span> skills:
+        sections.append(skills)
+
+    memory = self._build_memory_section()
+    <span class="kw">if</span> memory:
+        sections.append(memory)
+
+    claude_md = self._build_claude_md()
+    <span class="kw">if</span> claude_md:
+        sections.append(claude_md)
+
+    <span class="cm"># Static/dynamic boundary</span>
+    sections.append(DYNAMIC_BOUNDARY)
+
+    dynamic_context = self._build_dynamic_context()
+    <span class="kw">if</span> dynamic_context:
+        sections.append(dynamic_context)
+
+    <span class="kw">return</span> <span class="s">"\n\n"</span>.<span class="fn">join</span>(sections)</pre>
+
+  <div class="callout purple">
+    <strong>关键理解：</strong>这里的"段"是构造时的逻辑单元（中间产物），不是最终产物的数量。<code>build()</code> 返回的确实是一个完整字符串，但内部的 6 个零件是独立加工的——就像生产一辆车，刹车系统和发动机各自独立制造。
+  </div>
+
+  <h3>DYNAMIC_BOUNDARY 的作用</h3>
+  <pre>DYNAMIC_BOUNDARY = <span class="s">"=== DYNAMIC_BOUNDARY ==="</span></pre>
+
+  <ul>
+    <li>把静态段（1-5）和动态段（6）显式分隔</li>
+    <li>真实 Claude Code 中，静态段可以<strong>跨轮缓存</strong>，只重新构建动态段</li>
+    <li>模型注意力也能利用这个分隔符更好理解"固定规则 vs 实时信息"</li>
+  </ul>
+
+  <div class="callout green">
+    <strong>教学版 vs 生产版：</strong>教学版每轮都全量重建 6 段。生产版只首次构建段 1-5，后续轮次复用缓存，只重新拼段 6，节省约 95%+ token。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> meta 字典与 frontmatter 解析</h2>
+
+  <h3>代码位置：L80-98（_build_skill_listing）和 L103-118（_build_memory_section）</h3>
+
+  <h3>什么是 frontmatter</h3>
+  <p>Markdown 文件头部用 <code>---</code> 包裹的 YAML 风格元数据区域。</p>
+
+  <pre>---
+name: pdf
+description: Generate PDF from markdown or HTML
+version: 1.0
+---
+
+# PDF Skill
+这是技能的实际内容...</pre>
+
+  <h3>meta 里存了什么</h3>
+  <p>解析 frontmatter 得到的键值对字典：</p>
+  <pre>meta = {
+    <span class="s">"name"</span>: <span class="s">"pdf"</span>,          <span class="cm"># 技能/记忆的名称</span>
+    <span class="s">"description"</span>: <span class="s">"Generate PDF from markdown or HTML"</span>,  <span class="cm"># 简要描述</span>
+    <span class="s">"version"</span>: <span class="s">"1.0"</span>       <span class="cm"># 可选的额外字段</span>
+}</pre>
+
+  <h3>两个方法中 frontmatter 正则的差异</h3>
+  <table>
+    <tr><th>方法</th><th>正则表达式</th><th>提取内容</th></tr>
+    <tr><td>_build_skill_listing</td><td><code>r"^---\s*\n(.*?)\n---"</code></td><td>只提取 header 元数据</td></tr>
+    <tr><td>_build_memory_section</td><td><code>r"^---\s*\n(.*?)\n---\s*\n(.*)"</code></td><td>提取 header + body（正文）</td></tr>
+  </table>
+
+  <p>区别：memory 文件需要在 system prompt 里呈现<strong>全文内容</strong>，而 skill 只需要告诉模型"有这个技能"就够了。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> partition 与 "k, _, v" 详解</h2>
+
+  <h3>代码位置：L92-96</h3>
+
+  <pre><span class="kw">for</span> line <span class="kw">in</span> match.group(<span class="num">1</span>).<span class="fn">splitlines</span>():
+    <span class="kw">if</span> <span class="s">":"</span> <span class="kw">in</span> line:
+        k, _, v = line.<span class="fn">partition</span>(<span class="s">":"</span>)
+        meta[k.strip()] = v.strip()</pre>
+
+  <h3>partition 与 split 的区别</h3>
+  <table>
+    <tr><th>方法</th><th>输入</th><th>输出</th></tr>
+    <tr><td><code>"name: pdf: v2".split(":")</code></td><td><code>"name: pdf: v2"</code></td><td><code>["name", " pdf", " v2"]</code>（拆碎了）</td></tr>
+    <tr><td><code>"name: pdf: v2".partition(":")</code></td><td><code>"name: pdf: v2"</code></td><td><code>("name", ":", " pdf: v2")</code>（只切第一刀）</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>为什么用 partition 而不是 split：</strong>description 里很可能包含冒号。用 <code>split</code> 会把内容拆散，而 <code>partition</code> 只切第一个冒号，后面的原封不动留给 value。解析 key-value 首选 partition。
+  </div>
+
+  <h3>_ 是什么？为什么不需要？</h3>
+  <p><code>partition</code> 返回三元组：<code>(左边, 分隔符本身, 右边)</code></p>
+
+  <table>
+    <tr><th>变量</th><th>对应值</th><th>需要吗？</th></tr>
+    <tr><td><code>k</code></td><td><code>"name"</code>（key 名）</td><td>✅</td></tr>
+    <tr><td><code>_</code></td><td><code>":"</code>（分隔符自身）</td><td>❌ 没有信息量</td></tr>
+    <tr><td><code>v</code></td><td><code>" pdf"</code>（value）</td><td>✅</td></tr>
+  </table>
+
+  <p><strong>_ 不是语法关键字</strong>，Python 约定用它表示"丢弃这个值"。也可以写成 <code>k, colon, v</code>，但 <code>colon</code> 变量永远不会被用到，徒增 lint 警告。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> Path.cwd() 用法</h2>
+
+  <h3>代码位置：L147</h3>
+
+  <pre>cwd = Path.cwd()</pre>
+
+  <h3>含义</h3>
+  <p><code>Path.cwd()</code> 是 <code>pathlib</code> 的类方法，返回<strong>当前工作目录</strong>，返回类型是 <code>Path</code> 对象。</p>
+
+  <table>
+    <tr><th>写法</th><th>返回类型</th><th>说明</th></tr>
+    <tr><td><code>os.getcwd()</code></td><td><code>str</code></td><td>老式写法，字符串拼接路径麻烦</td></tr>
+    <tr><td><code>Path.cwd()</code></td><td><code>Path</code></td><td>新式写法，可直接用 <code>/</code> 拼接<br>例：<code>Path.cwd() / "CLAUDE.md"</code></td></tr>
+  </table>
+
+  <h3>在这里的具体用途</h3>
+  <p>判断"当前子目录 ≠ 项目根目录"，如果是，则多检查一级 <code>cwd/CLAUDE.md</code>：</p>
+
+  <pre>cwd = Path.cwd()                        <span class="cm"># 比如 /home/user/project/src</span>
+<span class="kw">if</span> cwd != self.workdir:               <span class="cm"># workdir 是 /home/user/project</span>
+    subdir_claude = cwd / <span class="s">"CLAUDE.md"</span>  <span class="cm"># /home/user/project/src/CLAUDE.md</span>
+    <span class="kw">if</span> subdir_claude.<span class="fn">exists</span>():
+        sources.append(...)</pre>
+
+  <div class="callout">
+    <strong>注意：</strong><code>Path.cwd()</code> 是"真实"的当前目录，而 <code>self.workdir</code> 是用户传给 builder 的目录——两者可能不同（比如用户在子目录下执行命令）。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> _build_claude_md() 中的 label 和 content</h2>
+
+  <h3>代码位置：L158-162</h3>
+
+  <pre>sources = []                                              <span class="cm"># [(label, content), ...]</span>
+
+sources.append((<span class="s">"user global (~/.claude/CLAUDE.md)"</span>,  user_claude.<span class="fn">read_text</span>()))
+<span class="cm">#               ↑ label（来源描述）                        ↑ content（文件原文）</span>
+
+sources.append((<span class="s">"project root (CLAUDE.md)"</span>,          project_claude.<span class="fn">read_text</span>()))
+sources.append((<span class="s">f"subdir ({cwd.name}/CLAUDE.md)"</span>,   subdir_claude.<span class="fn">read_text</span>()))</pre>
+
+  <table>
+    <tr><th>变量</th><th>类型</th><th>含义</th><th>示例</th></tr>
+    <tr><td><code>label</code></td><td><code>str</code></td><td>来源描述（用于生成 <code>## From xxx</code> 标题）</td><td><code>"user global (~/.claude/CLAUDE.md)"</code></td></tr>
+    <tr><td><code>content</code></td><td><code>str</code></td><td>文件的原始内容</td><td><code>"# Project rules\nAlways use type hints..."</code></td></tr>
+  </table>
+
+  <h3>组装后的效果</h3>
+  <pre><span class="cm"># CLAUDE.md instructions</span>
+
+<span class="cm">## From user global (~/.claude/CLAUDE.md)</span>
+你的个人编码习惯...
+
+<span class="cm">## From project root (CLAUDE.md)</span>
+项目规范...</pre>
+
+  <p>三个文件全部包含（不互相覆盖），用 <code>## From xxx</code> 区分来源。这样模型在不同范围有不同层级的规则上下文。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> datetime.date.today().isoformat()</h2>
+
+  <h3>代码位置：L169</h3>
+
+  <pre>f<span class="s">"Current date: {datetime.date.today().isoformat()}"</span></pre>
+
+  <h3>拆解</h3>
+  <pre>import datetime
+
+today = datetime.date.today()       <span class="cm"># 2026-06-15（date 对象）</span>
+today.<span class="fn">isoformat</span>()                  <span class="cm"># "2026-06-15"（字符串）</span></pre>
+
+  <table>
+    <tr><th>代码</th><th>返回类型</th><th>示例值</th></tr>
+    <tr><td><code>datetime.date.today()</code></td><td><code>datetime.date</code></td><td><code>2026-06-15</code></td></tr>
+    <tr><td><code>.isoformat()</code></td><td><code>str</code></td><td><code>"2026-06-15"</code></td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>小知识：</strong>此处 <code>.isoformat()</code> 其实是可省略的。因为 <code>date</code> 对象的 <code>__str__</code> 默认就是 ISO 格式。但显式写出来代码意图更清晰。
+  </div>
+
+  <p><strong>目的：</strong>让模型知道今天的日期。如果用户说"下周二发布"，模型才能算得出来具体是哪天。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> os.uname().sysname</h2>
+
+  <h3>代码位置：L172</h3>
+
+  <pre>f<span class="s">"Platform: {os.uname().sysname}"</span></pre>
+
+  <h3>含义</h3>
+  <p><code>os.uname()</code> 返回一个 named tuple，包含当前操作系统的信息：</p>
+
+  <table>
+    <tr><th>字段</th><th>含义</th><th>Linux 示例</th><th>macOS 示例</th></tr>
+    <tr><td><code>sysname</code></td><td>操作系统名</td><td><code>Linux</code></td><td><code>Darwin</code></td></tr>
+    <tr><td><code>nodename</code></td><td>主机名</td><td><code>my-server</code></td><td><code>MacBook-Pro</code></td></tr>
+    <tr><td><code>release</code></td><td>内核版本</td><td><code>6.8.0</code></td><td><code>24.3.0</code></td></tr>
+    <tr><td><code>version</code></td><td>版本详情</td><td><code>#1 SMP ...</code></td><td><code>Darwin Kernel ...</code></td></tr>
+    <tr><td><code>machine</code></td><td>硬件架构</td><td><code>x86_64</code></td><td><code>arm64</code></td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>注意平台兼容性：</strong><code>os.uname()</code> 在 Windows 上不可用。在 Claude Code 的上下文中 agent 通常只跑在 Linux/macOS 上，所以没问题。如果要跨平台，需要加 fallback。
+  </div>
+
+  <p><strong>目的：</strong>让模型知道自己是跑在 Linux 还是 macOS 上，从而在建议命令（<code>ls</code> vs <code>dir</code>）、路径写法等场景中做出正确的平台判断。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> build_system_reminder() — 本轮提醒</h2>
+
+  <h3>代码位置：L214-227</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">build_system_reminder</span>(extra: str = <span class="tp">None</span>) -> <span class="tp">dict</span>:
+    parts = []
+    <span class="kw">if</span> extra:
+        parts.append(extra)
+    <span class="kw">if</span> <span class="kw">not</span> parts:
+        <span class="kw">return</span> <span class="tp">None</span>
+    content = <span class="s">"&lt;system-reminder&gt;\n"</span> + <span class="s">"\n"</span>.<span class="fn">join</span>(parts) + <span class="s">"\n&lt;/system-reminder&gt;"</span>
+    <span class="kw">return</span> {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: content}</pre>
+
+  <h3>解决了什么问题</h3>
+  <p>有些信息<strong>只在这一轮对话有效</strong>，比如：</p>
+  <ul>
+    <li>"用户刚刚上传了一个文件"</li>
+    <li>"上一步操作出错了"</li>
+    <li>"当前正在处理的文件是 xxx"</li>
+  </ul>
+  <p>如果把这些短命信息也塞进 system prompt，会破坏缓存策略，而且让 prompt 不断膨胀。</p>
+
+  <h3>设计思路</h3>
+  <p>把这些每轮变化的短命信息，伪装成一条 <code>role: "user"</code> 的消息发给模型，而不是混进 system prompt：</p>
+
+  <div class="diagram">系统: [system prompt (稳定)]        ← SystemPromptBuilder.build()
+
+用户: &lt;system-reminder&gt;
+      上一步操作返回了错误，请注意
+      &lt;/system-reminder&gt;
+
+用户: 帮我修复这个问题                ← 用户的实际输入</div>
+
+  <table>
+    <tr><th></th><th>system prompt</th><th>system reminder</th></tr>
+    <tr><td>寿命</td><td>跨轮稳定（可缓存）</td><td>仅本轮有效</td></tr>
+    <tr><td>存放位置</td><td><code>system</code> 参数</td><td><code>user</code> 消息</td></tr>
+    <tr><td>内容</td><td>身份、规则、工具</td><td>临时上下文、变动状态</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>小彩蛋：</strong>函数名 <code>build_system_remider</code> 拼错了，少了个 <code>n</code>，正确应为 <code>build_system_reminder</code>。教学代码里无伤大雅。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> count("\n\n") — 段的计量</h2>
+
+  <h3>代码位置：L378</h3>
+
+  <pre>section_count = full_prompt.<span class="fn">count</span>(<span class="s">"\n\n"</span>)</pre>
+
+  <h3>含义</h3>
+  <p><code>build()</code> 最后用 <code>"\n\n".join(sections)</code> 组装，所以 <code>full_prompt</code> 中的 <code>\n\n</code> 就是段与段之间的分隔符。这段代码统计了<strong>分隔符的个数</strong>。</p>
+
+  <p>n 段之间有 n-1 个分隔符，所以实际段数是 <code>section_count + 1</code>：</p>
+
+  <pre>sections = [<span class="s">"段1"</span>, <span class="s">"段2"</span>, <span class="s">"段3"</span>]
+<span class="s">"\n\n"</span>.<span class="fn">join</span>(sections)  →  <span class="s">"段1\n\n段2\n\n段3"</span>
+<span class="s">"段1\n\n段2\n\n段3"</span>.<span class="fn">count</span>(<span class="s">"\n\n"</span>)  →  <span class="num">2</span>  <span class="cm"># 分隔符个数</span>
+                     <span class="cm"># 实际段数 = 2 + 1 = 3</span></pre>
+
+  <div class="callout">
+    <strong>不是精确计数：</strong>如果段内也有 <code>\n\n</code>，会被重复计入。这里只是用于调试日志的粗略统计，给一个 prompt 规模的量级参考，不是精确的段数计算。
+  </div>
+
+  <p>启动时输出示例：</p>
+  <pre>[System prompt assembled: 2847 chars, ~6 sections]</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> /sections 调试命令</h2>
+
+  <h3>代码位置：L396-401</h3>
+
+  <pre><span class="kw">if</span> query.strip() == <span class="s">"/sections"</span>:
+    prompt = prompt_builder.<span class="fn">build</span>()
+    <span class="kw">for</span> line <span class="kw">in</span> prompt.<span class="fn">splitlines</span>():
+        <span class="kw">if</span> line.<span class="fn">startswith</span>(<span class="s">"# "</span>) <span class="kw">or</span> line == DYNAMIC_BOUNDARY:
+            <span class="fn">print</span>(<span class="s">f"  {line}"</span>)
+    <span class="kw">continue</span></pre>
+
+  <h3>作用</h3>
+  <p>只打印 prompt 中各段的标题，而不是打印全文——相当于 prompt 的<strong>目录视图</strong>：</p>
+
+  <pre>s10 >> /sections
+  # Available Tools
+  # Available skills
+  # Memories (persistent)
+  # CLAUDE.md instructions
+  === DYNAMIC_BOUNDARY ===
+  # Dynamic Context</pre>
+
+  <p>另一个命令 <code>/prompt</code> 打印全文，信息量太大。而 <code>/sections</code> 让你一眼看到 prompt 的骨架结构：有哪些段、顺序对不对、有没有缺漏。</p>
+
+  <table>
+    <tr><th>命令</th><th>作用</th><th>输出量</th></tr>
+    <tr><td><code>/prompt</code></td><td>打印完整 system prompt</td><td>大（全文）</td></tr>
+    <tr><td><code>/sections</code></td><td>只打印段标题</td><td>小（目录）</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> System Prompt 的本质：是每轮重建的"工作环境说明"，不是启动配置</h2>
+
+  <h3>关键理解</h3>
+
+  <div class="callout green">
+    <strong>一句话：</strong>s10 的 system prompt 不是"启动时读一次就完了"的配置，而是<strong>每一轮对话都重新构建</strong>的工作环境说明。
+  </div>
+
+  <p>看 <code>agent_loop</code> 的调用方式：</p>
+
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(messages: list) -> <span class="tp">None</span>:
+    <span class="kw">while</span> <span class="tp">True</span>:
+        system = prompt_builder.<span class="fn">build</span>()      <span class="cm"># ← 每一轮都重新拼</span>
+        response = client.messages.<span class="fn">create</span>(
+            model=MODEL, system=system,      <span class="cm"># ← 每轮都传给模型</span>
+            ...
+        )</pre>
+
+  <h3>更像"每天门口重印的员工手册"</h3>
+  <table>
+    <tr><th>手册内容</th><th>对应段</th><th>每天变吗？</th></tr>
+    <tr><td>"你是本公司员工"</td><td>core — 身份</td><td>❌</td></tr>
+    <tr><td>"公司内部系统目录"</td><td>tools — 工具有哪些</td><td>❌</td></tr>
+    <tr><td>"你有哪些专业证书"</td><td>skills — 高级能力</td><td>❌</td></tr>
+    <tr><td>"项目历史决策"</td><td>memory — 跨会话记忆</td><td>❌</td></tr>
+    <tr><td>"部门守则"</td><td>CLAUDE.md — 指令链</td><td>❌</td></tr>
+    <tr><td>---</td><td>DYNAMIC_BOUNDARY</td><td>---</td></tr>
+    <tr><td>"今天周几、你在哪个工位"</td><td>dynamic — 日期/目录/平台</td><td>✅ 每轮变化</td></tr>
+  </table>
+
+  <h3>三个角色</h3>
+  <table>
+    <tr><th>角色</th><th>内容</th><th>例子</th></tr>
+    <tr><td><strong>身份设定</strong></td><td>告诉模型"你是谁"</td><td><code>You are a coding agent operating in ...</code></td></tr>
+    <tr><td><strong>环境描述</strong></td><td>告诉模型"你现在在哪"</td><td><code>Current date: 2026-06-15</code></td></tr>
+    <tr><td><strong>能力清单</strong></td><td>告诉模型"你能用什么"</td><td>工具列表、skills、记忆、CLAUDE.md 规则</td></tr>
+  </table>
+
+  <p>这个"每轮都重建"的设计保证了：新保存的记忆、新写的 CLAUDE.md、今天的日期，都能在下一轮立即生效。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 静态段缓存的理论</h2>
+
+  <h3>教学版代码自己说了什么</h3>
+
+  <pre><span class="cm"># Static/dynamic boundary</span>
+sections.append(DYNAMIC_BOUNDARY)
+
+<span class="cm"># In real CC, the static prefix is cached across turns to save prompt tokens.</span></pre>
+
+  <p>注释写得明明白白：<strong>真实的 Claude Code 里，静态前缀会被缓存</strong>。教学版没做缓存只是因为"缓存"不是本章的教学目标。</p>
+
+  <h3>教学版 vs 生产版</h3>
+  <table>
+    <tr><th></th><th>教学版 s10</th><th>真实生产版</th></tr>
+    <tr><td>每轮怎么拼</td><td>从头调用 6 个 _build_xxx</td><td>只重新拼段 6（动态部分）</td></tr>
+    <tr><td>段 1-5 怎么处理</td><td>每次都重新构建</td><td>首次构建后<strong>缓存起来</strong></td></tr>
+    <tr><td>每轮传给 API 的 prompt</td><td>[段1-5] ==BOUNDARY== [段6]</td><td>[缓存好的静态段] ==BOUNDARY== [段6]</td></tr>
+    <tr><td>token 开销</td><td>每轮全量</td><td>只有段 6 的变化量（约省 95%+)</td></tr>
+  </table>
+
+  <h3>教学版为什么不做缓存</h3>
+  <p>教学页面明确说：</p>
+  <blockquote>"不要先讲缓存与预算"</blockquote>
+  <p>因为一旦引入缓存，就要处理：</p>
+  <ul>
+    <li>什么时候缓存失效？（<code>.memory/</code> 变了？<code>CLAUDE.md</code> 被修改了？）</li>
+    <li>缓存击穿 / 并发写入怎么办？</li>
+    <li>怎么验证缓存和实时数据一致？</li>
+  </ul>
+  <p>这些是复杂的基础设施问题。s10 的教学边界是：<strong>先把分段的概念立住</strong>。</p>
+
+  <div class="callout green">
+    <strong>你的直觉完全正确：</strong>静态部分（段 1-5）+ 动态边界 + 动态部分（段 6）的拆分，正是为了<strong>静态部分缓存，只有动态部分每轮重建</strong>。这个拆分方式本身，就是 s10 最核心的教学目标。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15 -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> s09 → s10 完整变更对比</h2>
+
+  <h3>总体定位变化</h3>
+  <table>
+    <tr><th></th><th>s09</th><th>s10</th></tr>
+    <tr><td>核心主题</td><td>跨会话记忆系统</td><td>System Prompt 组装流水线</td></tr>
+    <tr><td>一句话</td><td>"记住该记住的"</td><td>"把不同来源按清晰边界拼起来"</td></tr>
+    <tr><td>关键文件</td><td>s09_memory_system.py</td><td>s10_system_prompt.py</td></tr>
+  </table>
+
+  <h3>新增内容</h3>
+  <table>
+    <tr><th>新增</th><th>说明</th><th>原因</th></tr>
+    <tr><td><code>SystemPromptBuilder</code> 类</td><td>6 个独立 _build_xxx 方法 + build() 总装</td><td>替代 s09 的单个 build_system_prompt() 函数</td></tr>
+    <tr><td><code>DYNAMIC_BOUNDARY</code></td><td>静态段和动态段之间的分隔符</td><td>让缓存边界显式化</td></tr>
+    <tr><td><code>build_system_reminder()</code></td><td>构建本轮提醒（role: user）</td><td>短命信息不该混入稳定的 system prompt</td></tr>
+    <tr><td>_build_skill_listing()</td><td>读取 .skills/ 下的 SKILL.md</td><td>s05（技能系统）的汇入点</td></tr>
+    <tr><td>_build_claude_md()</td><td>三级 CLAUDE.md 指令链</td><td>分层指令来源：全局/项目/子目录</td></tr>
+    <tr><td>_build_dynamic_context()</td><td>日期/目录/模型/平台</td><td>每轮变化的运行时环境信息</td></tr>
+    <tr><td>/prompt 和 /sections 命令</td><td>REPL 调试命令</td><td>教学辅助，查看 prompt 结构</td></tr>
+  </table>
+
+  <h3>删除内容</h3>
+  <table>
+    <tr><th>删除</th><th>原来在哪</th><th>原因</th></tr>
+    <tr><td><code>MemoryManager</code> 类</td><td>s09 L56-175</td><td>s10 只读 memory，不负责写入/管理</td></tr>
+    <tr><td><code>DreamConsolidator</code> 类</td><td>s09 L178-326</td><td>进阶特性，和 prompt 组装无关</td></tr>
+    <tr><td><code>save_memory</code> 工具</td><td>s09 TOOLS / TOOL_HANDLERS</td><td>s10 只读不写</td></tr>
+    <tr><td><code>MEMORY_GUIDANCE</code></td><td>s09 L455-462</td><td>对应的 save 功能已删</td></tr>
+  </table>
+
+  <h3>修改内容</h3>
+  <table>
+    <tr><th>特性</th><th>s09</th><th>s10</th></tr>
+    <tr><td>memory 在 prompt 中的位置</td><td>手动拼接</td><td>builder 的一部分，与其他段用 \n\n 分隔</td></tr>
+    <tr><td>memory 格式</td><td>按 type 分组（## [user]）</td><td>不分 type，直接 [type] name: desc\nbody</td></tr>
+    <tr><td>启动时输出</td><td>[Memory loaded: N memories]</td><td>[System prompt assembled: N chars, ~N sections]</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16 -->
+<div class="card" id="s16">
+  <h2><span class="num">16</span> 基础知识点汇总</h2>
+
+  <h3>1. <code>dict.get(key, default)</code> — 防御式取值</h3>
+  <pre>meta.<span class="fn">get</span>(<span class="s">"name"</span>, skill_dir.name)   <span class="cm"># 有 name 就用，没有就用 skill_dir.name 兜底</span></pre>
+  <p>比直接 <code>meta["name"]</code> 安全，不会因 key 不存在而报 KeyError。</p>
+
+  <h3>2. <code>line.partition(":")</code> — 只切第一刀</h3>
+  <pre><span class="s">"name: pdf: v2"</span>.<span class="fn">partition</span>(<span class="s">":"</span>)  →  (<span class="s">"name"</span>, <span class="s">":"</span>, <span class="s">" pdf: v2"</span>)</pre>
+  <p>只切第一个分隔符，后面的原封不动。解析 key-value 的首选，比 split 更安全。</p>
+
+  <h3>3. <code>_</code> — 丢弃变量约定</h3>
+  <p>Python 中用 <code>_</code> 表示"这个位置有值但我明确不需要它"。不是语法关键字，是约定。</p>
+
+  <h3>4. <code>Path.cwd()</code> — 当前工作目录</h3>
+  <p>返回 <code>Path</code> 对象，可直接用 <code>/</code> 拼接路径。替代老式的 <code>os.getcwd()</code>。</p>
+
+  <h3>5. <code>Path.glob("*.md")</code> — 文件模式匹配</h3>
+  <p>类似 shell 的 <code>ls *.md</code>，返回生成器。常用 <code>sorted()</code> 转成排序后的列表。</p>
+
+  <h3>6. <code>Path.stem</code> / <code>Path.name</code> — 文件名操作</h3>
+  <table>
+    <tr><th>属性</th><th>示例（<code>Path("prefer_tabs.md")</code>）</th></tr>
+    <tr><td><code>.name</code></td><td><code>"prefer_tabs.md"</code></td></tr>
+    <tr><td><code>.stem</code></td><td><code>"prefer_tabs"</code></td></tr>
+    <tr><td><code>.suffix</code></td><td><code>".md"</code></td></tr>
+  </table>
+
+  <h3>7. <code>datetime.date.today()</code> — 今天的日期</h3>
+  <p>返回 <code>date</code> 对象，<code>.isoformat()</code> 输出 <code>"YYYY-MM-DD"</code> 格式字符串。</p>
+
+  <h3>8. <code>os.uname()</code> — 系统信息</h3>
+  <p>返回 named tuple：<code>sysname</code>, <code>nodename</code>, <code>release</code>, <code>version</code>, <code>machine</code>。教学版只用 <code>.sysname</code>（Linux / Darwin）。</p>
+
+  <h3>9. <code>"\n\n".join(sections)</code> — 用空行拼接</h3>
+  <p>用两个换行符（即一个空行）把各段拼接起来。反过来 <code>.count("\n\n")</code> 可以统计段间分隔符的数量。</p>
+
+  <h3>10. <code>re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)</code> — frontmatter 正则</h3>
+  <p><code>re.DOTALL</code> 让 <code>.</code> 能匹配换行符。<code>(.*?)</code> 是非贪婪匹配，确保只取第一个 <code>---</code> 之前的内容。<code>\s*</code> 处理前后可能有的空白。</p>
+
+  <hr>
+
+  <div class="callout purple">
+    <strong>一句话记住 s10：</strong>system prompt 的关键不是"写一段很长的话"，而是"把不同来源的信息按清晰边界组装起来"。
+  </div>
+</div>
+
+</div>
+</body>
+</html>
