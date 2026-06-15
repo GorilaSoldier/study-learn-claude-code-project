@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s08 Hook System - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ── header ── */
+  .header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  /* ── toc ── */
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── layout ── */
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  /* ── code ── */
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  /* ── diagram / callout ── */
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s08 · s08_hook_system.py 复习笔记</h1>
+  <p class="subtitle">从 s07 到 s08：不改主循环也能扩展——预留插口模式</p>
+  <span class="badge">基于 s08_hook_system.py 源码 · 问答整理</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">本章核心设计理念</a></li>
+    <li><a href="#s2">常量定义解析</a></li>
+    <li><a href="#s3">HookManager.<strong>init</strong> — 加载配置</a></li>
+    <li><a href="#s4">_check_workspace_trust — 信任机制</a></li>
+    <li><a href="#s5">run_hooks — 核心方法总览</a></li>
+    <li><a href="#s6">run_hooks 内部详解（6 大步）</a></li>
+    <li><a href="#s7">退出码契约详解（0 / 1 / 2）</a></li>
+    <li><a href="#s8">何时调用 Hook？三处调用点</a></li>
+    <li><a href="#s9">agent_loop 完整流程</a></li>
+    <li><a href="#s10">subprocess — 启动子进程</a></li>
+    <li><a href="#s11">ctx 参数的生命周期</a></li>
+    <li><a href="#s12">何谓 Matcher 过滤机制</a></li>
+    <li><a href="#s13">.hooks.json 配置详解</a></li>
+    <li><a href="#s14">Handler vs Hook 对比</a></li>
+    <li><a href="#s15">s07 → s08 完整对比</a></li>
+    <li><a href="#s16">完整运行实例</a></li>
+    <li><a href="#s17">为什么 tool_result 用 role:user</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 本章核心设计理念</h2>
+
+  <div class="callout green">
+    <strong>核心格言：</strong><code>"Extend the agent without touching the loop."</code>
+    <br>—— 扩展 Agent 的行为，而不修改主循环代码。
+  </div>
+
+  <h3>这一章要解决什么问题</h3>
+  <p>到了 s07，我们已经能在工具执行前做权限判断。但很多真实需求并不属于"允许/拒绝"这条线，而属于：</p>
+  <ul>
+    <li>在某个固定时机顺手做一点事</li>
+    <li>不改主循环主体，也能接入额外规则</li>
+    <li>让用户或插件在系统边缘扩展能力</li>
+  </ul>
+  <p>例如：会话开始时打印欢迎信息、工具执行前做一次额外检查、工具执行后补一条审计日志。</p>
+  <p>如果每增加一个需求，你都去修改主循环，主循环就会越来越重，最后谁都不敢动。</p>
+
+  <h3>什么是 Hook</h3>
+  <p>你可以把 Hook 理解成一个<strong>"预留插口"</strong>：</p>
+  <ol>
+    <li>主系统运行到某个固定时机</li>
+    <li>把当前上下文交给 Hook</li>
+    <li>Hook 返回结果</li>
+    <li>主系统根据结果决定下一步怎么继续</li>
+  </ol>
+
+  <div class="callout purple">
+    <strong>最重要的一句话：</strong>Hook 让系统可扩展，但不要求主循环理解每个扩展需求。
+    主循环只需要知道三件事：现在是什么事件、要把哪些上下文交出去、收到结果以后怎么处理。
+  </div>
+
+  <h3>三个核心事件（教学版）</h3>
+  <table>
+    <tr><th>事件</th><th>时机</th><th>作用</th></tr>
+    <tr><td><code>SessionStart</code></td><td>程序启动时，进入主循环之前</td><td>初始化、打印欢迎信息、检查环境</td></tr>
+    <tr><td><code>PreToolUse</code></td><td>工具执行之前</td><td>安全检查、参数修改、阻止执行</td></tr>
+    <tr><td><code>PostToolUse</code></td><td>工具执行之后</td><td>审计日志、结果增强、注入消息</td></tr>
+  </table>
+
+  <h3>教学版退出码统一契约</h3>
+  <table>
+    <tr><th>退出码</th><th>含义</th><th>类比</th></tr>
+    <tr><td><code>0</code></td><td>正常继续</td><td>绿灯——一切正常，继续走</td></tr>
+    <tr><td><code>1</code></td><td>阻止当前动作</td><td>红灯——停下，不许执行</td></tr>
+    <tr><td><code>2</code></td><td>注入一条补充消息，再继续</td><td>黄灯——顺便传递一条消息</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 常量定义解析</h2>
+
+  <h3>代码位置：L42-L48</h3>
+
+  <pre><span class="kw">HOOK_EVENTS</span> = {<span class="s">"PreToolUse"</span>, <span class="s">"PostToolUse"</span>, <span class="s">"SessionStart"</span>}
+<span class="kw">HOOK_TIMEOUT</span> = <span class="num">30</span>
+<span class="kw">TRUST_MARKER</span> = WORKDIR / <span class="s">".claude"</span> / <span class="s">".claude_trusted"</span></pre>
+
+  <table>
+    <tr><th>常量</th><th>类型</th><th>含义</th></tr>
+    <tr><td><code>HOOK_EVENTS</code></td><td><code>set[str]</code></td><td>定义了三个钩子事件：工具使用前、工具使用后、会话开始</td></tr>
+    <tr><td><code>HOOK_TIMEOUT</code></td><td><code>int</code></td><td>每个钩子命令最多执行 30 秒，超时会被杀掉</td></tr>
+    <tr><td><code>TRUST_MARKER</code></td><td><code>Path</code></td><td>工作区信任标记文件路径。钩子只在该文件存在时才执行</td></tr>
+  </table>
+
+  <div class="callout red">
+    <strong>为什么需要信任机制？</strong> 钩子会通过 <code>subprocess.run</code> 执行外部命令。如果工作区被恶意篡改，<code>.hooks.json</code> 可能包含危险命令。
+    信任标记文件确保只有用户主动"信任"的工作区才会执行钩子。
+  </div>
+
+  <p>信任标记文件的完整路径示例：</p>
+  <pre>D:\code\learn-claude-code\.claude\.claude_trusted</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> HookManager.__init__ — 加载配置</h2>
+
+  <h3>代码位置：L56-L70</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">__init__</span>(self, config_path: <span class="tp">Path</span> = <span class="hl">None</span>, sdk_mode: <span class="tp">bool</span> = <span class="hl">False</span>):
+    self.hooks = {<span class="s">"PreToolUse"</span>: [], <span class="s">"PostToolUse"</span>: [], <span class="s">"SessionStart"</span>: []}
+    self._sdk_mode = sdk_mode
+    config_path = config_path <span class="kw">or</span> (WORKDIR / <span class="s">".hooks.json"</span>)
+    <span class="kw">if</span> config_path.exists():
+        <span class="kw">try</span>:
+            config = json.loads(config_path.read_text())
+            <span class="kw">for</span> event <span class="kw">in</span> HOOK_EVENTS:
+                self.hooks[event] = config.get(<span class="s">"hooks"</span>, {}).get(event, [])
+            <span class="fn">print</span>(<span class="s">f"[Hook loaded from {config_path}]"</span>)
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> e:
+            <span class="fn">print</span>(<span class="s">f"[Hook config error: {e}]"</span>)</pre>
+
+  <h3>参数说明</h3>
+  <table>
+    <tr><th>参数</th><th>默认值</th><th>说明</th></tr>
+    <tr><td><code>config_path</code></td><td><code>None</code></td><td>默认为工作目录下的 <code>.hooks.json</code></td></tr>
+    <tr><td><code>sdk_mode</code></td><td><code>False</code></td><td>SDK 模式下信任隐式生效，无需信任标记文件</td></tr>
+  </table>
+
+  <h3>执行流程</h3>
+  <ol>
+    <li><strong>初始化三个空列表</strong>：<code>{"PreToolUse": [], "PostToolUse": [], "SessionStart": []}</code></li>
+    <li><strong>确定配置文件路径</strong>：如果没有传入 <code>config_path</code>，就用 <code>WORKDIR / ".hooks.json"</code></li>
+    <li><strong>检查文件是否存在</strong>：如果不存在，hooks 保持为空列表（什么都不做）</li>
+    <li><strong>读取并解析 JSON</strong>：提取每个事件对应的钩子命令列表</li>
+    <li><strong>容错处理</strong>：任何异常只打印错误，不崩溃程序</li>
+  </ol>
+
+  <div class="callout purple">
+    <strong>设计意图：</strong>.hooks.json 不是必须的。如果不创建，程序正常运行，只是没有任何钩子行为。
+    这体现了"扩展是可选的"设计思路。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> _check_workspace_trust — 信任机制</h2>
+
+  <h3>代码位置：L72-L78</h3>
+
+  <pre><span class="kw">def</span> <span class="fn">_check_workspace_trust</span>(self) -> <span class="tp">bool</span>:
+    <span class="kw">if</span> self._sdk_mode:
+        <span class="kw">return</span> <span class="hl">True</span>
+    <span class="kw">return</span> <span class="tp">TRUST_MARKER</span>.exists()</pre>
+
+  <table>
+    <tr><th>条件</th><th>行为</th></tr>
+    <tr><td><code>self._sdk_mode = True</code></td><td>SDK 模式，信任隐式生效，直接返回 <code>True</code></td></tr>
+    <tr><td>信任标记文件存在</td><td>返回 <code>True</code>，允许执行钩子</td></tr>
+    <tr><td>信任标记文件不存在</td><td>返回 <code>False</code>，拒绝执行任何钩子</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>安全原则：</strong>不信任的工作区，一个钩子都不执行。即使 <code>.hooks.json</code> 存在也不执行。
+    这是双层安全防护：第一层是信任标记，第二层才是钩子配置。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> run_hooks — 核心方法总览</h2>
+
+  <h3>代码位置：L82-L155</h3>
+
+  <div class="callout green">
+    <strong>一句话：</strong>接收一个事件名和上下文，执行所有匹配的钩子脚本，返回阻塞/消息结果。
+  </div>
+
+  <h3>方法签名</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_hooks</span>(self, event: <span class="tp">str</span>, context: <span class="tp">dict</span> = <span class="hl">None</span>) -> <span class="tp">dict</span>:</pre>
+
+  <table>
+    <tr><th>参数</th><th>类型</th><th>含义</th></tr>
+    <tr><td><code>event</code></td><td><code>str</code></td><td>事件名，如 <code>"PreToolUse"</code></td></tr>
+    <tr><td><code>context</code></td><td><code>dict</code></td><td>上下文信息，包含 <code>tool_name</code>、<code>tool_input</code>、<code>tool_output</code>（可选）</td></tr>
+  </table>
+
+  <h3>返回值结构</h3>
+  <pre>{
+    <span class="s">"blocked"</span>: <span class="hl">False</span>,          <span class="cm"># True 表示钩子阻止了执行</span>
+    <span class="s">"messages"</span>: [],             <span class="cm"># 钩子注入的消息列表</span>
+    <span class="cm"># 以下字段只在特定情况下出现:</span>
+    <span class="s">"block_reason"</span>: <span class="s">"..."</span>,     <span class="cm"># 阻止原因（blocked=True 时）</span>
+    <span class="s">"permission_override"</span>: ...  <span class="cm"># 权限决策覆写（JSON stdout 时）</span>
+}</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> run_hooks 内部详解（6 大步）</h2>
+
+  <h3>第 1 步：信任检查</h3>
+  <pre><span class="kw">if</span> <span class="kw">not</span> self._check_workspace_trust():
+    <span class="kw">return</span> result  <span class="cm"># 直接返回空结果，一个钩子都不执行</span></pre>
+
+  <h3>第 2 步：按事件名筛选钩子列表</h3>
+  <pre>hooks = self.hooks.get(event, [])  <span class="cm"># 只拿当前事件的钩子</span></pre>
+
+  <h3>第 3 步：Matcher 过滤</h3>
+  <pre>matcher = hook_def.get(<span class="s">"matcher"</span>)
+<span class="kw">if</span> matcher <span class="kw">and</span> context:
+    tool_name = context.get(<span class="s">"tool_name"</span>, <span class="s">""</span>)
+    <span class="kw">if</span> matcher != <span class="s">"*"</span> <span class="kw">and</span> matcher != tool_name:
+        <span class="kw">continue</span>  <span class="cm"># 不匹配，跳过</span></pre>
+
+  <table>
+    <tr><th>matcher 值</th><th>行为</th></tr>
+    <tr><td>没有 matcher 字段</td><td>不过滤，任何工具都触发</td></tr>
+    <tr><td><code>"*"</code></td><td>通配符，任何工具都触发</td></tr>
+    <tr><td><code>"bash"</code></td><td>只有当前工具名为 <code>"bash"</code> 时才触发</td></tr>
+    <tr><td>其他字符串</td><td>只有精确匹配工具名时才触发</td></tr>
+  </table>
+
+  <h3>第 4 步：构建环境变量</h3>
+  <pre>env = <span class="fn">dict</span>(os.environ)
+<span class="kw">if</span> context:
+    env[<span class="s">"HOOK_EVENT"</span>] = event
+    env[<span class="s">"HOOK_TOOL_NAME"</span>] = context.get(<span class="s">"tool_name"</span>, <span class="s">""</span>)
+    env[<span class="s">"HOOK_TOOL_INPUT"</span>] = <span class="fn">json.dumps</span>(context.get(<span class="s">"tool_input"</span>, {}))[:<span class="num">10000</span>]
+    <span class="kw">if</span> <span class="s">"tool_output"</span> <span class="kw">in</span> context:
+        env[<span class="s">"HOOK_TOOL_OUTPUT"</span>] = <span class="fn">str</span>(context[<span class="s">"tool_output"</span>])[:<span class="num">10000</span>]</pre>
+
+  <table>
+    <tr><th>环境变量</th><th>内容</th><th>长度限制</th></tr>
+    <tr><td><code>HOOK_EVENT</code></td><td>当前事件名</td><td>—</td></tr>
+    <tr><td><code>HOOK_TOOL_NAME</code></td><td>正在调用的工具名</td><td>—</td></tr>
+    <tr><td><code>HOOK_TOOL_INPUT</code></td><td>工具的输入参数（JSON 字符串）</td><td>前 10000 字符</td></tr>
+    <tr><td><code>HOOK_TOOL_OUTPUT</code></td><td>工具的输出结果</td><td>前 10000 字符</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么有长度限制？</strong> 防止超大 JSON 打爆操作系统的环境变量缓冲区。
+    坏数据会被静默截断，但不会让钩子崩溃。
+  </div>
+
+  <h3>第 5 步：执行子进程</h3>
+  <pre>r = subprocess.run(
+    command, <span class="hl">shell=True</span>, cwd=WORKDIR, env=env,
+    <span class="hl">capture_output=True</span>, <span class="hl">text=True</span>, timeout=HOOK_TIMEOUT,
+)</pre>
+
+  <table>
+    <tr><th>参数</th><th>作用</th></tr>
+    <tr><td><code>shell=True</code></td><td>通过系统 Shell 解释执行（支持管道、重定向）</td></tr>
+    <tr><td><code>capture_output=True</code></td><td>捕获 stdout 和 stderr，不打印到终端</td></tr>
+    <tr><td><code>text=True</code></td><td>以字符串（而非 bytes）形式返回输出</td></tr>
+    <tr><td><code>timeout=30</code></td><td>30 秒超时，超时则杀掉进程并抛异常</td></tr>
+    <tr><td><code>cwd=WORKDIR</code></td><td>在工作目录下执行命令</td></tr>
+  </table>
+
+  <h3>第 6 步：异常处理（容错设计）</h3>
+  <pre><span class="kw">except</span> subprocess.TimeoutExpired:
+    <span class="fn">print</span>(<span class="s">f"  [hook:{event}] TIMEOUT ({HOOK_TIMEOUT}s)"</span>)
+<span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> e:
+    <span class="fn">print</span>(<span class="s">f"  [hook:{event}] ERROR: {e}"</span>)</pre>
+
+  <div class="callout green">
+    <strong>健壮性设计：</strong>钩子挂了（超时、异常、命令不存在），主流程不受影响。
+    只打印日志，不抛异常，不崩溃程序。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> 退出码契约详解（0 / 1 / 2）</h2>
+
+  <h3>退出码 0 — 继续执行</h3>
+  <pre><span class="kw">if</span> r.returncode == <span class="num">0</span>:
+    <span class="kw">if</span> r.stdout.strip():
+        <span class="fn">print</span>(<span class="s">f"  [hook:{event}] {r.stdout.strip()[:100]}"</span>)
+    <span class="kw">try</span>:
+        hook_output = <span class="fn">json.loads</span>(r.stdout)
+        <span class="kw">if</span> <span class="s">"updatedInput"</span> <span class="kw">in</span> hook_output:
+            context[<span class="s">"tool_input"</span>] = hook_output[<span class="s">"updatedInput"</span>]
+        <span class="kw">if</span> <span class="s">"additionalContext"</span> <span class="kw">in</span> hook_output:
+            result[<span class="s">"messages"</span>].append(hook_output[<span class="s">"additionalContext"</span>])
+        <span class="kw">if</span> <span class="s">"permissionDecision"</span> <span class="kw">in</span> hook_output:
+            result[<span class="s">"permission_override"</span>] = hook_output[<span class="s">"permissionDecision"</span>]
+    <span class="kw">except</span> (json.JSONDecodeError, TypeError):
+        <span class="kw">pass</span>  <span class="cm"># stdout 不是 JSON —— 普通的简单钩子</span></pre>
+
+  <table>
+    <tr><th>stdout 类型</th><th>行为</th></tr>
+    <tr><td>纯文本</td><td>打印日志，正常继续</td></tr>
+    <tr><td>JSON，包含 <code>updatedInput</code></td><td>修改工具输入参数</td></tr>
+    <tr><td>JSON，包含 <code>additionalContext</code></td><td>注入附加上下文消息给 AI</td></tr>
+    <tr><td>JSON，包含 <code>permissionDecision</code></td><td>覆写权限决策</td></tr>
+  </table>
+
+  <h3>退出码 1 — 阻止执行</h3>
+  <pre><span class="kw">elif</span> r.returncode == <span class="num">1</span>:
+    result[<span class="s">"blocked"</span>] = <span class="hl">True</span>
+    reason = r.stderr.strip() <span class="kw">or</span> <span class="s">"Blocked by hook"</span>
+    result[<span class="s">"block_reason"</span>] = reason
+    <span class="fn">print</span>(<span class="s">f"  [hook:{event}] BLOCKED: {reason[:200]}"</span>)
+    <span class="cm"># 被阻止后，agent_loop 会跳过工具执行</span></pre>
+
+  <h3>退出码 2 — 注入消息</h3>
+  <pre><span class="kw">elif</span> r.returncode == <span class="num">2</span>:
+    msg = r.stderr.strip()
+    <span class="kw">if</span> msg:
+        result[<span class="s">"messages"</span>].append(msg)
+        <span class="fn">print</span>(<span class="s">f"  [hook:{event}] INJECTED: {msg[:200]}"</span>)
+    <span class="cm"># 消息会在工具执行后追加到输出末尾</span></pre>
+
+  <div class="diagram">┌─────────────────────────────────────────────┐
+│  退出码 0 → 继续执行，可选 JSON 修改行为      │
+│  退出码 1 → 阻止工具执行，返回 block_reason   │
+│  退出码 2 → 不阻止，但向 AI 注入一条消息      │
+└─────────────────────────────────────────────┘</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 何时调用 Hook？三处调用点</h2>
+
+  <h3>调用点 ①：SessionStart（L335）</h3>
+  <pre>hooks.<span class="fn">run_hooks</span>(<span class="s">"SessionStart"</span>, {<span class="s">"tool_name"</span>: <span class="s">""</span>, <span class="s">"tool_input"</span>: {}})</pre>
+  <p><strong>时机：</strong>程序刚启动，还没进入主循环。</p>
+
+  <h3>调用点 ②：PreToolUse（L289）</h3>
+  <pre>pre_result = hooks.<span class="fn">run_hooks</span>(<span class="s">"PreToolUse"</span>, ctx)</pre>
+  <p><strong>时机：</strong>AI 返回了 <code>tool_use</code>，但工具<strong>还没执行</strong>。</p>
+  <p>这是最关键的一个调用点——它的结果直接影响是否执行工具：</p>
+
+  <pre><span class="kw">if</span> pre_result.get(<span class="s">"blocked"</span>):
+    <span class="cm"># 跳过工具执行，返回"被阻止"消息给 AI</span>
+    <span class="kw">continue</span>
+
+<span class="cm"># 没被阻止，才去执行工具</span>
+output = handler(<span class="kw">**</span>tool_input)  <span class="cm"># 注意：tool_input 可能已被钩子修改</span></pre>
+
+  <h3>调用点 ③：PostToolUse（L317）</h3>
+  <pre>post_result = hooks.<span class="fn">run_hooks</span>(<span class="s">"PostToolUse"</span>, ctx)</pre>
+  <p><strong>时机：</strong>工具已经执行完毕，但结果<strong>还没返回给 AI</strong>。</p>
+  <p>钩子可以通过 <code>messages</code> 在输出末尾追加内容：</p>
+
+  <pre><span class="kw">for</span> msg <span class="kw">in</span> post_result.get(<span class="s">"messages"</span>, []):
+    output += <span class="s">f"\n[Hook note]: {msg}"</span></pre>
+
+  <div class="callout">
+    <strong>不对称设计：</strong>PreToolUse 的 <code>blocked</code> 会被读取并阻止工具执行。
+    PostToolUse 的 <code>blocked</code> 没有被检查——因为工具已经执行完了，阻止没有意义。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> agent_loop 完整流程</h2>
+
+  <h3>代码位置：L263-L327</h3>
+
+  <div class="diagram">┌──────────────────────────────────────────────────┐
+│  agent_loop(messages, hooks)                     │
+│                                                  │
+│  while True:                                     │
+│    1. 调 Anthropic API（带全部对话历史）           │
+│    2. 追加 AI 回复到 history                      │
+│    3. stop_reason != "tool_use" ?                 │
+│       ├── YES: return（结束本轮）                  │
+│       └── NO: 遍历所有 tool_use blocks            │
+│                                                  │
+│    for each tool_use block:                      │
+│      ┌──────────────────────────────────────┐    │
+│      │  4. PreToolUse 钩子                  │    │
+│      │     如果 blocked → 跳过工具执行       │    │
+│      │     如果有 message → 注入消息结果     │    │
+│      │     没有阻止 → 继续往下              │    │
+│      ├──────────────────────────────────────┤    │
+│      │  5. 执行工具（handler(**tool_input)） │    │
+│      ├──────────────────────────────────────┤    │
+│      │  6. PostToolUse 钩子                │    │
+│      │     如果有 message → 追加到输出末尾   │    │
+│      └──────────────────────────────────────┘    │
+│    7. 所有结果追加到 history（role:user）         │
+│    8. 回到 while True 继续下一轮循环              │
+└──────────────────────────────────────────────────┘</div>
+
+  <h3>关键逻辑：PreToolUse 的阻断</h3>
+  <pre><span class="cm"># -- PreToolUse hooks --</span>
+pre_result = hooks.<span class="fn">run_hooks</span>(<span class="s">"PreToolUse"</span>, ctx)
+
+<span class="cm"># Inject hook messages into results</span>
+<span class="kw">for</span> msg <span class="kw">in</span> pre_result.get(<span class="s">"message"</span>, []):     <span class="cm"># 注意：这里有笔误，应该是 "messages"</span>
+    results.append({...})
+
+<span class="kw">if</span> pre_result.get(<span class="s">"blocked"</span>):
+    results.append({<span class="s">"content"</span>: <span class="s">f"Tool blocked by PreToolUse hook: {reason}"</span>})
+    <span class="kw">continue</span>  <span class="cm">← 跳过后面的工具执行和 PostToolUse</span></pre>
+
+  <h3>主程序入口（L331-L353）</h3>
+  <pre><span class="kw">if</span> __name__ == <span class="s">"__main__"</span>:
+    hooks = <span class="tp">HookManager</span>()                          <span class="cm"># 加载 .hooks.json</span>
+    hooks.<span class="fn">run_hooks</span>(<span class="s">"SessionStart"</span>, ...)             <span class="cm"># 触发 SessionStart</span>
+
+    history = []
+    <span class="kw">while</span> <span class="hl">True</span>:
+        query = <span class="fn">input</span>(<span class="s">"\033[36ms04 >> \033[0m"</span>)         <span class="cm"># 等待用户输入</span>
+        <span class="kw">if</span> query <span class="kw">in</span> (<span class="s">"q"</span>, <span class="s">"exit"</span>, <span class="s">""</span>): <span class="kw">break</span>           <span class="cm"># 退出条件</span>
+
+        history.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: query})
+        <span class="fn">agent_loop</span>(history, hooks)                    <span class="cm"># 进入主循环</span>
+        <span class="cm"># 打印 AI 的最终回复</span>
+        response_content = history[-1][<span class="s">"content"</span>]
+        <span class="kw">if</span> <span class="fn">isinstance</span>(response_content, <span class="tp">list</span>):
+            <span class="kw">for</span> block <span class="kw">in</span> response_content:
+                <span class="kw">if</span> <span class="fn">hasattr</span>(block, <span class="s">"text"</span>):
+                    <span class="fn">print</span>(block.text)</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> subprocess — 启动子进程</h2>
+
+  <h3>代码位置：L116-L119</h3>
+  <pre>r = subprocess.run(
+    command, shell=<span class="hl">True</span>, cwd=WORKDIR, env=env,
+    capture_output=<span class="hl">True</span>, text=<span class="hl">True</span>, timeout=HOOK_TIMEOUT,
+)</pre>
+
+  <div class="callout green">
+    <strong>一句话：</strong><code>subprocess.run</code> 是 Python 标准库中启动"子进程"的函数——
+    在当前 Python 程序之外，另外开一个独立的操作系统进程去执行命令。
+  </div>
+
+  <h3>工作原理</h3>
+  <pre>Python 进程                       操作系统
+┌──────────┐                   ┌──────────┐
+│          │   subprocess       │          │
+│  Hook    │ ────run()──────→  │  子进程  │
+│ Manager  │                   │  (bash)  │
+│          │ ←──结果返回─────  │          │
+└──────────┘                   └──────────┘</pre>
+
+  <h3>各参数详解</h3>
+  <table>
+    <tr><th>参数</th><th>值</th><th>作用</th></tr>
+    <tr><td><code>command</code></td><td>钩子定义的命令字符串</td><td>要执行的命令，如 <code>"echo hello"</code> 或 <code>"python check.py"</code></td></tr>
+    <tr><td><code>shell=True</code></td><td>固定值</td><td>通过 Shell 解释执行。不设的话，命令会被当作可执行文件路径</td></tr>
+    <tr><td><code>capture_output=True</code></td><td>固定值</td><td>把子进程的 stdout/stderr 捕获到内存，不打印到终端</td></tr>
+    <tr><td><code>text=True</code></td><td>固定值</td><td>返回的 stdout/stderr 是普通字符串而非 bytes</td></tr>
+    <tr><td><code>timeout=30</code></td><td>秒数</td><td>子进程最多跑 30 秒，超时杀掉进程并抛出异常</td></tr>
+    <tr><td><code>cwd=WORKDIR</code></td><td>工作目录</td><td>子进程从哪个目录开始运行</td></tr>
+    <tr><td><code>env=env</code></td><td>环境变量字典</td><td>子进程能看到的环境变量（含 <code>HOOK_EVENT</code> 等）</td></tr>
+  </table>
+
+  <h3>返回值 r（CompletedProcess）</h3>
+  <pre>r.returncode  <span class="cm"># 退出码（整数）：0 成功，非 0 失败</span>
+r.stdout      <span class="cm"># 标准输出（字符串）</span>
+r.stderr      <span class="cm"># 标准错误（字符串）</span></pre>
+
+  <div class="callout purple">
+    <strong>退出码契约的实现基础：</strong>钩子系统通过检查 <code>r.returncode</code> 来判断钩子的意图：
+    <code>0 → 继续</code>，<code>1 → 阻止</code>，<code>2 → 注入</code>。
+  </div>
+
+  <h3>vs 其他方式</h3>
+  <table>
+    <tr><th>方式</th><th>问题</th></tr>
+    <tr><td><code>os.system(cmd)</code></td><td>返回退出码，但拿不到 stdout/stderr</td></tr>
+    <tr><td><code>os.popen(cmd)</code></td><td>能读输出，但拿不到退出码，易资源泄漏</td></tr>
+    <tr><td><code>subprocess.run(...)</code></td><td>退出码 + 输出 + 超时 + 环境变量全都能管</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> ctx 参数的生命周期</h2>
+
+  <h3>核心理解：同一个 ctx 对象在不同时间点有不同的状态</h3>
+
+  <pre>L286: ctx = {<span class="s">"tool_name"</span>: block.name, <span class="s">"tool_input"</span>: tool_input}
+                ↑
+         此时工具还没执行，ctx 里只有工具名和输入参数
+                │
+                ▼
+L289: pre_result = hooks.<span class="fn">run_hooks</span>(<span class="s">"PreToolUse"</span>, ctx)
+                │
+                ▼
+        ...执行工具，拿到 output...
+                │
+                ▼
+L316: ctx[<span class="s">"tool_output"</span>] = output    <span class="cm">← 执行完了，追加输出</span>
+                │
+                ▼
+L317: post_result = hooks.<span class="fn">run_hooks</span>(<span class="s">"PostToolUse"</span>, ctx)</pre>
+
+  <table>
+    <tr><th>时间点</th><th>ctx 的内容</th><th>传给谁的</th></tr>
+    <tr><td>L286 刚创建</td><td><code>{tool_name, tool_input}</code></td><td>PreToolUse 钩子</td></tr>
+    <tr><td>L316 追加后</td><td><code>{tool_name, tool_input, tool_output}</code></td><td>PostToolUse 钩子</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么 PreToolUse 不传 tool_output？</strong> 因为工具还没执行，根本没有 output。
+    <br><strong>为什么 PostToolUse 还保留 tool_name 和 tool_input？</strong> 钩子可能也需要知道"这个工具当初是用什么参数调用的"，方便做审计或逻辑判断。
+  </div>
+
+  <p>可以把 <code>ctx</code> 理解成一个<strong>在流程中不断累积信息的通行证</strong>——每个阶段往里面添加上下文，下一个阶段就能用上。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> Matcher 过滤机制</h2>
+
+  <h3>代码位置：L93-L98</h3>
+  <pre>matcher = hook_def.get(<span class="s">"matcher"</span>)
+<span class="kw">if</span> matcher <span class="kw">and</span> context:
+    tool_name = context.get(<span class="s">"tool_name"</span>, <span class="s">""</span>)
+    <span class="kw">if</span> matcher != <span class="s">"*"</span> <span class="kw">and</span> matcher != tool_name:
+        <span class="kw">continue</span>  <span class="cm"># 不匹配，跳过这个钩子</span></pre>
+
+  <div class="callout green">
+    <strong>一句话：</strong>事件名定大方向（PreToolUse / PostToolUse），matcher 定细粒度（只对某个工具生效）。
+    两个合在一起决定了哪个钩子该跑。
+  </div>
+
+  <h3>完整的双层过滤</h3>
+  <div class="diagram">run_hooks("PreToolUse", {"tool_name": "bash", ...})
+           │                │
+           ▼                ▼
+       事件名过滤          工具名过滤（matcher）
+       PreToolUse          只跑 matcher="bash" 或 "*" 的钩子
+       里的钩子             跳过 matcher="write_file" 的钩子</div>
+
+  <h3>一个实际的例子</h3>
+  <p>假设 <code>.hooks.json</code> 中 PreToolUse 配置了 3 个钩子，当前要调用 <code>bash</code> 工具：</p>
+
+  <table>
+    <tr><th>钩子</th><th>matcher</th><th>当前 tool_name</th><th>是否执行？</th></tr>
+    <tr><td><code>{"matcher": "bash", "command": "validate.py"}</code></td><td><code>"bash"</code></td><td><code>"bash"</code></td><td>✅ <code>bash == bash</code> → 执行</td></tr>
+    <tr><td><code>{"matcher": "*", "command": "echo running"}</code></td><td><code>"*"</code></td><td><code>"bash"</code></td><td>✅ 通配符 → 总是执行</td></tr>
+    <tr><td><code>{"matcher": "write_file", "command": "check.py"}</code></td><td><code>"write_file"</code></td><td><code>"bash"</code></td><td>❌ <code>write_file != bash</code> → 跳过</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> .hooks.json 配置详解</h2>
+
+  <div class="callout purple">
+    <strong>来源：</strong>需要<strong>手动创建</strong>。代码里没有自动生成它的逻辑，它由开发者/管理员手工编写。
+    如果文件不存在，程序正常运行，只是 hooks 为空列表，不会执行任何钩子。
+  </div>
+
+  <h3>典型结构</h3>
+  <pre>{
+  <span class="s">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {
+        <span class="s">"matcher"</span>: <span class="s">"bash"</span>,
+        <span class="s">"command"</span>: <span class="s">"python scripts/validate_command.py"</span>
+      },
+      {
+        <span class="s">"matcher"</span>: <span class="s">"*"</span>,
+        <span class="s">"command"</span>: <span class="s">"echo Tool $HOOK_TOOL_NAME is about to run"</span>
+      }
+    ],
+    <span class="s">"PostToolUse"</span>: [
+      {
+        <span class="s">"matcher"</span>: <span class="s">"write_file"</span>,
+        <span class="s">"command"</span>: <span class="s">"python scripts/count_lines.py"</span>
+      }
+    ],
+    <span class="s">"SessionStart"</span>: [
+      {
+        <span class="s">"command"</span>: <span class="s">"echo Session started at $(date)"</span>
+      }
+    ]
+  }
+}</pre>
+
+  <h3>每个钩子定义的字段</h3>
+  <table>
+    <tr><th>字段</th><th>必需</th><th>类型</th><th>说明</th></tr>
+    <tr><td><code>matcher</code></td><td>否</td><td>字符串</td><td>工具名过滤器。<code>"*"</code> 匹配全部，省略则不过滤</td></tr>
+    <tr><td><code>command</code></td><td>是</td><td>字符串</td><td>要执行的命令。通过 <code>subprocess.run</code> 以 shell 方式执行</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>教学用意：</strong>不改 Python 代码，只改一个 JSON 配置文件，就能往 Agent 流程里插入任意行为。
+    这体现的就是"扩展而不修改"的思想。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> Handler vs Hook 对比</h2>
+
+  <div class="callout red">
+    <strong>核心区别：Handler 是给大模型用的"手和脚"；Hook 是给管理员用的"监视器和过滤器"。</strong>
+  </div>
+
+  <table>
+    <tr><th>维度</th><th>工具 Handler（TOOL_HANDLERS）</th><th>钩子（HookManager）</th></tr>
+    <tr><td><strong>谁发起</strong></td><td>大模型</td><td>你（通过 <code>.hooks.json</code> 配置）</td></tr>
+    <tr><td><strong>执行时机</strong></td><td>大模型调用时才执行</td><td>每次工具调用之前/之后自动触发</td></tr>
+    <tr><td><strong>能否阻止工具？</strong></td><td>本身就是工具，不能阻止自己</td><td>可以（退出码 1）</td></tr>
+    <tr><td><strong>能否修改参数？</strong></td><td>接收参数并执行</td><td>可以（JSON stdout 的 <code>updatedInput</code>）</td></tr>
+    <tr><td><strong>能否注入消息？</strong></td><td>只能返回执行结果</td><td>可以（退出码 2 或 JSON 的 <code>additionalContext</code>）</td></tr>
+    <tr><td><strong>定义在哪里？</strong></td><td>Python 代码的 <code>TOOL_HANDLERS</code> 字典</td><td><code>.hooks.json</code> 配置文件</td></tr>
+    <tr><td><strong>修改方式</strong></td><td>改 Python 代码，重启程序</td><td>改 JSON 文件，即时生效</td></tr>
+  </table>
+
+  <h3>一个对比场景</h3>
+  <p>假设你想"禁止 AI 删除文件"：</p>
+
+  <h4>方案 A：改 Handler（改 Python 代码）</h4>
+  <pre><span class="kw">def</span> <span class="fn">run_bash</span>(command):
+    dangerous = [<span class="s">"rm -rf /"</span>, ...]  <span class="cm"># 写在代码里，改规则要改代码</span>
+    <span class="kw">if</span> <span class="fn">any</span>(d <span class="kw">in</span> command <span class="kw">for</span> d <span class="kw">in</span> dangerous):
+        <span class="kw">return</span> <span class="s">"Error: Dangerous command blocked"</span></pre>
+
+  <h4>方案 B：用钩子（改配置文件）</h4>
+  <pre><span class="cm"># .hooks.json 中配置</span>
+{
+  <span class="s">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {<span class="s">"matcher"</span>: <span class="s">"bash"</span>, <span class="s">"command"</span>: <span class="s">"python check_dangerous.py"</span>}
+    ]
+  }
+}
+
+<span class="cm"># check_dangerous.py 完全是一个独立的外部脚本，用任何语言写都行</span></pre>
+
+  <div class="callout purple">
+    <strong>两者各司其职：</strong>Handler 提供能力，Hook 控制能力的使用方式。
+    把 Handler 搬到 Hook 里 = 砍掉了大模型的手臂；只在 Handler 里做限制 = 每次改规则都得改代码。
+    两者并存才是完整的设计。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15 -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> s07 → s08 完整对比</h2>
+
+  <h3>宏观关注点的变化</h3>
+  <table>
+    <tr><th>维度</th><th>s07 权限系统</th><th>s08 Hook 系统</th></tr>
+    <tr><td><strong>核心问题</strong></td><td>安全——谁可以做什么？</td><td>扩展——如何在固定时机插入行为？</td></tr>
+    <tr><td><strong>设计理念</strong></td><td>Safety is a pipeline, not a boolean</td><td>Extend the agent without touching the loop</td></tr>
+    <tr><td><strong>控制者</strong></td><td>用户（交互式审批）</td><td>开发者（配置脚本）</td></tr>
+    <tr><td><strong>扩展方式</strong></td><td>改 Python 规则 / 改模式</td><td>改 <code>.hooks.json</code> + 外部脚本</td></tr>
+  </table>
+
+  <h3>s07 有、s08 删除了的内容</h3>
+  <table>
+    <tr><th>删除的内容</th><th>原因</th></tr>
+    <tr><td><code>BashSecrityValidator</code> 类</td><td>安全检查逻辑移到外部钩子脚本中</td></tr>
+    <tr><td><code>PermissionManager</code> 类</td><td>权限管道（deny→mode→allow→ask）被移除</td></tr>
+    <tr><td><code>is_workspace_trusted()</code> 独立函数</td><td>搬进了 <code>HookManager._check_workspace_trust()</code> 内部</td></tr>
+    <tr><td><code>DEFAULT_RULES</code> / <code>READ_ONLY_TOOLS</code> / <code>WRITE_TOOLS</code></td><td>权限分类常量不再需要</td></tr>
+    <tr><td><code>load_skill</code> 工具</td><td>保持工具集最小化，聚焦 Hook 主题</td></tr>
+    <tr><td><code>/mode</code> 和 <code>/rules</code> 交互命令</td><td>s08 的配置在文件中，不在运行时</td></tr>
+    <tr><td>用户交互审批流程（ask_user）</td><td>钩子脚本自动决策，不再弹窗问用户</td></tr>
+  </table>
+
+  <h3>s08 新增的内容</h3>
+  <table>
+    <tr><th>新增的内容</th><th>说明</th></tr>
+    <tr><td><code>HookManager</code> 类（~100 行）</td><td>从 <code>.hooks.json</code> 读取配置，在正确的事件点执行钩子</td></tr>
+    <tr><td><code>HOOK_EVENTS</code> / <code>HOOK_TIMEOUT</code> / <code>TRUST_MARKER</code></td><td>钩子系统三要素常量</td></tr>
+    <tr><td>退出码契约（0→继续、1→阻止、2→注入）</td><td>统一的进程间通信协议</td></tr>
+    <tr><td>Matcher 过滤机制</td><td>同一事件下，不同工具可有不同钩子行为</td></tr>
+    <tr><td>上下文环境变量传递</td><td><code>HOOK_EVENT</code>、<code>HOOK_TOOL_NAME</code> 等</td></tr>
+    <tr><td>JSON stdout 结构化输出</td><td>支持 <code>updatedInput</code>、<code>additionalContext</code>、<code>permissionDecision</code></td></tr>
+    <tr><td><code>SessionStart</code> 事件</td><td>程序启动时的初始化扩展点</td></tr>
+  </table>
+
+  <h3>保留不变的内容</h3>
+  <pre><span class="cm"># 4 个基础工具实现：</span>
+<span class="fn">safe_path</span>()     <span class="fn">run_bash</span>()     <span class="fn">run_read</span>()     <span class="fn">run_write</span>()     <span class="fn">run_edit</span>()
+
+<span class="cm"># TOOL_HANDLERS 字典 + TOOLS 定义（移除了 load_skill）</span>
+<span class="cm"># import / 环境初始化 / agent_loop 基本骨架</span>
+<span class="cm"># \033[36ms04 >> \033[0m 提示符</span></pre>
+
+  <div class="callout purple">
+    <strong>一句话总结 s07 → s08：</strong>s07 在工具执行前加了一道"安全闸门"（PermissionManager），
+    s08 不仅保留了"执行前"这个检查点，还在"执行后"和"启动时"各加了一个"扩展插口"（Hook），
+    并且把这些插口的行为控制权从 Python 代码交到了外部配置文件手中。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16 -->
+<div class="card" id="s16">
+  <h2><span class="num">16</span> 完整运行实例</h2>
+
+  <h3>场景设定</h3>
+  <p>用户输入：<strong>"帮我看看当前目录有哪些文件"</strong></p>
+
+  <p><code>.hooks.json</code> 配置：</p>
+  <pre>{
+  <span class="s">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {<span class="s">"matcher"</span>: <span class="s">"bash"</span>,       <span class="s">"command"</span>: <span class="s">"echo Before bash"</span>},
+      {<span class="s">"matcher"</span>: <span class="s">"write_file"</span>, <span class="s">"command"</span>: <span class="s">"python -c \"exit(1)\""</span>}
+    ],
+    <span class="s">"PostToolUse"</span>: [
+      {<span class="s">"matcher"</span>: <span class="s">"*"</span>, <span class="s">"command"</span>: <span class="s">"echo After tool: $HOOK_TOOL_NAME"</span>}
+    ],
+    <span class="s">"SessionStart"</span>: [
+      {<span class="s">"command"</span>: <span class="s">"echo Session began"</span>}
+    ]
+  }
+}</pre>
+
+  <h3>完整执行流程</h3>
+
+  <h4>阶段 ①：程序启动</h4>
+  <pre><span class="cm"># HookManager() 加载 .hooks.json</span>
+<span class="cm"># SessionStart 钩子触发</span>
+&gt; [Hook loaded from D:\code\learn-claude-code\.hooks.json]
+&gt; [hook:SessionStart] Session began
+s04 &gt;&gt;  _</pre>
+
+  <h4>阶段 ②：用户输入 + 调 API</h4>
+  <pre>s04 &gt;&gt; 帮我看看当前目录有哪些文件
+
+<span class="cm"># AI 决定调用 bash 工具，API 返回 tool_use</span>
+<span class="cm"># stop_reason = "tool_use" → 进入工具处理流程</span></pre>
+
+  <h4>阶段 ③：PreToolUse 钩子</h4>
+  <pre><span class="cm"># 遍历两个钩子：</span>
+<span class="cm"># 钩子1: matcher="bash", tool_name="bash" → 匹配！执行 echo</span>
+&gt; [hook:PreToolUse] Before bash
+<span class="cm"># 钩子2: matcher="write_file", tool_name="bash" → 不匹配！跳过</span>
+
+<span class="cm"># pre_result = {"blocked": False, "messages": []}</span>
+<span class="cm"># 没有阻止 → 继续执行工具</span></pre>
+
+  <h4>阶段 ④：执行工具</h4>
+  <pre><span class="cm"># handler = TOOL_HANDLERS["bash"] = run_bash</span>
+<span class="cm"># run_bash("ls") 执行真正的 ls 命令</span>
+&gt; bash: file1.txt
+file2.txt
+s08_hook_system.py
+[hook:PostToolUse] After tool: bash
+当前目录有3个文件：file1.txt、file2.txt 和 s08_hook_system.py
+s04 &gt;&gt; _</pre>
+
+  <h3>如果把钩子改成"阻止"模式</h3>
+  <p>把 <code>.hooks.json</code> 改成这样：</p>
+  <pre>{
+  <span class="s">"hooks"</span>: {
+    <span class="s">"PreToolUse"</span>: [
+      {<span class="s">"matcher"</span>: <span class="s">"bash"</span>, <span class="s">"command"</span>: <span class="s">"python -c \"exit(1)\""</span>,
+       <span class="s">"stderr"</span>: <span class="s">"Bash is temporarily disabled"</span>}
+    ]
+  }
+}</pre>
+
+  <p>输出就变成：</p>
+  <pre>[hook:SessionStart] Session began
+s04 &gt;&gt; 帮我看看当前目录有哪些文件
+    [hook:PreToolUse] BLOCKED: Bash is temporarily disabled
+
+<span class="cm"># bash 工具从未执行！ls 命令从未运行过</span>
+<span class="cm"># AI 收到阻止消息，向用户解释：</span>
+Bash工具暂时不可用，我无法执行 ls 命令。请稍后再试。
+s04 &gt;&gt; _</pre>
+
+  <div class="callout red">
+    <strong>这就是钩子系统的全部价值：</strong>不修改任何 Python 代码，只改一个 JSON 文件，
+    就能控制 Agent 的行为——允许、阻止、注入消息。
+    <br>从"AI 想做什么就做什么"变成了"AI 想做什么，先过我配置的钩子再说"。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 17 -->
+<div class="card" id="s17">
+  <h2><span class="num">17</span> 为什么 tool_result 用 role:user</h2>
+
+  <div class="callout green">
+    <strong>一句话：</strong>不是因为"用户说了这句话"，而是因为 Anthropic Messages API 只有 user 和 assistant 两种角色，没有专门的 tool 角色。
+  </div>
+
+  <h3>API 的消息格式</h3>
+  <pre>messages = [
+  {<span class="s">"role"</span>: <span class="s">"user"</span>,      <span class="s">"content"</span>: <span class="s">"帮我看看这个目录"</span>},
+  {<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: [
+    {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">"好的"</span>},
+    {<span class="s">"type"</span>: <span class="s">"tool_use"</span>, <span class="s">"id"</span>: <span class="s">"toolu_abc123"</span>, <span class="s">"name"</span>: <span class="s">"bash"</span>, ...},
+  ]},
+  {<span class="s">"role"</span>: <span class="s">"user"</span>,      <span class="s">"content"</span>: [
+    {<span class="s">"type"</span>: <span class="s">"tool_result"</span>, <span class="s">"tool_use_id"</span>: <span class="s">"toolu_abc123"</span>, <span class="s">"content"</span>: <span class="s">"file1.txt"</span>},
+  ]},
+]</pre>
+
+  <table>
+    <tr><th>角色</th><th>包含的内容</th></tr>
+    <tr><td><code>assistant</code></td><td>AI 说的话 + AI 发起的工具调用（<code>type: "tool_use"</code>）</td></tr>
+    <tr><td><code>user</code></td><td>用户说的话 + 工具执行结果（<code>type: "tool_result"</code>）</td></tr>
+  </table>
+
+  <h3>配对的真正机制</h3>
+  <div class="diagram">配对的不是 role，而是 tool_use_id。
+
+assistant 消息里:
+  tool_use { id: "toolu_abc123", name: "bash", input: {...} }
+                           ↑  id
+                           ┃
+                           ┃  配对依据
+                           ┃
+user 消息里:
+  tool_result { tool_use_id: "toolu_abc123", content: "..." }
+                           ↑  tool_use_id 指向同一个 id</div>
+
+  <p>API 内部做的：</p>
+  <ol>
+    <li>扫描 <code>assistant</code> 角色的消息，找到所有 <code>type: "tool_use"</code> 的 block，拿到它们的 <code>id</code></li>
+    <li>扫描后续 <code>user</code> 角色的消息，找到所有 <code>type: "tool_result"</code> 的 block，拿到它们的 <code>tool_use_id</code></li>
+    <li>通过 <code>id == tool_use_id</code> 来配对</li>
+  </ol>
+
+  <div class="callout purple">
+    理解方式：<code>role: "user"</code> 是"放回执的篮子"，
+    <code>tool_use_id</code> 是"回执上写的订单号"，
+    API 通过订单号找到对应的订单，而不是通过篮子。
+  </div>
+</div>
+
+</div> <!-- /container -->
+
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "bash",
+        "command": "python scripts/check_bash.py",
+        "description": "Bash security validation — checks dangerous patterns via regex"
+      },
+      {
+        "matcher": "*",
+        "command": "python scripts/check_deny.py",
+        "description": "Hard deny rules — blocks rm -rf / and sudo unconditionally"
+      },
+      {
+        "matcher": "*",
+        "command": "python scripts/check_plan.py",
+        "description": "Plan mode enforcer — blocks write operations in plan mode"
+      },
+      {
+        "matcher": "*",
+        "command": "python scripts/check_auto.py",
+        "description": "Auto mode handler — auto-approves read-only tools"
+      }
+    ],
+    "PostToolUse": [],
+    "SessionStart": [
+      {
+        "command": "echo [hook] Session started. Mode: $HOOK_MODE"
+      }
+    ]
+  }
+}
