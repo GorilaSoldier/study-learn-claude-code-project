@@ -45,6 +45,8 @@ HOOK_TIMEOUT = 30
 # Workspace trust marker. Hooks only run if this file exists (or SDK mode).
 TRUST_MARKER = WORKDIR / ".claude" / ".claude_trusted"
 
+MODES = ("default", "plan", "auto")
+
 class HookManager:
     """
     Load and execute hooks from .hooks.json configuration.
@@ -53,9 +55,10 @@ class HookManager:
     - run matching commands for an event
     - aggregate block / message results for the caller
     """
-    def __init__(self, config_path: Path = None, sdk_mode: bool = False):
+    def __init__(self, config_path: Path = None, sdk_mode: bool = False, mode: str = "default"):
         self.hooks = {"PreToolUse": [], "PostToolUse": [], "SessionStart": []}
         self._sdk_mode = sdk_mode
+        self.mode = mode if mode in MODES else "default"
         config_path = config_path or (WORKDIR / ".hooks.json")
         if config_path.exists():
             try:
@@ -105,6 +108,7 @@ class HookManager:
             
             # Build environment with hook context
             env = dict(os.environ)
+            env["HOOK_MODE"] = self.mode
             if context:
                 env["HOOK_EVENT"] = event
                 env["HOOK_TOOL_NAME"] = context.get("tool_name", "")
@@ -329,20 +333,48 @@ def agent_loop(messages: list, hooks: HookManager) -> None:
 
 
 if __name__ == "__main__":
-    hooks = HookManager()
-    
+    # Choose permission mode at startup
+    print("Permission modes: default, plan, auto")
+    mode_input = input("MODE (default): ").strip().lower() or "default"
+    if mode_input not in MODES:
+        mode_input = "default"
+
+    hooks = HookManager(mode=mode_input)
+    print(f"[Permission_mode: {mode_input}]")
+
     # Fire SessionStart hooks
     hooks.run_hooks("SessionStart", {"tool_name": "", "tool_input": {}})
-    
+
     history = []
     while True:
         try:
-            query = input("\033[36ms04 >> \033[0m")
+            query = input("\033[36ms08 >> \033[0m")
         except (EOFError, KeyboardInterrupt):
             break
         if query.strip().lower() in ("q", "exit", ""):
             break
-        
+
+        # /mode command to switch modes at runtime
+        if query.startswith("/mode"):
+            parts = query.split()
+            if len(parts) == 2 and parts[1] in MODES:
+                hooks.mode = parts[1]
+                print(f"[Switched to mode: {parts[1]} mode]")
+            else:
+                print(f"Usage: /mode <{'|'.join(MODES)}>")
+            continue
+
+        # /rules command to show current hook config
+        if query.strip() == "/rules":
+            for event, hook_list in hooks.hooks.items():
+                if hook_list:
+                    print(f" [{event}]")
+                    for i, h in enumerate(hook_list):
+                        cmd = h.get("command", "")
+                        matcher = h.get("matcher", "*")
+                        print(f"   {i}: matcher={matcher} -> {cmd}")
+            continue
+
         history.append({"role": "user", "content": query})
         agent_loop(history, hooks)
         response_content = history[-1]["content"]
