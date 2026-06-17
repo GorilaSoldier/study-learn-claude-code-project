@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s12 Task System - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0f3b5e 0%, #1a5276 50%, #1a6e5c 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+  .tag.bug  { background: #ffebe9; color: #cf222e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s12 · 任务系统（Task System）复习笔记</h1>
+  <p class="subtitle">把"会话里的 todo"升级成"可持久化的任务图"——依赖管理、状态流转、自动解锁</p>
+  <span class="badge">基于问答整理 · 227 LOC · 8 个工具 · 3 层架构</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节概述：为什么需要任务系统？</a></li>
+    <li><a href="#s2">Task 数据结构详解</a></li>
+    <li><a href="#s3">文件持久化：一任务一文件</a></li>
+    <li><a href="#s4">create_task：任务创建与 ID 生成</a></li>
+    <li><a href="#s5">list_tasks：glob + 列表推导式拆解</a></li>
+    <li><a href="#s6">依赖系统：blockedBy 与 can_start</a></li>
+    <li><a href="#s7">claim_task：认领任务的两道检查</a></li>
+    <li><a href="#s8">complete_task：完成 + 级联解锁</a></li>
+    <li><a href="#s9">run_* 包装层：三层架构</a></li>
+    <li><a href="#s10">TOOLS &amp; TOOL_HANDLERS</a></li>
+    <li><a href="#s11">Prompt 组装系统</a></li>
+    <li><a href="#s12">context 与 update_context</a></li>
+    <li><a href="#s13">agent_loop 详解：ReAct 循环</a></li>
+    <li><a href="#s14">主入口 main</a></li>
+    <li><a href="#s15">s12 vs s11 完整对比</a></li>
+    <li><a href="#s16">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节概述：为什么需要任务系统？</h2>
+
+  <h3>核心思路</h3>
+  <p>s03 的 todo 已经能帮 agent 拆解目标，但有两个限制：</p>
+  <ul>
+    <li><strong>不持久</strong>——对话结束就丢，重启后没有任务记录</li>
+    <li><strong>不表达依赖</strong>——不知道谁先谁后、谁等谁</li>
+  </ul>
+  <p>s12 的升级：<strong>把"会话里的 todo"升级为"可持久化的任务图"</strong>。</p>
+
+  <h3>最小心智模型</h3>
+  <p>只要系统能稳定回答以下 4 个问题，最小任务系统就成立了：</p>
+  <ol>
+    <li><strong>现在有哪些任务？</strong> → <code>list_tasks()</code></li>
+    <li><strong>每个任务什么状态？</strong> → <code>Task.status</code>（pending → in_progress → completed）</li>
+    <li><strong>哪些任务被卡住？</strong> → <code>blockedBy</code> 未全部完成</li>
+    <li><strong>哪些任务可以开始？</strong> → <code>can_start()</code> 返回 True</li>
+  </ol>
+
+  <div class="callout green">
+    <strong>记住：</strong>todo 更像本轮计划，task 更像长期工作板。todo 适合会话内快速列步骤，task 适合跨步骤、跨阶段、跨对话地协调工作。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> Task 数据结构详解</h2>
+
+  <h3>代码位置：L55-62</h3>
+  <pre><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="tp">Task</span>:
+    id: <span class="tp">str</span>
+    subject: <span class="tp">str</span>
+    description: <span class="tp">str</span>
+    status: <span class="tp">str</span>          <span class="cm"># pending | in_progress | completed</span>
+    owner: <span class="tp">str</span> | <span class="tp">None</span>    <span class="cm"># Agent name (multi-agent scenarios)</span>
+    blockedBy: <span class="tp">list[str]</span> <span class="cm"># Dependency task IDs</span></pre>
+
+  <h3>逐字段解释</h3>
+  <table>
+    <tr><th>字段</th><th>类型</th><th>含义</th></tr>
+    <tr><td><code>id</code></td><td>str</td><td>任务唯一标识，如 <code>"task_1718600000_0001"</code></td></tr>
+    <tr><td><code>subject</code></td><td>str</td><td>任务标题/一句话摘要</td></tr>
+    <tr><td><code>description</code></td><td>str</td><td>详细描述，默认空字符串</td></tr>
+    <tr><td><code>status</code></td><td>str</td><td>状态：<code>pending</code>（待处理）→ <code>in_progress</code>（进行中）→ <code>completed</code>（已完成）</td></tr>
+    <tr><td><code>owner</code></td><td>str \| None</td><td>责任人，为多 Agent 场景预留。未分配时为 <code>None</code></td></tr>
+    <tr><td><code>blockedBy</code></td><td>list[str]</td><td>依赖列表，存其他任务的 <code>id</code>。当前任务必须等这些依赖全部完成才能开始</td></tr>
+  </table>
+
+  <h3>关于 @dataclass</h3>
+  <p>Python 3.7+ 引入的装饰器，自动生成 <code>__init__</code>、<code>__repr__</code>、<code>__eq__</code> 等方法。没有它的话需要手写：</p>
+  <pre><span class="kw">class</span> <span class="tp">Task</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="hl">self</span>, id, subject, description, status, owner, blockedBy):
+        self.id = id
+        self.subject = subject
+        <span class="cm"># ... 每个字段都要写一遍 ...</span></pre>
+
+  <h3>关于 <code>str | None</code></h3>
+  <p>这是 Python 3.10+ 的类型联合写法（Union Type），等价于 <code>Optional[str]</code>。表示 owner 可以是字符串或 None。</p>
+
+  <div class="callout orange">
+    <strong>关键理解：</strong><code>@dataclass</code> + <code>asdict()</code> 配合使用，可以一键把对象转为字典，方便 JSON 序列化——这是整个持久化机制的基础。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> 文件持久化：一任务一文件</h2>
+
+  <h3>代码位置：L64-78</h3>
+
+  <h3>目录结构</h3>
+  <pre>.tasks/
+    task_1718600000_0001.json
+    task_1718600001_0002.json
+    task_1718600002_8888.json</pre>
+
+  <h3>三个核心函数</h3>
+
+  <h4><code>_task_path(task_id) -> Path</code>（L64-65）</h4>
+  <pre><span class="kw">def</span> <span class="fn">_task_path</span>(task_id: <span class="tp">str</span>) -> <span class="tp">Path</span>:
+    <span class="kw">return</span> TASKS_DIR / f<span class="s">"{task_id}.json"</span></pre>
+  <ul>
+    <li>下划线开头表示<strong>私有函数</strong>，仅在模块内部使用</li>
+    <li>将任务 ID 映射为文件路径：<code>"task_xxx"</code> → <code>".tasks/task_xxx.json"</code></li>
+    <li><code>Path / str</code>：<code>pathlib</code> 的路径拼接操作符，比 <code>os.path.join()</code> 更简洁</li>
+  </ul>
+
+  <h4><code>save_task(task)</code>（L70-71）</h4>
+  <pre><span class="kw">def</span> <span class="fn">save_task</span>(task: <span class="tp">Task</span>):
+    _task_path(task.id).write_text(json.<span class="fn">dumps</span>(<span class="fn">asdict</span>(task), indent=<span class="num">2</span>))</pre>
+  <ul>
+    <li><strong><code>asdict(task)</code></strong>：dataclasses 内置函数，把 Task 对象递归转换为字典</li>
+    <li><strong><code>json.dumps(..., indent=2)</code></strong>：字典 → 带缩进的 JSON 字符串</li>
+    <li><strong><code>Path.write_text()</code></strong>：pathlib 的方法，<strong>自动创建/覆盖文件</strong>，等价于 <code>with open(path, "w") as f: f.write(s)</code></li>
+    <li>如果文件不存在会自动创建（但父目录必须先存在——<code>TASKS_DIR.mkdir(exist_ok=True)</code> 保证这一点）</li>
+  </ul>
+
+  <h4><code>load_task(task_id) -> Task</code>（L73-74）</h4>
+  <pre><span class="kw">def</span> <span class="fn">load_task</span>(task_id: <span class="tp">str</span>) -> <span class="tp">Task</span>:
+    <span class="kw">return</span> Task(<span class="op">**</span>json.<span class="fn">loads</span>(_task_path(task_id).read_text()))</pre>
+  <ul>
+    <li><strong><code>Path.read_text()</code></strong>：读取整个文件为字符串</li>
+    <li><strong><code>json.loads(...)</code></strong>：JSON 字符串 → Python 字典</li>
+    <li><strong><code>Task(**dict)</code></strong>：字典解包为关键字参数，等价于 <code>Task(id=..., subject=..., ...)</code></li>
+  </ul>
+
+  <div class="callout">
+    <strong>设计思路：</strong>一任务一文件的好处——独立读写互不影响，方便调试时手动编辑，删除某个任务不影响其他任务。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> create_task：任务创建与 ID 生成</h2>
+
+  <h3>代码位置：L65-70</h3>
+  <pre><span class="kw">def</span> <span class="fn">create_task</span>(subject: <span class="tp">str</span>, description: <span class="tp">str</span> = <span class="s">""</span>,
+                blockedBy: <span class="tp">list[str]</span> | <span class="tp">None</span> = <span class="tp">None</span>) -> <span class="tp">Task</span>:
+    task = Task(
+        id=f<span class="s">"task_{int(time.time())}_{random.randint(0, 9999):04d}"</span>,
+        subject=subject,
+        description=description,
+        status=<span class="s">"pending"</span>,
+        owner=<span class="tp">None</span>,
+        blockedBy=blockedBy <span class="op">or</span> [],
+    )
+    save_task(task)
+    <span class="kw">return</span> task</pre>
+
+  <h3>ID 生成策略</h3>
+  <pre>id=f<span class="s">"task_{int(time.time())}_{random.randint(0, 9999):04d}"</span></pre>
+  <p>格式：<strong><code>task_时间戳_4位随机数</code></strong></p>
+  <ul>
+    <li><code>int(time.time())</code>：当前 Unix 时间戳（秒级），如 <code>1718600000</code></li>
+    <li><code>random.randint(0, 9999)</code>：0~9999 的随机整数</li>
+    <li><code>:04d</code>：格式化说明符，至少 4 位数字，不足补零。如 <code>42</code> → <code>0042</code></li>
+    <li>组合效果：<strong>同一秒内最多 10000 个不重复 ID</strong>，足以避免碰撞</li>
+  </ul>
+
+  <h3>默认值处理</h3>
+  <pre>blockedBy=blockedBy <span class="op">or</span> []</pre>
+  <p>这是一个常见的 Python 惯用写法：</p>
+  <ul>
+    <li>如果传了 <code>None</code> 或空列表 <code>[]</code>，<code>None or []</code> 或 <code>[] or []</code> 都得到 <code>[]</code></li>
+    <li>如果传了非空列表如 <code>["task_A"]</code>，<code>["task_A"] or []</code> 得到 <code>["task_A"]</code></li>
+    <li>目的是保证 <code>blockedBy</code> 始终是列表，后续 <code>for dep_id in task.blockedBy</code> 不会报错</li>
+  </ul>
+
+  <div class="callout green">
+    <strong>注意：</strong>参数默认值 <code>blockedBy: list[str] | None = None</code> 不能写成 <code>= []</code>，否则所有调用共享同一个列表对象（可变默认参数陷阱）。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> list_tasks：glob + 列表推导式拆解</h2>
+
+  <h3>代码位置：L76-78</h3>
+  <pre><span class="kw">def</span> <span class="fn">list_tasks</span>() -> <span class="tp">list[Task]</span>:
+    <span class="kw">return</span> [Task(<span class="op">**</span>json.<span class="fn">loads</span>(p.read_text()))
+            <span class="kw">for</span> p <span class="kw">in</span> <span class="fn">sorted</span>(TASKS_DIR.glob(<span class="s">"task_*.json"</span>))]</pre>
+
+  <h3>从右往左读</h3>
+
+  <table>
+    <tr><th>步骤</th><th>表达式</th><th>结果</th></tr>
+    <tr><td>1</td><td><code>TASKS_DIR.glob("task_*.json")</code></td><td>匹配所有 <code>task_开头.json结尾</code> 的 Path 迭代器<br>如 <code>[Path(".tasks/task_xxx.json"), ...]</code></td></tr>
+    <tr><td>2</td><td><code>sorted(...)</code></td><td>按文件名（字母序=时间序）排序</td></tr>
+    <tr><td>3</td><td><code>for p in sorted(...)</code></td><td>遍历每个 Path 对象</td></tr>
+    <tr><td>4</td><td><code>p.read_text()</code></td><td>读取文件全部内容 → 字符串（JSON）</td></tr>
+    <tr><td>5</td><td><code>json.loads(...)</code></td><td>JSON 字符串 → Python 字典</td></tr>
+    <tr><td>6</td><td><code>Task(**dict)</code></td><td>字典解包 → Task 对象，如 <code>Task(id="task_xxx", subject="写提纲", ...)</code></td></tr>
+    <tr><td>7</td><td><code>[Task(...) for p in ...]</code></td><td>最终得到一个 Task 对象列表 <code>[Task1, Task2, Task3]</code></td></tr>
+  </table>
+
+  <h3>glob 是什么？</h3>
+  <p><code>Path.glob(pattern)</code> 是 pathlib 的**文件通配匹配**方法：</p>
+  <ul>
+    <li><code>*</code> 匹配任意多个字符（不含路径分隔符）</li>
+    <li><code>?</code> 匹配单个字符</li>
+    <li><code>**</code> 匹配任意层级的子目录</li>
+  </ul>
+  <p><code>TASKS_DIR.glob("task_*.json")</code> 的意思就是："在 <code>.tasks/</code> 目录下，找到所有以 <code>task_</code> 开头、以 <code>.json</code> 结尾的文件"。</p>
+
+  <div class="callout orange">
+    <strong>重要理解：</strong>列表推导式 <code>[expr for x in xs if cond]</code> 是 Python 核心语法。从上表可以逐层拆解它的执行流程。本代码在 L76、L100、L113 三处用了列表推导式，非常值得反复练习。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> 依赖系统：blockedBy 与 can_start</h2>
+
+  <h3>代码位置：L87-94</h3>
+  <pre><span class="kw">def</span> <span class="fn">can_start</span>(task_id: <span class="tp">str</span>) -> <span class="tp">bool</span>:
+    <span class="s">"""Check if all blockedBy dependencies are completed.
+    Missing dependencies are treated as blocked."""</span>
+    task = load_task(task_id)
+    <span class="kw">for</span> dep_id <span class="kw">in</span> task.blockedBy:
+        <span class="kw">if</span> <span class="op">not</span> _task_path(dep_id).exists():
+            <span class="kw">return</span> <span class="tp">False</span>
+        <span class="kw">if</span> load_task(dep_id).status != <span class="s">"completed"</span>:
+            <span class="kw">return</span> <span class="tp">False</span>
+    <span class="kw">return</span> <span class="tp">True</span></pre>
+
+  <h3>两个阻塞条件</h3>
+  <ol>
+    <li><strong>依赖文件不存在</strong> → 阻塞（被删了或从未创建，<code>load_task</code> 会抛 <code>FileNotFoundError</code>，所以先检查文件存在）</li>
+    <li><strong>依赖存在但未完成</strong> → <code>status != "completed"</code> 则阻塞</li>
+  </ol>
+  <p>全部通过才返回 <code>True</code>。</p>
+
+  <h3>状态流转图</h3>
+  <div class="diagram">┌──────────┐   claim_task()   ┌────────────┐   complete_task()   ┌───────────┐
+│  pending  │ ──────────────► │ in_progress │ ─────────────────► │ completed │
+│  (待处理)  │                  │  (进行中)    │                    │  (已完成)   │
+└──────────┘                  └────────────┘                    └───────────┘
+      ▲                              │
+      │  blockedBy 依赖              │  完成时自动检查下游
+      │  全部完成才能认领              │  是否有任务被解除阻塞
+      └──────────────────────────────┘</div>
+
+  <div class="callout purple">
+    <strong>课程核心：</strong><code>is_ready()</code>（即代码中的 <code>can_start()</code>）是本章最关键的一条判断规则。任务系统的核心不是"保存清单"，而是"判断什么时候能开工"。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> claim_task：认领任务的两道检查</h2>
+
+  <h3>代码位置：L96-107</h3>
+  <pre><span class="kw">def</span> <span class="fn">claim_task</span>(task_id: <span class="tp">str</span>, owner: <span class="tp">str</span> = <span class="s">"agent"</span>) -> <span class="tp">str</span>:
+    task = load_task(task_id)
+    <span class="kw">if</span> task.status != <span class="s">"pending"</span>:
+        <span class="kw">return</span> f<span class="s">"Task {task_id} is {task.status}, cannot claim"</span>
+    <span class="kw">if</span> <span class="op">not</span> can_start(task_id):
+        deps = [d <span class="kw">for</span> d <span class="kw">in</span> task.blockedBy
+                           <span class="kw">if</span> <span class="op">not</span> _task_path(d).exists() <span class="op">or</span> load_task(d).status != <span class="s">"completed"</span>]
+        <span class="kw">return</span> f<span class="s">"Blocked by: {deps}"</span>
+    task.owner = owner
+    task.status = <span class="s">"in_progress"</span>
+    save_task(task)
+    <span class="hl">print(f"  \033[36m[claim] {task.subject} → in_progress (owner: {owner})\033[0m")</span>
+    <span class="kw">return</span> f<span class="s">"Claimed {task.id} ({task.subject})"</span></pre>
+
+  <h3>两道检查</h3>
+  <ol>
+    <li><strong>状态检查</strong>：只有 <code>pending</code> 的任务才能被认领。已经是 <code>in_progress</code> 或 <code>completed</code> 的，直接返回错误。</li>
+    <li><strong>依赖检查</strong>：调用 <code>can_start()</code>，如果不满足，额外计算具体被哪些依赖阻塞，一并返回以便下游调试。</li>
+  </ol>
+
+  <h3>deps 列表推导式详解</h3>
+  <pre>deps = [d <span class="kw">for</span> d <span class="kw">in</span> task.blockedBy
+        <span class="kw">if</span> <span class="op">not</span> _task_path(d).exists() <span class="op">or</span> load_task(d).status != <span class="s">"completed"</span>]</pre>
+  <p>等价于：</p>
+  <pre>deps = []
+<span class="kw">for</span> d <span class="kw">in</span> task.blockedBy:            <span class="cm"># 遍历依赖列表</span>
+    <span class="kw">if</span> <span class="op">not</span> _task_path(d).exists():  <span class="cm"># 条件1：文件不存在</span>
+        deps.append(d)
+    <span class="kw">elif</span> load_task(d).status != <span class="s">"completed"</span>:  <span class="cm"># 条件2：存在但没完成</span>
+        deps.append(d)</pre>
+  <p>最终得到的是<strong>阻塞依赖的 ID 列表</strong>，如 <code>["task_A", "task_B"]</code>。</p>
+
+  <h3>关于 \033[36m</h3>
+  <p>这是 ANSI 转义码，用于终端颜色输出：</p>
+  <ul>
+    <li><code>\033[36m</code> — 青色（用于 claim/create 日志）</li>
+    <li><code>\033[32m</code> — 绿色（用于 complete 日志）</li>
+    <li><code>\033[33m</code> — 黄色（用于 unblocked 日志）</li>
+    <li><code>\033[34m</code> — 蓝色（用于 create 日志）</li>
+    <li><code>\033[0m</code> — 重置颜色</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> complete_task：完成 + 级联解锁</h2>
+
+  <h3>代码位置：L109-124</h3>
+  <pre><span class="kw">def</span> <span class="fn">complete_task</span>(task_id: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    task = load_task(task_id)
+    <span class="kw">if</span> task.status != <span class="s">"in_progress"</span>:
+        <span class="kw">return</span> f<span class="s">"Task {task_id} is {task.status}, cannot complete"</span>
+    task.status = <span class="s">"completed"</span>
+    save_task(task)
+    unblocked = [t.subject <span class="kw">for</span> t <span class="kw">in</span> list_tasks()
+                           <span class="kw">if</span> t.status == <span class="s">"pending"</span> <span class="op">and</span> t.blockedBy <span class="op">and</span> can_start(t.id)]
+    print(f<span class="s">"  \033[32m[complete] {task.subject} ✓\033[0m"</span>)
+    msg = f<span class="s">"Completed {task.id} ({task.subject})"</span>
+    <span class="kw">if</span> unblocked:
+        msg += f<span class="s">"\nUnblocked: {', '.join(unblocked)}"</span>
+        print(f<span class="s">"  \033[33m[unblocked] {', '.join(unblocked)}\033[0m"</span>)
+    <span class="kw">return</span> msg</pre>
+
+  <h3>核心逻辑</h3>
+  <ol>
+    <li><strong>状态校验</strong>：只有 <code>in_progress</code> 的任务才能完成</li>
+    <li><strong>保存</strong>：更新状态为 <code>completed</code>，写入磁盘</li>
+    <li><strong>级联解锁</strong>：检查有哪些下游任务因此解除了阻塞</li>
+  </ol>
+
+  <h3>unblocked 列表推导式拆解</h3>
+  <pre>unblocked = [t.subject <span class="kw">for</span> t <span class="kw">in</span> list_tasks()
+             <span class="kw">if</span> t.status == <span class="s">"pending"</span> <span class="op">and</span> t.blockedBy <span class="op">and</span> can_start(t.id)]</pre>
+  <p>三个条件（按 <code>and</code> 短路求值顺序）：</p>
+  <table>
+    <tr><th>条件</th><th>作用</th><th>为什么需要？</th></tr>
+    <tr><td><code>t.status == "pending"</code></td><td>只看还没开始的任务</td><td>已在进行的或已完成的任务不用管</td></tr>
+    <tr><td><code>t.blockedBy</code></td><td>必须有依赖列表（非空）</td><td>空列表是 False，没有依赖的任务本来就能开始，不属于"被解除阻塞"</td></tr>
+    <tr><td><code>can_start(t.id)</code></td><td>检查所有依赖是否全部完成</td><td>当前任务的完成可能让某个依赖全部满足，这个条件就变成 True</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>级联解锁示例：</strong><br>
+    假设 task_A（写提纲）完成后，task_B（写初稿）和 task_C（写摘要）都依赖于 task_A。<br>
+    在 <code>complete_task("task_A")</code> 中，<code>unblocked = ["写初稿", "写摘要"]</code>，然后输出：<br>
+    <code>[complete] 写提纲 ✓</code><br>
+    <code>[unblocked] 写初稿, 写摘要</code>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> run_* 包装层：三层架构</h2>
+
+  <h3>代码位置：L198-233</h3>
+
+  <div class="diagram">┌────────────────────────────────────────────────────┐
+│  Layer 1: LLM 工具入口（run_* 函数）                  │
+│  run_create_task / run_list_tasks /                   │
+│  run_get_task / run_claim_task / run_complete_task    │
+│  职责：格式化输出、终端日志、错误处理                    │
+├────────────────────────────────────────────────────┤
+│  Layer 2: Core 业务逻辑                               │
+│  create_task / list_tasks / get_task /                │
+│  claim_task / complete_task                           │
+│  职责：增删改查、状态机维护、依赖校验                    │
+├────────────────────────────────────────────────────┤
+│  Layer 3: 文件持久化                                   │
+│  save_task / load_task / _task_path                   │
+│  职责：JSON 文件读写                                   │
+└────────────────────────────────────────────────────┘</div>
+
+  <h3>各函数详解</h3>
+
+  <h4><code>run_create_task(subject, description, blockedBy)</code>（L198-204）</h4>
+  <ul>
+    <li>透传给 core 层的 <code>create_task</code></li>
+    <li>拼接可选的 <code>blockedBy</code> 说明文字：<code>', '.join(blockedBy)</code></li>
+    <li>打印蓝色终端日志，返回描述性字符串给 LLM</li>
+  </ul>
+
+  <h4><code>run_list_tasks()</code>（L206-215）</h4>
+  <ul>
+    <li>状态图标映射：<code>pending</code> → ○ / <code>in_progress</code> → ● / <code>completed</code> → ✓</li>
+    <li>条件拼接：依赖说明 <code>(blockedBy: ...)</code> 和责任人 <code>[owner]</code></li>
+    <li>空列表友好提示：<code>"No tasks. Use create_task to add some."</code></li>
+  </ul>
+
+  <h4><code>run_get_task(task_id)</code>（L217-220）</h4>
+  <ul>
+    <li>核心作用：<strong>异常处理包装</strong></li>
+    <li>捕获 <code>FileNotFoundError</code>，返回友好错误消息而非让程序崩溃</li>
+  </ul>
+
+  <h4><code>run_claim_task(task_id)</code>（L222-223）</h4>
+  <ul>
+    <li>固定 <code>owner="agent"</code>，避免 LLM 乱传 owner</li>
+    <li>保留包装层以备将来添加权限检查、审计日志</li>
+  </ul>
+
+  <h4><code>run_complete_task(task_id)</code>（L225-232）</h4>
+  <ul>
+    <li>最简包装，直接透传给 core 层</li>
+    <li>保留包装层是为了<strong>架构一致性</strong></li>
+  </ul>
+
+  <div class="callout">
+    <strong>三层架构的好处：</strong>修改隔离（改格式只改 Layer 1，改业务规则只改 Layer 2）、测试方便（可单独测试 core 层）、可演变（Layer 1 可从简单包装演变为鉴权、限流）。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> TOOLS &amp; TOOL_HANDLERS</h2>
+
+  <h3>代码位置：L234-283</h3>
+
+  <h3>TOOLS——LLM 的工具菜单</h3>
+  <p>符合 Anthropic tool schema 格式的列表，每个工具包含 name、description、input_schema：</p>
+
+  <table>
+    <tr><th>工具名</th><th>描述</th><th>参数</th></tr>
+    <tr><td><code>bash</code></td><td>运行 shell 命令</td><td><code>command</code> (string)</td></tr>
+    <tr><td><code>read_file</code></td><td>读取文件内容</td><td><code>path</code> (string), <code>limit</code> (integer, 可选)</td></tr>
+    <tr><td><code>write_file</code></td><td>写入文件</td><td><code>path</code> (string), <code>content</code> (string)</td></tr>
+    <tr><td><code>create_task</code></td><td>创建任务，支持依赖</td><td><code>subject</code> (string), <code>description</code> (string, 可选), <code>blockedBy</code> (array, 可选)</td></tr>
+    <tr><td><code>list_tasks</code></td><td>列出所有任务</td><td>无参数</td></tr>
+    <tr><td><code>get_task</code></td><td>获取任务详情</td><td><code>task_id</code> (string)</td></tr>
+    <tr><td><code>claim_task</code></td><td>认领 pending 任务</td><td><code>task_id</code> (string)</td></tr>
+    <tr><td><code>complete_task</code></td><td>完成 in_progress 任务，报告解锁</td><td><code>task_id</code> (string)</td></tr>
+  </table>
+
+  <h3>TOOL_HANDLERS——Python 侧的执行映射</h3>
+  <pre>TOOL_HANDLERS = {
+    <span class="s">"bash"</span>: run_bash,
+    <span class="s">"read_file"</span>: run_read,
+    <span class="s">"write_file"</span>: run_write,
+    <span class="s">"create_task"</span>: run_create_task,
+    <span class="s">"list_tasks"</span>: run_list_tasks,
+    <span class="s">"get_task"</span>: run_get_task,
+    <span class="s">"claim_task"</span>: run_claim_task,
+    <span class="s">"complete_task"</span>: run_complete_task,
+}</pre>
+
+  <div class="callout orange">
+    <strong>两者关系：</strong>TOOLS 告诉 LLM "有什么工具可用"，TOOL_HANDLERS 告诉代码"怎么执行这些工具"。一个是对 LLM 的接口契约，一个是对代码的实现映射。
+  </div>
+
+  <h3>与 s11 的差异</h3>
+  <p>s12 的 <code>TOOL_HANDLERS</code> 直接传函数引用（如 <code>"bash": run_bash</code>），而 s11 用了 <code>lambda **kw: run_bash(kw["command"])</code>。原因是 s12 的 <code>run_bash</code> 函数签名直接匹配工具参数名，不需要 lambda 解包。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> Prompt 组装系统</h2>
+
+  <h3>代码位置：L126-159</h3>
+
+  <h3>整体结构</h3>
+  <pre>PROMPT_SECTIONS = {                              <span class="cm"># 模板段落"原材料"</span>
+    <span class="s">"identity"</span>: <span class="s">"You are a coding agent. Act, don't explain."</span>,
+    <span class="s">"tools"</span>: <span class="s">"Available tools: bash, read_file, ..."</span>,
+    <span class="s">"workspace"</span>: f<span class="s">"Working directory: {WORKDIR}"</span>,
+    <span class="s">"memory"</span>: <span class="s">"Relevant memories are injected below when available."</span>,
+}
+
+<span class="kw">def</span> <span class="fn">assemble_system_prompt</span>(context: dict) -> <span class="tp">str</span>:
+    sections = [PROMPT_SECTIONS[<span class="s">"identity"</span>],    <span class="cm"># 1. 身份</span>
+                PROMPT_SECTIONS[<span class="s">"tools"</span>],       <span class="cm"># 2. 工具</span>
+                PROMPT_SECTIONS[<span class="s">"workspace"</span>]]   <span class="cm"># 3. 工作目录</span>
+    memories = context.get(<span class="s">"memories"</span>, <span class="s">""</span>)       <span class="cm"># 4. 长期记忆（条件添加）</span>
+    <span class="kw">if</span> memories:
+        sections.append(f<span class="s">"Relevant memories:\n{memories}"</span>)
+    <span class="kw">return</span> <span class="s">"\n\n"</span>.join(sections)               <span class="cm"># 用两个换行符拼接各段</span></pre>
+
+  <h3>为什么这样设计？</h3>
+  <ul>
+    <li><strong>分片段存储</strong>：各段独立，改一段不影响其他段</li>
+    <li><strong>条件组装</strong>：<code>memory</code> 只在有内容时才拼入</li>
+    <li><strong><code>"分隔符".join(列表)</code></strong>：用空行分隔段落，LLM 更容易区分不同部分</li>
+  </ul>
+
+  <h3>缓存机制</h3>
+  <pre>_last_context_key, _last_prompt = <span class="tp">None</span>, <span class="tp">None</span>
+
+<span class="kw">def</span> <span class="fn">get_system_prompt</span>(context: dict) -> <span class="tp">str</span>:
+    <span class="kw">global</span> _last_context_key, _last_prompt
+    key = json.<span class="fn">dumps</span>(context, sort_keys=<span class="tp">True</span>,
+                      ensure_ascii=<span class="tp">False</span>, default=<span class="tp">str</span>)
+    <span class="kw">if</span> key == _last_context_key <span class="op">and</span> _last_prompt:
+        <span class="kw">return</span> _last_prompt                 <span class="cm"># 缓存命中，跳过组装</span>
+    _last_context_key = key
+    _last_prompt = assemble_system_prompt(context)
+    <span class="kw">return</span> _last_prompt</pre>
+
+  <table>
+    <tr><th>参数</th><th>作用</th></tr>
+    <tr><td><code>sort_keys=True</code></td><td>字典键排序，保证同样内容生成同样的键</td></tr>
+    <tr><td><code>ensure_ascii=False</code></td><td>中文等非 ASCII 字符不转义</td></tr>
+    <tr><td><code>default=str</code></td><td>不可序列化的类型（如 Path）强转字符串</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么需要缓存？</strong>每一轮对话都要传 system prompt 给 LLM，但 <code>context</code> 可能很久不变。每次都重新组装和 JSON 序列化是浪费的。缓存通过比较 <code>context</code> 的 JSON 指纹来避免重复工作。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> context 与 update_context</h2>
+
+  <h3>代码位置：L287-298</h3>
+  <pre><span class="kw">def</span> <span class="fn">update_context</span>(context: dict, messages: list) -> dict:
+    <span class="s">"""Derive context from real state."""</span>
+    memories = <span class="s">""</span>
+    <span class="kw">if</span> MEMORY_INDEX.exists():
+        content = MEMORY_INDEX.read_text().strip()
+        <span class="kw">if</span> content:
+            memories = content
+    <span class="kw">return</span> {
+        <span class="s">"enabled_tools"</span>: list(TOOL_HANDLERS.keys()),
+        <span class="s">"workspace"</span>: str(WORKDIR),
+        <span class="s">"memories"</span>: memories
+    }</pre>
+
+  <h3>context 是什么？</h3>
+  <p><code>context</code> 是一个只有 <strong>3 个键</strong>的小字典，不是"全部上下文"：</p>
+  <table>
+    <tr><th>字段</th><th>来源</th><th>作用</th></tr>
+    <tr><td><code>enabled_tools</code></td><td><code>TOOL_HANDLERS.keys()</code></td><td>告诉 LLM 当前可用工具列表</td></tr>
+    <tr><td><code>workspace</code></td><td><code>str(WORKDIR)</code></td><td>工作目录路径</td></tr>
+    <tr><td><code>memories</code></td><td><code>.memory/MEMORY.md</code> 文件</td><td>长期记忆内容</td></tr>
+  </table>
+
+  <h3>context 不是"全部上下文"</h3>
+  <p>整个程序运行中的信息分成了三块：</p>
+
+  <div class="diagram">┌───────────────────────────────────────────────────────┐
+│                  程序运行的"全貌"                        │
+│                                                       │
+│  context（字典）         messages（列表）      tools（映射表）│
+│  ┌──────────────┐     ┌──────────────┐     ┌─────────┐ │
+│  │ enabled_tools│     │ {"role":     │     │ bash →  │ │
+│  │ workspace    │     │  "user",     │     │   函数   │ │
+│  │ memories     │     │  "content":  │     │ read →  │ │
+│  └──────────────┘     │  "你好..."}  │     │   函数   │ │
+│         │             │ {"role":     │     │ ...     │ │
+│         │             │  "assistant",│     └─────────┘ │
+│         ▼             │  "content":  │                 │
+│  传给 system 参数      │  "..."}     │                 │
+│                       └──────────────┘                 │
+│                              │                         │
+│                        传给 messages 参数               │
+└───────────────────────────────────────────────────────┘</div>
+
+  <ul>
+    <li><strong>context</strong> → 注入 system prompt 的"静态背景知识"</li>
+    <li><strong>messages</strong> → 对话历史，传给 API 的 <code>messages</code> 参数</li>
+    <li><strong>TOOL_HANDLERS</strong> → 工具名到函数的映射，由路由代码使用</li>
+  </ul>
+
+  <h3>memories 的来源</h3>
+  <p><code>memories</code> 来自文件 <code>.memory/MEMORY.md</code>（如果存在的话）。<code>update_context</code> 每次被调用时都<strong>重新读取这个文件</strong>。</p>
+
+  <div class="callout red">
+    <strong>半成品状态：</strong>目前代码只有"读取 MEMORY.md"的逻辑，没有任何地方<strong>写入</strong>这个文件。所以 <code>memories</code> 的读取基础设施已就位，但写入功能尚未实现。如果有人手动创建 <code>.memory/MEMORY.md</code> 并写入内容，系统能正确读取并拼入 prompt。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> agent_loop 详解：ReAct 循环</h2>
+
+  <h3>代码位置：L302-341</h3>
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(messages: list, context: dict) -> <span class="tp">None</span>:
+    system = get_system_prompt(context)       <span class="cm"># [A] 进入循环前组装 system</span>
+    <span class="kw">while</span> <span class="tp">True</span>:                               <span class="cm"># [B] 直到 LLM 不再调工具</span>
+        <span class="kw">try</span>:
+            response = client.messages.create(  <span class="cm"># [C] 调用 LLM API</span>
+                model=MODEL, system=system, messages=messages,
+                tools=TOOLS, max_tokens=<span class="num">8000</span>)
+        <span class="kw">except</span> Exception <span class="kw">as</span> e:
+            messages.append({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: [
+                {<span class="s">"type"</span>: <span class="s">"text"</span>,
+                 <span class="s">"text"</span>: f<span class="s">"[Error] {type(e).__name__}: {e}"</span>}]})
+            <span class="kw">return</span>                            <span class="cm"># [D] 出错返回</span>
+
+        messages.append({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: response.content})  <span class="cm"># [E]</span>
+        <span class="kw">if</span> response.stop_reason != <span class="s">"tool_use"</span>:
+            <span class="kw">return</span>                            <span class="cm"># [F] end_turn → 正常退出</span>
+
+        <span class="cm"># -- Process tool calls --</span>
+        results = []
+        <span class="kw">for</span> block <span class="kw">in</span> response.content:
+            <span class="kw">if</span> block.type != <span class="s">"tool_use"</span>:
+                <span class="kw">continue</span>                       <span class="cm"># [G1] 跳过文本块</span>
+            print(f<span class="s">"\033[36m> {block.name}\033[0m"</span>)
+            handler = TOOL_HANDLERS.get(block.name)       <span class="cm"># [G2] 查找处理函数</span>
+
+            <span class="kw">try</span>:
+                output = handler(<span class="op">**</span>(block.input <span class="op">or</span> {})) <span class="kw">if</span> handler <span class="kw">else</span> f<span class="s">"Unknown: {block.name}"</span>
+            <span class="kw">except</span> Exception <span class="kw">as</span> e:
+                output = f<span class="s">"Error: {e}"</span>                 <span class="cm"># [G3] 工具内异常不崩溃</span>
+
+            results.append({
+                <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+                <span class="s">"tool_use_id"</span>: block.id,
+                <span class="s">"content"</span>: str(output),
+            })                                          <span class="cm"># [G4] 构建 tool_result</span>
+
+        messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})  <span class="cm"># [H] 工具结果放回</span>
+        context = update_context(context, messages)            <span class="cm"># [I] 更新 context</span>
+        system = get_system_prompt(context)                    <span class="cm"># [J] 重新组装 system</span></pre>
+
+  <h3>完整执行流程</h3>
+
+  <div class="diagram">┌──────────────┐
+│ 组装 system  │  ← [A] 进入循环前
+└──────┬───────┘
+       ▼
+┌──────────────┐     stop_reason     ┌────────────────┐
+│  调用 LLM    │ ──── "end_turn" ──► │  退出循环，返回  │
+│    API       │                     └────────────────┘
+└──────┬───────┘
+       │ stop_reason = "tool_use"
+       ▼
+┌──────────────┐
+│ 执行所有工具  │  ← 可能有多个 tool_use 块
+│  (可能多个)   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ 结果放回消息  │
+│ 更新 context │
+│ 重新组装     │
+│ system prompt│
+└──────┬───────┘
+       │
+       └──→ 回到"调用 LLM API" ──→ 直到 LLM 不再调工具</div>
+
+  <h3>关键细节</h3>
+
+  <table>
+    <tr><th>代码</th><th>含义</th></tr>
+    <tr><td><code>handler(**(block.input or {}))</code></td><td>字典解包调用。如 <code>block.input = {"subject": "写提纲"}</code> → <code>run_create_task(subject="写提纲")</code></td></tr>
+    <tr><td><code>stop_reason == "tool_use"</code></td><td>LLM 请求调用工具 → 继续循环</td></tr>
+    <tr><td><code>stop_reason == "end_turn"</code></td><td>LLM 给出最终回复 → 退出循环</td></tr>
+    <tr><td><code>results</code> 的 <code>"role": "user"</code></td><td>Anthropic API 约定：tool_result 必须以 user 角色发回</td></tr>
+    <tr><td><code>type(e).__name__</code></td><td>获取异常类名，如 <code>"AuthenticationError"</code></td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>与 s11 的关键差异：</strong>s12 的 agent_loop 是<strong>简化版</strong>——只保留最基本的 ReAct 循环，没有 s11 的 max_tokens 续接、prompt_too_long 压缩、连接退避重试等三层错误恢复。课程设计意图是"正交层分离"：错误恢复和任务系统是独立的能力，教学中分开讲，产品中通过组合使用。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 主入口 main</h2>
+
+  <h3>代码位置：L344-363</h3>
+  <pre><span class="kw">if</span> __name__ == <span class="s">"__main__"</span>:
+    print(<span class="s">"s12: task system"</span>)
+    print(<span class="s">"Enter a question, press Enter to send. Type q to quit.\n"</span>)
+    history = []
+    context = update_context({}, history)             <span class="cm"># 初始化 context</span>
+    <span class="kw">while</span> <span class="tp">True</span>:
+        <span class="kw">try</span>:
+            query = input(<span class="s">"\033[36ms12 >> \033[0m"</span>)   <span class="cm"># 青色提示符</span>
+        <span class="kw">except</span> (EOFError, KeyboardInterrupt):
+            <span class="kw">break</span>
+        <span class="kw">if</span> query.strip().lower() <span class="kw">in</span> (<span class="s">"q"</span>, <span class="s">"exit"</span>, <span class="s">""</span>):
+            <span class="kw">break</span>
+
+        history.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: query})
+        agent_loop(history, context)                  <span class="cm"># 调用 agent 循环</span>
+        context = update_context(context, history)    <span class="cm"># 更新 context</span>
+        <span class="kw">for</span> block <span class="kw">in</span> history[-<span class="num">1</span>][<span class="s">"content"</span>]:
+            <span class="kw">if</span> getattr(block, <span class="s">"type"</span>, <span class="tp">None</span>) == <span class="s">"text"</span>:
+                print(block.text)                     <span class="cm"># 打印最终回复</span>
+        print()</pre>
+
+  <h3>整体流程</h3>
+  <ol>
+    <li>初始化 <code>history</code> 和 <code>context</code></li>
+    <li>用户输入 → 追加到 history → 进入 agent_loop</li>
+    <li>agent_loop 结束后，<code>update_context</code> 刷新 context（供下一轮使用）</li>
+    <li>打印 LLM 最终的文本回复</li>
+  </ol>
+
+  <div class="callout green">
+    <strong>context 的更新时机：</strong>每轮用户输入之后都调用 <code>update_context</code>（L359），确保下一轮对话使用最新的长期记忆和环境信息。但由于 MEMORY.md 没有写入逻辑，目前每次返回的结果都一样。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15 -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> s12 vs s11 完整对比</h2>
+
+  <h3>总体数据</h3>
+  <table>
+    <tr><th>维度</th><th>s11（错误恢复）</th><th>s12（任务系统）</th></tr>
+    <tr><td>LOC</td><td>~328 行</td><td>~363 行</td></tr>
+    <tr><td>工具数</td><td>4 个（bash/read/write/edit）</td><td>7 个（3 基础 + 5 任务，去掉了 edit）</td></tr>
+    <tr><td>核心主题</td><td>让 agent 在出错时活下来</td><td>让 agent 能组织和管理长期工作</td></tr>
+    <tr><td>数据结构</td><td>无（纯函数）</td><td>Task dataclass + JSON 文件持久化</td></tr>
+    <tr><td>agent 循环</td><td>带三层恢复逻辑</td><td>简化版（无恢复逻辑）</td></tr>
+    <tr><td>System Prompt</td><td>硬编码字符串 <code>SYSTEM</code></td><td>动态组装 <code>PROMPT_SECTIONS</code> + 缓存</td></tr>
+  </table>
+
+  <h3>删除的内容（s11有→s12无）</h3>
+  <table>
+    <tr><th>删除内容</th><th>原因</th></tr>
+    <tr><td>三层错误恢复（max_tokens 续接、prompt_too_long 压缩、连接退避重试）</td><td>课程设计中错误恢复与任务系统是正交层，分开教学更清晰</td></tr>
+    <tr><td><code>edit_file</code> 工具</td><td>任务系统场景下，<code>read_file</code> + <code>write_file</code> 已能覆盖编辑需求，减少工具数量降低 LLM 选择负担</td></tr>
+    <tr><td><code>auto_compact</code> / <code>backoff_delay</code> / <code>estimate_tokens</code></td><td>属于错误恢复的一部分，一并移除</td></tr>
+    <tr><td><code>TOOL_HANDLERS</code> 的 lambda 包装</td><td>s12 函数签名直接匹配工具参数名，不需要 lambda 解包</td></tr>
+  </table>
+
+  <h3>增加的内容（s12 有 → s11 无）</h3>
+  <table>
+    <tr><th>增加内容</th><th>作用</th></tr>
+    <tr><td><code>Task</code> dataclass</td><td>任务数据结构，类型安全、可序列化</td></tr>
+    <tr><td><code>TASKS_DIR</code> + 文件持久化</td><td>让任务跨对话存活</td></tr>
+    <tr><td><code>create_task</code> / <code>claim_task</code> / <code>complete_task</code></td><td>任务生命周期管理</td></tr>
+    <tr><td><code>can_start</code> + <code>blockedBy</code></td><td>任务图核心——就绪判断</td></tr>
+    <tr><td><code>list_tasks</code> / <code>get_task</code></td><td>任务板查询能力</td></tr>
+    <tr><td><code>PROMPT_SECTIONS</code> + 动态组装</td><td>任务系统需要动态信息（可用工具、长期记忆）</td></tr>
+    <tr><td><code>get_system_prompt</code> 缓存</td><td>避免重复组装，提升性能</td></tr>
+    <tr><td><code>update_context</code> + <code>context</code></td><td>维护 LLM 的"环境信息"</td></tr>
+    <tr><td><code>safe_path</code> 路径安全检查</td><td>防止路径穿越攻击（s11 没有）</td></tr>
+    <tr><td><code>run_*</code> 包装层</td><td>职责分离更清晰（core vs 格式化）</td></tr>
+  </table>
+
+  <h3>保留不变的部分</h3>
+  <ul>
+    <li><code>run_bash</code> — 基本一致，s12 增加了危险命令拦截</li>
+    <li><code>run_read</code> / <code>run_write</code> — 基本一致，s12 增加了 <code>safe_path</code></li>
+    <li><code>TOOLS</code> 的 schema 格式 — 完全一致（Anthropic tool schema）</li>
+    <li>主循环的 <code>while True</code> + <code>stop_reason</code> 判断 — 框架不变</li>
+    <li>工具结果的 <code>messages.append</code> — 完全一致</li>
+  </ul>
+
+  <div class="callout purple">
+    <strong>教学设计的逻辑：</strong>从 s11 到 s12 不是"在 s11 基础上加功能"，而是<strong>换了一个教学视角</strong>。s11 教"agent 怎么活得久"，s12 教"agent 怎么管得好"。两者是垂直切割的正交能力，在真实产品中通过组合（composition）而不是继承来协作。s12 清掉恢复代码，是为了让读者聚焦在任务系统上。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16 -->
+<div class="card" id="s16">
+  <h2><span class="num">16</span> Python 语法小抄</h2>
+
+  <p>本文件涉及的所有 Python 语法点汇总：</p>
+
+  <table>
+    <tr><th>语法</th><th>含义</th><th>文件位置</th></tr>
+    <tr><td><code>@dataclass</code></td><td>自动生成 __init__、__repr__、__eq__</td><td>L55</td></tr>
+    <tr><td><code>str | None</code></td><td>类型联合（Python 3.10+），等价于 Optional[str]</td><td>L60</td></tr>
+    <tr><td><code>Path / "sub"</code></td><td>pathlib 路径拼接操作符</td><td>L65</td></tr>
+    <tr><td><code>Path.write_text(s)</code></td><td>把字符串 s 写入文件，自动创建</td><td>L71</td></tr>
+    <tr><td><code>Path.read_text()</code></td><td>读取整个文件为字符串</td><td>L74</td></tr>
+    <tr><td><code>Path.glob("*.json")</code></td><td>通配符匹配文件，返回 Path 迭代器</td><td>L78</td></tr>
+    <tr><td><code>**dict</code></td><td>字典解包为关键字参数</td><td>L74, L78, L328</td></tr>
+    <tr><td><code>[expr for x in xs if cond]</code></td><td>列表推导式</td><td>L78, L100, L113</td></tr>
+    <tr><td><code>sorted(iterable)</code></td><td>对可迭代对象排序，返回列表</td><td>L78</td></tr>
+    <tr><td><code>', '.join(list)</code></td><td>用分隔符连接字符串列表</td><td>L113, L201, L212</td></tr>
+    <tr><td><code>asdict(obj)</code></td><td>dataclass → 字典</td><td>L71</td></tr>
+    <tr><td><code>dict.get(key, default)</code></td><td>安全取值，不存在返回默认值</td><td>L145</td></tr>
+    <tr><td><code>f"{var:04d}"</code></td><td>f-string 格式化：至少 4 位数字，补零</td><td>L68</td></tr>
+    <tr><td><code>blockedBy or []</code></td><td>短路求值：None/空 → 空列表</td><td>L72</td></tr>
+    <tr><td><code>"\n\n".join(list)</code></td><td>用两个换行符拼接字符串列表</td><td>L148</td></tr>
+    <tr><td><code>global var</code></td><td>在函数内声明/赋值全局变量</td><td>L153</td></tr>
+    <tr><td><code>\033[36m...\033[0m</code></td><td>ANSI 转义码：终端颜色控制</td><td>多处</td></tr>
+    <tr><td><code>type(e).__name__</code></td><td>获取异常类名（如 "FileNotFoundError"）</td><td>L311</td></tr>
+    <tr><td><code>getattr(obj, attr, default)</code></td><td>安全获取对象属性</td><td>L361</td></tr>
+  </table>
+
+  <h3>易混淆点速查</h3>
+
+  <div class="callout">
+    <strong>json.dumps 不是写文件的</strong><br>
+    <code>json.dumps(obj)</code> 是把对象转为 JSON <strong>字符串</strong>。<code>Path.write_text()</code> 才负责写文件。两者通过链式调用配合：<code>path.write_text(json.dumps(data))</code>。
+  </div>
+
+  <div class="callout">
+    <strong>glob 只匹配文件名，不匹配内容</strong><br>
+    <code>Path.glob("task_*.json")</code> 只根据文件名做通配符匹配，和文件内容无关。匹配到的每个 <code>Path</code> 对象需要你手动 <code>read_text()</code> 再 <code>json.loads()</code> 来获取内容。
+  </div>
+
+  <div class="callout">
+    <strong>列表推导式 [Task(...) for p in ...] 不会自动命名</strong><br>
+    执行结果得到一个列表，里面的 Task 对象没有叫 Task1、Task2 的名字。你只能通过下标 <code>result[0]</code> 或遍历 <code>for t in result</code> 来访问它们。
+  </div>
+
+  <div class="callout">
+    <strong>sorted(...) 不修改原数据</strong><br>
+    <code>sorted(TASKS_DIR.glob(...))</code> 返回一个新的排序后的列表，不会改变原 glob 迭代器的状态。
+  </div>
+</div>
+
+</div> <span class="cm">&lt;!-- /container --&gt;</span>
+
+</body>
+</html>

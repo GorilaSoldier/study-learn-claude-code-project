@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s11 Error Recovery - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #2d1b4e 0%, #1a1a2e 50%, #16213e 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+  .tag.bug  { background: #ffebe9; color: #cf222e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s11 · s11_error_recovery.py 复习笔记</h1>
+  <p class="subtitle">错误恢复：把"报错就崩"升级成"先判断错误类型，再选择恢复路径"</p>
+  <span class="badge">基于问答整理 · 3 种恢复策略 · 3 个辅助函数</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">恢复常量详解：MAX_RECOVERY_ATTEMPTS / 退避 / 阈值</a></li>
+    <li><a href="#s2">CONTINUATION_MESSAGE — 续传提示词</a></li>
+    <li><a href="#s3">estimate_tokens — 粗估 token 数的原理</a></li>
+    <li><a href="#s4">auto_compact 逐段拆解（核心）</a></li>
+    <li><a href="#s5">json.dumps(messages)[:80000] 的实现与信息丢失问题</a></li>
+    <li><a href="#s6">response.content[0].text 为什么有 [0]？</a></li>
+    <li><a href="#s7">backoff_delay — 指数退避 + jitter</a></li>
+    <li><a href="#s8">agent_loop 总览：两层循环结构</a></li>
+    <li><a href="#s9">内层 for 循环：API 重试机制（策略 2 & 3）</a></li>
+    <li><a href="#s10">attempt 计数：会不会每次跑满 4 次？</a></li>
+    <li><a href="#s11">max_tokens 与 prompt_too_long 的本质区别</a></li>
+    <li><a href="#s12">max_output_recovery_count 与 x/y 分数表示</a></li>
+    <li><a href="#s13">异常恢复：prompt_too_long 分支详解</a></li>
+    <li><a href="#s14">messages[:] = 切片赋值的作用</a></li>
+    <li><a href="#s15">主动压缩机制（Proactive Compact）</a></li>
+    <li><a href="#s16">s10 → s11 完整变更对比</a></li>
+    <li><a href="#s17">代码中的小问题汇总</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 恢复常量详解</h2>
+
+  <h3>代码位置：L58-63</h3>
+  <pre><span class="cm"># Recovery constants</span>
+MAX_RECOVERY_ATTEMPTS = <span class="num">3</span>
+BACKOFF_BASE_DELAY = <span class="num">1.0</span>    <span class="cm"># seconds</span>
+BACKOFF_MAX_DELAY = <span class="num">30.0</span>    <span class="cm"># seconds</span>
+TOKEN_THRESHOLD = <span class="num">50000</span>    <span class="cm"># chars / 4 ~ tokens for compact trigger</span></pre>
+
+  <h3>含义与作用</h3>
+  <table>
+    <tr><th>常量</th><th>值</th><th>含义</th><th>被哪里使用</th></tr>
+    <tr><td><code>MAX_RECOVERY_ATTEMPTS</code></td><td>3</td><td>每种恢复路径最多可以试几次</td><td>内层 for 循环（API 重试）、外层 max_tokens 计数器</td></tr>
+    <tr><td><code>BACKOFF_BASE_DELAY</code></td><td>1.0 秒</td><td>指数退避的基准延迟时间</td><td><code>backoff_delay()</code></td></tr>
+    <tr><td><code>BACKOFF_MAX_DELAY</code></td><td>30.0 秒</td><td>退避延迟的上限，避免无限增长</td><td><code>backoff_delay()</code></td></tr>
+    <tr><td><code>TOKEN_THRESHOLD</code></td><td>50000 字符</td><td>超过此字符数触发主动压缩，约 12500 tokens</td><td><code>agent_loop</code> 末尾的主动压缩检查</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>关键理解：</strong>这些数字是"退路"的边界条件——重试不能无限次、等待不能无限长、上下文不能无限大。每个数字都对应一种防止系统失控的机制。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> CONTINUATION_MESSAGE — 续传提示词</h2>
+
+  <h3>代码位置：L65-70</h3>
+  <pre>CONTINUATION_MESSAGE = (
+    <span class="s">"Output limit hit. Continue directly from where you stopped.\n"</span>
+    <span class="s">"no recap, no repetition. Pick up mid-sentence if you need."</span>
+)</pre>
+
+  <h3>作用</h3>
+  <p>当 LLM 输出被 <code>max_tokens</code> 截断时，Agent 把这句话作为新的用户消息发给 LLM，告诉它：</p>
+  <blockquote>"你刚才话没说完就被打断了，直接接着继续说，不要重复前面的话。"</blockquote>
+
+  <h3>为什么特意强调"不要重复"？</h3>
+  <p>如果只说"继续"，模型经常会：</p>
+  <ul>
+    <li>重新总结前面说过的内容</li>
+    <li>重新开头</li>
+    <li>重复已经输出过的内容</li>
+  </ul>
+  <p>所以提示词明确了：<strong>no recap, no repetition. Pick up mid-sentence.</strong></p>
+
+  <div class="callout green">
+    <strong>小细节：</strong>原代码中 <code>stopped.\nno recap</code> 是正确换行的，续传消息的语义是清晰的。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> estimate_tokens — 粗估 token 数的原理</h2>
+
+  <h3>代码位置：L72-74</h3>
+  <pre><span class="kw">def</span> <span class="fn">estimate_tokens</span>(messages: list) -> <span class="tp">int</span>:
+    <span class="s">"""Rough token estimate: ~4 chars per token."""</span>
+    <span class="kw">return</span> <span class="fn">len</span>(json.<span class="fn">dumps</span>(messages, default=<span class="tp">str</span>)) // <span class="num">4</span></pre>
+
+  <h3>原理</h3>
+  <ul>
+    <li>把消息列表序列化成 JSON 字符串</li>
+    <li>取字符串长度</li>
+    <li>除以 4（英文中平均 1 token ≈ 4 个字符</li>
+    <li><code>//</code> 是整数除法，向下取整，保守估计</li>
+  </ul>
+
+  <div class="callout orange">
+    <strong>注意：</strong>这只是<strong>粗略估算</strong>，不是精确的 tokenizer 计数。不同模型的实际 token 化方式不同，中文字符约 1 字 ≈ 1-2 tokens，比英文更"贵"。
+  </div>
+
+  <h3>用途</h3>
+  <p>用于主动压缩的触发判断：当 <code>estimate_tokens(messages) &gt; TOKEN_THRESHOLD</code> 时，提前压缩上下文。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> auto_compact 逐段拆解（核心）</h2>
+
+  <h3>代码位置：L76-104</h3>
+
+  <h3>功能</h3>
+  <p>当对话历史太长时，让 LLM 自己总结浓缩历史，用摘要替换掉完整历史。相当于<strong>"记笔记"</strong>——把长篇讨论浓缩成要点。</p>
+
+  <h3>4 个步骤逐一拆解</h3>
+
+  <h4>步骤 1：截取要压缩的历史（L77）</h4>
+  <pre>conversation_text = json.<span class="fn">dumps</span>(messages, default=<span class="tp">str</span>)[:<span class="num">80000</span>]</pre>
+  <ul>
+    <li>把对话消息转为 JSON 字符串</li>
+    <li><code>[:80000]</code> 截断前 8 万字符，防止摘要请求本身太长</li>
+    <li><code>default=str</code>：处理不可序列化的对象（如 Path、datetime），强转成字符串</li>
+  </ul>
+
+  <h4>步骤 2：构建压缩提示词（L78-87）</h4>
+  <pre>prompt = (
+    <span class="s">"Summarize this conversation for continuity. Include:\n"</span>
+    <span class="s">"1) Task overview and success criteria\n"</span>
+    <span class="s">"2) Current state: completed work, files touched\n"</span>
+    <span class="s">"3) Key decisions and failed approaches\n"</span>
+    <span class="s">"4) Remaining next steps\n"</span>
+    <span class="s">"Be concise but preserve critical details.\n\n"</span>
+    + conversation_text
+)</pre>
+
+  <p>明确要求 LLM 摘要时包含 4 个维度：</p>
+  <ol>
+    <li><strong>任务总览 + 成功标准</strong>——我们在做什么？</li>
+    <li><strong>当前状态</strong>——做了什么、改了哪些文件</li>
+    <li><strong>关键决策 + 失败尝试</strong>——哪些方案试过行不通</li>
+    <li><strong>下一步</strong>——还剩什么没做</li>
+  </ol>
+
+  <h4>步骤 3：调用 LLM 生成摘要（L88-94）</h4>
+  <pre><span class="kw">try</span>:
+    response = client.messages.<span class="fn">create</span>(
+        model=MODEL,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}],
+        max_tokens=<span class="num">4000</span>
+    )
+    summary = response.content[<span class="num">0</span>].text
+<span class="kw">except</span> Exception <span class="kw">as</span> e:
+    summary = <span class="s">f"(compact failed: {e}). Previous context lost."</span></pre>
+
+  <ul>
+    <li>正常路径：LLM 生成摘要，限制 <code>max_tokens=4000</code></li>
+    <li>异常路径：如果 LLM 调用失败，标记"压缩失败，上下文丢失"</li>
+  </ul>
+
+  <h4>步骤 4：构建压缩后的消息（L96-103）</h4>
+  <pre>continuation = (
+    <span class="s">"This session continues from a previous conversation that was compacted. "</span>
+    <span class="s">f"Summary of prior context:\n\n{summary}\n\n"</span>
+    <span class="s">"Continue from where we left off without re-asking the user."</span>
+)
+<span class="kw">return</span> [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: continuation}]</pre>
+
+  <ul>
+    <li>把摘要包装成一条新的用户消息</li>
+    <li>核心意图：<strong>告诉 LLM "这是之前的摘要，接着干，不要问我"</strong></li>
+    <li>返回只有<strong>一条消息</strong>的列表，替换掉原来可能几百条消息的历史</li>
+  </ul>
+
+  <div class="callout purple">
+    <strong>为什么需要 auto_compact？</strong><br>
+    LLM 有上下文窗口限制（如 100K、200K tokens）。对话越长，推理成本越高、速度越慢、越容易"迷失"。压缩就是把对话历史浓缩为要点，扔掉冗余信息。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> json.dumps(messages)[:80000] 的实现与信息丢失问题</h2>
+
+  <h3>问题：messages 是消息列表，json.dumps 怎么序列化它？</h3>
+
+  <p><code>messages</code> 是一个列表，每个元素是一个字典，类似：</p>
+
+  <pre>messages = [
+    {<span class="s">"role"</span>: <span class="s">"user"</span>,      <span class="s">"content"</span>: <span class="s">"帮我写一个 Python 脚本"</span>},
+    {<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: <span class="s">"好的，我来写..."</span>},
+    {<span class="s">"role"</span>: <span class="s">"user"</span>,      <span class="s">"content"</span>: <span class="s">"再加一些错误处理"</span>},
+    ...
+]</pre>
+
+  <h3>json.dumps 做了什么</h3>
+  <pre>json.<span class="fn">dumps</span>(messages)
+<span class="cm"># 输出（一行）：
+# [{"role": "user", "content": "帮我写个脚本"}, {"role": "assistant", "content": "好的"}]</span></pre>
+
+  <p>把整个列表序列化为<strong>一个扁平的 JSON 字符串</strong>。如果中间有 Path 等不可 JSON 序列化的对象，<code>default=str</code> 会兜底用 <code>str()</code> 强转。</p>
+
+  <h3>[:80000] 截断的问题</h3>
+
+  <div class="callout red">
+    <strong>关键理解：截断即丢失。</strong><br>
+    如果对话历史的 JSON 字符串有 30 万字符，<code>[:80000]</code> 取前 8 万，后面 22 万字符（约 75% 内容）在传给 LLM 做摘要时<strong>完全消失</strong>了。
+  </div>
+
+  <table>
+    <tr><th>情况</th><th>后果</th></tr>
+    <tr><td>关键信息在<strong>对话前半段</strong>（任务目标、初始决策）</td><td>✅ 影响不大，摘要仍然可用</td></tr>
+    <tr><td>关键信息在<strong>对话后半段</strong>（最新调试发现、最新方案）</td><td>❌ 摘要会遗漏重要信息，后续对话可能偏离方向</td></tr>
+    <tr><td>对话<strong>特别长</strong>（超 50 万字符）</td><td>❌ 截断非常严重，可能只剩 1/6 的内容</td></tr>
+  </table>
+
+  <h3>可能的改进方案</h3>
+
+  <table>
+    <tr><th>方案</th><th>思路</th><th>优点</th></tr>
+    <tr><td><strong>保留头+尾，丢中间</strong></td><td>截取前 40000 + 后 40000 字符</td><td>同时保留早期任务定义和近期最新进展</td></tr>
+    <tr><td><strong>按消息粒度截断</strong></td><td>从最新消息往前取，直到达阈值</td><td>保留完整的最新中国消息</td></tr>
+    <tr><td><strong>分块摘要</strong></td><td>把对话切块，分别摘要再合并</td><td>覆盖全部内容，但代价更高</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>为什么作者这样设计？</strong> 这是一种权衡：防止溢出（如果对话 200 万字符，不截断摘要请求就会超过 context window），且假设早期内容更重要。教学 demo 可以接受，生产环境需要更精细的策略。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> response.content[0].text 为什么有 [0]？</h2>
+
+  <h3>问题：按理说 response 里不就 1 个元素吗？为什么还要区分 [0]？</h3>
+
+  <h3>Anthropic SDK 响应结构</h3>
+  <pre>Message(
+    id=<span class="s">"msg_xxx"</span>,
+    model=<span class="s">"claude-3-sonnet"</span>,
+    role=<span class="s">"assistant"</span>,
+    <span class="hl">content=[</span>                     <span class="cm"># ← 这是一个列表</span>
+        ContentBlock(
+            type=<span class="s">"text"</span>,
+            text=<span class="s">"这是 Claude 的回答..."</span>
+        ),
+        ContentBlock(               <span class="cm"># ← 可能有第二个块（工具调用）</span>
+            type=<span class="s">"tool_use"</span>,
+            id=<span class="s">"toolu_xxx"</span>,
+            name=<span class="s">"run_bash"</span>,
+            input={...}
+        )
+    ],
+    stop_reason=<span class="s">"end_turn"</span>,
+    usage=Usage(input_tokens=<span class="num">100</span>, output_tokens=<span class="num">200</span>)
+)</pre>
+
+  <h3>为什么 content 是列表？</h3>
+  <p>因为 Claude 的响应<strong>可能同时包含文本和工具调用</strong>。例如模型既回答了问题又要调用工具：</p>
+  <pre>content = [
+    ContentBlock(type=<span class="s">"text"</span>,     text=<span class="s">"好的，我来查看这个文件..."</span>),
+    ContentBlock(type=<span class="s">"tool_use"</span>, name=<span class="s">"read_file"</span>, input={...})
+]
+
+response.content[<span class="num">0</span>].text   <span class="cm"># → "好的，我来查看这个文件..."</span>
+response.content[<span class="num">1</span>].input  <span class="cm"># → {"path": "/tmp/test.py"}</span></pre>
+
+  <h3>auto_compact 中为什么只用 [0]？</h3>
+  <p>因为构造的 prompt 是纯文本请求（没有注册工具），所以 Claude 只会返回一个 text 类型的块。<code>content[0].text</code> 就是唯一的文本内容。使用 <code>[0]</code> 是取列表的第一个（也是唯一一个）元素。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> backoff_delay — 指数退避 + jitter</h2>
+
+  <h3>代码位置：L106-109</h3>
+  <pre><span class="kw">def</span> <span class="fn">backoff_delay</span>(attempt: int) -> <span class="tp">float</span>:
+    <span class="s">"""Exponential backoff with jitter: base * 2^attempt + random(0,1)."""</span>
+    delay = <span class="fn">min</span>(BACKOFF_BASE_DELAY * (<span class="num">2</span> ** attempt), BACKOFF_MAX_DELAY)
+    jitter = random.<span class="fn">uniform</span>(<span class="num">0</span>, <span class="num">1</span>)
+    <span class="kw">return</span> delay + jitter</pre>
+
+  <h3>等待时间计算表</h3>
+  <table>
+    <tr><th>attempt</th><th>2^attempt</th><th>base * 2^attempt</th><th>min(..., 30)</th><th>+ jitter</th></tr>
+    <tr><td>0（首次重试）</td><td>1</td><td>1.0s</td><td>1.0s</td><td>~1.0~1.9s</td></tr>
+    <tr><td>1</td><td>2</td><td>2.0s</td><td>2.0s</td><td>~2.0~2.9s</td></tr>
+    <tr><td>2</td><td>4</td><td>4.0s</td><td>4.0s</td><td>~4.0~4.9s</td></tr>
+    <tr><td>3</td><td>8</td><td>8.0s</td><td>8.0s</td><td>~8.0~8.9s</td></tr>
+    <tr><td>4+</td><td>16+</td><td>16.0s+</td><td><strong>30.0s（上限）</strong></td><td>~30.0~30.9s</td></tr>
+  </table>
+
+  <h3>两个关键设计</h3>
+  <ol>
+    <li><strong>指数增长</strong>：每次重试等待时间翻倍，给系统逐步恢复的时间</li>
+    <li><strong>Jitter（抖动）</strong>：加上 <code>random.uniform(0, 1)</code> 的随机数，防止多个客户端同时重试造成"惊群效应"（thundering herd problem）</li>
+  </ol>
+
+  <div class="callout green">
+    <strong>文档字符串与实际代码：</strong>文档里的公式写的是 <code>base * 2^attempt + jitter + random(0,1)</code>，但实际上只有 <code>min(...) + random(0,1)</code>，没有额外的 jitter 变量。实际代码是正确的。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> agent_loop 总览：两层循环结构</h2>
+
+  <h3>代码位置：L214-308</h3>
+
+  <h3>整体架构</h3>
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(messages: list) -> <span class="tp">None</span>:
+    max_output_recovery_count = <span class="num">0</span>
+    <span class="kw">while</span> <span class="tp">True</span>:    <span class="cm"># ← 外层：Agent 主循环，持续到任务结束</span>
+        response = <span class="tp">None</span>
+        <span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(MAX_RECOVERY_ATTEMPTS + <span class="num">1</span>):  <span class="cm"># ← 内层：API 重试</span>
+            <span class="kw">try</span>:
+                response = client.messages.<span class="fn">create</span>(...)
+                <span class="kw">break</span>
+            <span class="kw">except</span> APIError <span class="kw">as</span> e:
+                <span class="cm"># 策略 2: prompt_too_long → compact</span>
+                <span class="cm"># 策略 3: 临时错误 → backoff</span>
+
+        <span class="cm"># 策略 1: max_tokens 恢复</span>
+        <span class="cm"># 工具调用处理</span>
+        <span class="cm"># 主动压缩检查</span></pre>
+
+  <div class="diagram">agent_loop(messages)
+    │
+    └── while True（外层：Agent 主循环）
+         │
+         ├── for attempt in range(4)（内层：API 重试循环）
+         │    ├── 成功 → break 跳出内层
+         │    ├── prompt_too_long → auto_compact + continue
+         │    ├── 临时错误 + 未超限 → backoff_delay + continue
+         │    └── 重试耗尽 → return（彻底失败）
+         │
+         ├── response is None? → return
+         │
+         ├── 追加助手响应
+         │
+         ├── stop_reason == "max_tokens"?
+         │    ├── 未超 3 次 → 注入续传消息 → continue（回外层）
+         │    └── 超 3 次 → return
+         │
+         ├── 重置 max_output_recovery_count = 0
+         │
+         ├── stop_reason != "tool_use"? → return（正常结束）
+         │
+         ├── 处理工具调用 → 追加结果到 messages
+         │
+         └── token 估算 > 阈值? → auto_compact（主动压缩）
+              │
+              └── → 回到 while True 开头</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 内层 for 循环：API 重试机制（策略 2 & 3）</h2>
+
+  <h3>代码位置：L225-248</h3>
+  <pre>response = <span class="tp">None</span>
+<span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(MAX_RECOVERY_ATTEMPTS + <span class="num">1</span>):
+    <span class="kw">try</span>:
+        response = client.messages.<span class="fn">create</span>(
+            model=MODEL, system=SYSTEM, messages=messages,
+            tools=TOOLS, max_tokens=<span class="num">8000</span>
+        )
+        <span class="kw">break</span> <span class="cm"># success</span>
+    <span class="kw">except</span> APIError <span class="kw">as</span> e:
+        error_body = <span class="fn">str</span>(e).<span class="fn">lower</span>()
+
+        <span class="cm"># Strategy 2: prompt_too_long -> compact and retry</span>
+        <span class="kw">if</span> <span class="s">"overlong_prompt"</span> <span class="kw">in</span> error_body <span class="kw">or</span> (<span class="s">"prompt"</span> <span class="kw">in</span> error_body <span class="kw">and</span> <span class="s">"long"</span> <span class="kw">in</span> error_body):
+            <span class="fn">print</span>(<span class="s">f"[Recovery] Prompt too long.Compacting... (attempt {attempt + 1})"</span>)
+            messages[:] = <span class="fn">auto_compact</span>(messages)
+            <span class="kw">continue</span>
+        
+        <span class="cm"># Strategy 3: connection/rate errors -> backoff</span>
+        <span class="kw">if</span> attempt &lt; MAX_RECOVERY_ATTEMPTS:
+            delay = <span class="fn">backoff_delay</span>(attempt)
+            <span class="fn">print</span>(<span class="s">f"[Recovery] API error: {e}. "</span>
+                    <span class="s">f"Retrying in {delay:.1f}s (attempt {attempt + 1}/{MAX_RECOVERY_ATTEMPTS})"</span>)
+            time.<span class="fn">sleep</span>(delay)
+            <span class="kw">continue</span>
+        
+        <span class="cm"># All retries exhausted</span>
+        <span class="fn">print</span>(<span class="s">f"[Error] API call failed after {MAX_RECOVERY_ATTEMPTS} retries: {e}"</span>)
+        <span class="kw">return</span></pre>
+
+  <h3>流程</h3>
+  <ol>
+    <li><strong>先尝试 API 调用</strong>——<code>client.messages.create(...)</code></li>
+    <li><strong>成功？</strong>→ <code>break</code> 跳出内层 for 循环</li>
+    <li><strong>失败？</strong>→ 抛出 <code>APIError</code>，进入 <code>except</code> 块</li>
+    <li>在 except 中判断是哪种错误，选择对应的恢复策略</li>
+  </ol>
+
+  <h3>为什么上下文过长和网络延迟都是 APIError？</h3>
+  <p>Anthropic SDK 把所有 API 层面的异常统一为 <code>APIError</code>（或其子类）。在 except 块中通过<strong>字符串匹配</strong>进一步区分：</p>
+
+  <table>
+    <tr><th>错误类型</th><th>本质</th><th>区分方式</th></tr>
+    <tr><td>prompt_too_long</td><td>输入消息太长</td><td>检查错误信息文本：<code>"overlong_prompt" in error_body</code></td></tr>
+    <tr><td>rate_limit_error</td><td>请求频率过高被限流</td><td>走退避策略（和其他临时错误一样处理）</td></tr>
+    <tr><td>网络超时/连接失败</td><td>DNS 解析失败、SSL 握手失败等</td><td>SDK 包装成 APIError，走退避策略</td></tr>
+    <tr><td>API 500 错误</td><td>服务器内部错误</td><td>走退避策略</td></tr>
+    <tr><td>认证错误（401）</td><td>API Key 无效</td><td>也是 APIError，但退避重试也没用，3 次后失败</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>关键理解：</strong><code>except APIError</code> 是一张"大网"，捕获所有 API 相关的异常，然后在里面通过字符串匹配进一步判断是哪种具体错误，选择不同策略。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> attempt 计数：会不会每次跑满 4 次？</h2>
+
+  <h3>问题：for attempt in range(MAX_RECOVERY_ATTEMPTS + 1) 是不是不管有没有问题都会累加？</h3>
+
+  <h3>答案：不会。关键在 <code>break</code></h3>
+
+  <pre><span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(<span class="num">4</span>):  <span class="cm"># → [0, 1, 2, 3]</span>
+    <span class="kw">try</span>:
+        response = client.messages.<span class="fn">create</span>(...)
+        <span class="hl">break</span>   <span class="cm"># ← ★ 一旦成功，立刻跳出 for 循环</span>
+    <span class="kw">except</span> APIError <span class="kw">as</span> e:
+        <span class="cm"># 只有失败了才走这里</span>
+        ...</pre>
+
+  <div class="diagram">第 1 次（attempt=0）
+    ├── 成功 → break → 进入 while 后续逻辑  ✅ 只用 1 次
+    └── 失败 → 进入 except
+
+第 2 次（attempt=1）
+    ├── 成功 → break  ✅ 用了 2 次
+    └── 失败 → 进入 except
+
+第 3 次（attempt=2）
+    ├── 成功 → break  ✅ 用了 3 次
+    └── 失败 → 进入 except
+
+第 4 次（attempt=3，最后一次）
+    ├── 成功 → break  ✅ 用了 4 次
+    └── 失败 → 重试耗尽 → return  ❌ 彻底失败</div>
+
+  <h3>为什么是 range(MAX_RECOVERY_ATTEMPTS + 1) = range(4)？</h3>
+
+  <table>
+    <tr><th>次数</th><th>attempt</th><th>说明</th></tr>
+    <tr><td>第 1 次</td><td>0</td><td>首次调用（不是重试）</td></tr>
+    <tr><td>第 2 次</td><td>1</td><td>第 1 次重试</td></tr>
+    <tr><td>第 3 次</td><td>2</td><td>第 2 次重试</td></tr>
+    <tr><td>第 4 次</td><td>3</td><td>第 3 次重试（最后一次机会）</td></tr>
+  </table>
+
+  <p>设计意图：<strong>1 次首次调用 + 3 次重试 = 总共 4 次机会</strong>。</p>
+
+  <p>在退避策略中，<code>if attempt &lt; MAX_RECOVERY_ATTEMPTS</code>（即 attempt &lt; 3）时才有退避重试。当 attempt == 3 时（第 4 次），不再退避，直接失败退出。所以<strong>最多经历 3 次退避等待 + 1 次最终尝试</strong>。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> max_tokens 与 prompt_too_long 的本质区别</h2>
+
+  <h3>问题：max_tokens 属于"上下文超出"的情况吗？</h3>
+
+  <h3>答案：<strong>不属于。</strong>这是两个完全不同的概念。</h3>
+
+  <table>
+    <tr><th></th><th>max_tokens（输出截断）</th><th>prompt_too_long（上下文超出）</th></tr>
+    <tr><td><strong>问题在哪端</strong></td><td><strong>输出端</strong>（模型回答）</td><td><strong>输入端</strong>（你的消息）</td></tr>
+    <tr><td><strong>触发条件</strong></td><td>模型想说的话超过了 <code>max_tokens=8000</code> 的限制</td><td>你发的 messages 总长度超过了模型的上下文窗口</td></tr>
+    <tr><td><strong>表现形式</strong></td><td><code>response.stop_reason == "max_tokens"</code></td><td>API 直接报错抛出 <code>APIError</code></td></tr>
+    <tr><td><strong>有无 response</strong></td><td>✅ 有 response，内容是部分回答</td><td>❌ 无 response，调用本身失败</td></tr>
+    <tr><td><strong>恢复方式</strong></td><td>注入 CONTINUATION_MESSAGE，让他继续说</td><td>调用 auto_compact 压缩历史再重试</td></tr>
+    <tr><td><strong>类比</strong></td><td>你让一个人写 8000 字作文，他写到 8000 字被喊停</td><td>你给了这个人一本百科全书让他读，书太厚了他桌子放不下</td></tr>
+  </table>
+
+  <h3>为什么在代码中分两个地方处理？</h3>
+
+  <p>这涉及到<strong>两个不同层面的恢复</strong>：</p>
+  <ul>
+    <li><strong>内层 for 循环</strong>：处理 <strong>API 调用本身失败</strong>——包括上下文过长（prompt_too_long）、网络错误等</li>
+    <li><strong>外层 while 循环</strong>（max_tokens 策略）：处理 <strong>API 调用成功但输出被截断</strong>——response 对象正常返回了</li>
+  </ul>
+
+  <p><code>max_tokens</code> 不是 API 错误，API 正常返回了响应，只是响应不完整。所以它会在 for 循环中 <code>break</code> 成功，进入 while 的后续逻辑，在那里被 <code>stop_reason == "max_tokens"</code> 捕获。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> max_output_recovery_count 与 x/y 分数表示</h2>
+
+  <h3>代码位置：L261-274</h3>
+  <pre><span class="kw">if</span> response.stop_reason == <span class="s">"max_tokens"</span>:
+    max_output_recovery_count += <span class="num">1</span>
+    <span class="kw">if</span> max_output_recovery_count &lt;= MAX_RECOVERY_ATTEMPTS:
+        <span class="fn">print</span>(<span class="s">f"[recovery] max_tokens hit"</span>
+              <span class="s">f" ({max_output_recovery_count}/{MAX_RECOVERY_ATTEMPTS})"</span>  <span class="cm"># ← 这里</span>
+              <span class="s">f" Injecting continuation..."</span>
+        )
+        messages.<span class="fn">append</span>(...)
+        <span class="kw">continue</span></pre>
+
+  <h3>x/y 是什么？</h3>
+  <p>这是<strong>分数/进度显示</strong>的惯用写法，表示"当前值 / 总计"。</p>
+
+  <p>例如 <code>max_output_recovery_count = 2、MAX_RECOVERY_ATTEMPTS = 3</code> 时，打印：</p>
+  <pre>[recovery] max_tokens hit (2/3) Injecting continuation...</pre>
+
+  <p>意思是：<strong>"已恢复 2 次，总共最多 3 次"</strong>。</p>
+
+  <h3>为什么用 x/y 而不是文字描述？</h3>
+  <table>
+    <tr><th>写法</th><th>输出</th><th>解读成本</th></tr>
+    <tr><td><code>x/y</code></td><td><code>(2/3)</code></td><td>一眼就能看出进度——"已经试了 2 次，最多 3 次"</td></tr>
+    <tr><td>用文字</td><td><code>(attempt 2 of 3)</code></td><td>也可以，但更冗长</td></tr>
+  </table>
+
+  <p><code>x/y</code> 是一种超紧凑的信息密度最大化写法，常见于进度条、日志、CLI 工具的输出中。</p>
+
+  <h3>两个计数器的区别</h3>
+  <table>
+    <tr><th>计数器</th><th>所属层</th><th>用途</th><th>作用域</th></tr>
+    <tr><td><code>attempt</code></td><td>内层 for 循环</td><td>统计 API 调用的总尝试次数</td><td>每次外层 while 迭代都重置</td></tr>
+    <tr><td><code>max_output_recovery_count</code></td><td>外层 while 循环</td><td>统计 max_tokens 恢复发生的次数</td><td>跨 while 迭代累积，最多 3 次</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> 异常恢复：prompt_too_long 分支详解</h2>
+
+  <h3>代码位置：L230-234</h3>
+  <pre><span class="cm"># Strategy 2: prompt_too_long -> compact and retry</span>
+<span class="kw">if</span> <span class="s">"overlong_prompt"</span> <span class="kw">in</span> error_body <span class="kw">or</span> (<span class="s">"prompt"</span> <span class="kw">in</span> error_body <span class="kw">and</span> <span class="s">"long"</span> <span class="kw">in</span> error_body):
+    <span class="fn">print</span>(<span class="s">f"[Recovery] Prompt too long.Compacting... (attempt {attempt + 1})"</span>)
+    messages[:] = <span class="fn">auto_compact</span>(messages)
+    <span class="kw">continue</span></pre>
+
+  <h3>逻辑流程</h3>
+  <ol>
+    <li>把错误信息转小写，方便关键词匹配</li>
+    <li>检查是否含 <code>"overlong_prompt"</code>（精确错误码）<strong>或</strong>同时含 <code>"prompt"</code> 和 <code>"long"</code>（宽松匹配）</li>
+    <li>匹配成功 → 调用 <code>auto_compact(messages)</code> 压缩历史</li>
+    <li><code>messages[:] = ...</code> 切片赋值，原地替换 messages 内容</li>
+    <li><code>continue</code> 回到 for 循环开头，用压缩后的历史重试</li>
+  </ol>
+
+  <h3>错误匹配策略</h3>
+  <p>使用两种匹配方式，提高容错率：</p>
+  <ul>
+    <li><code>"overlong_prompt" in error_body</code>：Anthropic API 的精确错误码</li>
+    <li><code>"prompt" in error_body and "long" in error_body</code>：更宽松的关键词匹配，兼容不同 API 版本或代理的错误信息格式</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> messages[:] = 切片赋值的作用</h2>
+
+  <h3>问题：为什么用 messages[:] = 而不是 messages = ？</h3>
+
+  <p>这是 Python 的一个经典问题：</p>
+
+  <pre>messages[:] = <span class="fn">auto_compact</span>(messages)  <span class="cm"># ✔ 原地修改，外层变量可见</span>
+messages = <span class="fn">auto_compact</span>(messages)      <span class="cm"># ❌ 新绑定，外层 while 的 messages 不变</span></pre>
+
+  <table>
+    <tr><th>写法</th><th>效果</th><th>对外层影响</th></tr>
+    <tr><td><code>messages[:] = new_list</code></td><td><strong>列表切片赋值</strong>——直接修改列表对象本身，保持同一个对象</td><td>✅ 所有引用这个列表的地方都看到变化</td></tr>
+    <tr><td><code>messages = new_list</code></td><td><strong>重新绑定</strong>——让局部变量指向新对象，原对象不受影响</td><td>❌ 外层的 <code>messages</code> 仍然指向原列表</td></tr>
+  </tr></table>
+
+  <div class="callout orange">
+    <strong>为什么这里必须用切片赋值？</strong><br>
+    因为 <code>agent_loop</code> 函数外部（<code>__main__</code> 中的 <code>history</code> 变量）也持有同一个列表的引用。如果只重新绑定局部变量，外层看到的历史还是压缩前的旧内容，下一轮 API 调用还是超长。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15 -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> 主动压缩机制（Proactive Compact）</h2>
+
+  <h3>代码位置：L301-306</h3>
+  <pre><span class="cm"># Check if we should auto-compact (proactive, not just reactive)</span>
+<span class="kw">if</span> <span class="fn">estimate_tokens</span>(messages) &gt; TOKEN_THRESHOLD:
+    <span class="fn">print</span>(<span class="s">"[Recovery] Token estimate exceeds threshold. Auto-compacting..."</span>)
+    messages[:] = <span class="fn">auto_compact</span>(messages)</pre>
+
+  <h3>被动 vs 主动</h3>
+  <table>
+    <tr><th></th><th>被动压缩（策略 2）</th><th>主动压缩（这里）</th></tr>
+    <tr><td>触发时机</td><td>API 调用报错 <code>prompt_too_long</code> 时</td><td>每次工具调用处理完后主动检查</td></tr>
+    <tr><td>类比</td><td>等车坏了再修</td><td>定期保养预防故障</td></tr>
+    <tr><td>优点</td><td>只在必要时压缩</td><td>避免 API 浪费、减少失败重试</td></tr>
+  </table>
+
+  <p>这是代码中的<strong>第 4 种恢复机制</strong>（注释的三个策略 + 额外补充）：在工具调用处理后，主动检查 tokens 是否超过阈值（50000 字符），提前压缩，避免等到 API 报错。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16 -->
+<div class="card" id="s16">
+  <h2><span class="num">16</span> s10 → s11 完整变更对比</h2>
+
+  <h3>一、新增内容</h3>
+
+  <h4>3 大恢复策略</h4>
+  <table>
+    <tr><th>策略</th><th>触发条件</th><th>对应函数/变量</th><th>行为</th></tr>
+    <tr><td><strong>策略 1：续写</strong></td><td><code>stop_reason == "max_tokens"</code></td><td><code>CONTINUATION_MESSAGE</code></td><td>注入"接着没说完的说"，最多 3 次</td></tr>
+    <tr><td><strong>策略 2：压缩重试</strong></td><td>API 报错含 <code>"prompt_too_long"</code></td><td><code>auto_compact()</code></td><td>LLM 摘要替换原历史，再重试</td></tr>
+    <tr><td><strong>策略 3：退避重试</strong></td><td>临时性 API 错误</td><td><code>backoff_delay()</code></td><td>指数退避 + jitter，最多 3 次</td></tr>
+  </table>
+
+  <h4>5 个新函数/常量</h4>
+  <pre>MAX_RECOVERY_ATTEMPTS = <span class="num">3</span>
+estimate_tokens()   <span class="cm"># 粗估 token 数</span>
+auto_compact()      <span class="cm"># 用 LLM 压缩对话历史</span>
+backoff_delay()     <span class="cm"># 指数退避延迟计算</span>
+CONTINUATION_MESSAGE <span class="cm"># 续写提示词</span></pre>
+
+  <h4>agent_loop：从 17 行 → 94 行</h4>
+  <p>s10 的 agent_loop 没有错误处理，s11 增加了完整的恢复逻辑框架。</p>
+
+  <h3>二、删除内容</h3>
+  <table>
+    <tr><th>删除项</th><th>在 s10 中的作用</th><th>为什么删</th></tr>
+    <tr><td><code>SystemPromptBuilder</code> 类（86 行）</td><td>6 段式 system prompt 组装流水线</td><td>s11 主题是错误恢复，system prompt 不是重点，简化为 1 行</td></tr>
+    <tr><td><code>build_system_reminder()</code></td><td>本轮动态提醒机制</td><td>s11 没有 per-turn 动态提醒需求</td></tr>
+    <tr><td><code>/prompt</code>、<code>/sections</code> 命令</td><td>展示分段结构</td><td>s11 没有分层结构，无意义</td></tr>
+    <tr><td><code>DYNAMIC_BOUNDARY</code> 常量</td><td>静态/动态段分隔</td><td>system prompt 只有一行，不需要边界</td></tr>
+    <tr><td><code>import datetime</code>、<code>import re</code></td><td>动态上下文和 frontmatter 解析</td><td>对应函数被删除</td></tr>
+  </table>
+
+  <h3>三、整体对比</h3>
+  <table>
+    <tr><th>维度</th><th>s10</th><th>s11</th></tr>
+    <tr><td><strong>主题</strong></td><td>系统提示词构建</td><td>错误恢复</td></tr>
+    <tr><td><strong>代码行数</strong></td><td>~410 行</td><td>~328 行</td></tr>
+    <tr><td><strong>System Prompt</strong></td><td>86 行构建器</td><td>1 行字符串</td></tr>
+    <tr><td><strong>错误处理</strong></td><td>无</td><td>3 种恢复策略 + 主动压缩</td></tr>
+    <tr><td><strong>调试接口</strong></td><td><code>/prompt</code>、<code>/sections</code></td><td>无</td></tr>
+    <tr><td><strong>核心模式</strong></td><td>分层组装流水线</td><td>状态判断 + 恢复路径选择</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>一句话总结：</strong>s10 解决的是"提示词怎么造"，s11 解决的是"出错了怎么续"——两章完全正交，所以你在 s11 没有重复提问，是非常合理的学习轨迹。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 17 -->
+<div class="card" id="s17">
+  <h2><span class="num">17</span> 代码中的小问题汇总</h2>
+
+  <p>在阅读过程中发现的几个笔误或 bug：</p>
+
+  <table>
+    <tr><th>位置</th><th>问题</th><th>正确写法</th></tr>
+    <tr><td><span class="tag bug">bug</span> L250</td><td><code>response in None</code></td><td><code>response is None</code>（<code>in</code> 是成员运算符，<code>None</code> 不可迭代，会抛 <code>TypeError</code>）</td></tr>
+    <tr><td><span class="tag bug">typo</span> L233</td><td><code>Comapcting</code></td><td><code>Compacting</code></td></tr>
+    <tr><td><span class="tag bug">typo</span> L273</td><td><code>Stropping</code></td><td><code>Stopping</code></td></tr>
+    <tr><td><span class="tag bug">typo</span> L67</td><td><code>stopped.\nno recap</code>（换行正确但原文缺少 <code>\n</code>）</td><td>已修复</td></tr>
+    <tr><td><span class="tag bug">docs</span> L105 文档</td><td><code>base * 2^attempt + jitter + random(0,1)</code></td><td>实际代码只有 <code>min(...) + random(0,1)</code>，文档过期</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

@@ -31,7 +31,7 @@ try:
 except ImportError:
     pass
 
-from anthropic import Anthropic, APIError
+from anthropic import Anthropic
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -138,7 +138,7 @@ PROMPT_SECTIONS = {
     "memory": "Relevant memories are injected below when available.",
 }
 
-def assmeble_system_prompt(context: dict) -> str:
+def assemble_system_prompt(context: dict) -> str:
     sections = [PROMPT_SECTIONS["identity"],
                            PROMPT_SECTIONS["tools"],
                            PROMPT_SECTIONS["workspace"]]
@@ -155,7 +155,7 @@ def get_system_prompt(context: dict) -> str:
     if key == _last_context_key and _last_prompt:
         return _last_prompt
     _last_context_key = key
-    _last_prompt = assmeble_system_prompt(context)
+    _last_prompt = assemble_system_prompt(context)
     return _last_prompt
 
 # -- Tool implementations --

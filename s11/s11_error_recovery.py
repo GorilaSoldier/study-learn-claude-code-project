@@ -62,7 +62,7 @@ BACKOFF_MAX_DELAY = 30.0 # seconds
 TOKEN_THRESHOLD = 50000 # chars / 4 ~ tokens for compact trigger
 
 CONTINUATION_MESSAGE = (
-    "Output limit hit. Continue directly from where you stopped."
+    "Output limit hit. Continue directly from where you stopped.\n"
     "no recap, no repetition. Pick up mid-sentence if you need."
 )
 
@@ -88,7 +88,7 @@ def auto_compact(messages: list) -> list:
             messages=[{"role": "user", "content": prompt}],
             max_tokens=4000
         )
-        summary = response[0].text
+        summary = response.content[0].text
     except Exception as e:
         summary = f"(compact failed: {e}). Previous context lost."
     
@@ -234,7 +234,7 @@ def agent_loop(messages: list) -> None:
 
                 # Strategy 2: prompt_too_long -> compact and retry
                 if "overlong_prompt" in error_body or ("prompt" in error_body and "long" in error_body):
-                    print(f"[Recovery] Prompt too long.Comapcting... (attempt {attempt + 1})")
+                    print(f"[Recovery] Prompt too long.Compacting... (attempt {attempt + 1})")
                     messages[:] = auto_compact(messages)
                     continue
                 
@@ -250,7 +250,7 @@ def agent_loop(messages: list) -> None:
                 print(f"[Error] API call failed after {MAX_RECOVERY_ATTEMPTS} retries: {e}")
                 return
 
-        if response in None:
+        if response is None:
             print("[Error] No response received.")
             return
 
@@ -268,7 +268,7 @@ def agent_loop(messages: list) -> None:
                 continue # retry the loop
             else:
                 print(f"[Error] max_tokens recovery exhausted "
-                      f" ({MAX_RECOVERY_ATTEMPTS} attempts). Stropping."
+                      f" ({MAX_RECOVERY_ATTEMPTS} attempts). Stopping."
                 )
                 return
 
