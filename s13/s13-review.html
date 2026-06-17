@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s13 Background Tasks - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0f3b5e 0%, #1a5276 50%, #1a6e5c 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.15);
+    font-size: .85rem;
+  }
+
+  .toc {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+    padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 20px 0 10px;
+    color: var(--accent);
+  }
+  .card h4 {
+    font-size: .95rem;
+    margin: 16px 0 8px;
+    color: var(--purple);
+  }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.55;
+    margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+
+  .diagram {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5;
+    border-left: 4px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag.py   { background: #ddf4ff; color: #0969da; }
+  .tag.key  { background: #f3e8ff; color: #7c3aed; }
+  .tag.new  { background: #dafbe1; color: #1a7f37; }
+  .tag.del  { background: #ffebe9; color: #cf222e; }
+  .tag.mod  { background: #fff8c5; color: #9a6700; }
+  .tag.bug  { background: #ffebe9; color: #cf222e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .flow-arrow {
+    color: var(--text-muted);
+    font-size: .85rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s13 · 后台任务（Background Tasks）复习笔记</h1>
+  <p class="subtitle">慢命令丢到后台线程执行，主循环继续推进，完成后通过通知告诉模型</p>
+  <span class="badge">基于问答整理 · 287 LOC · 6 个工具 · 线程 + 锁 + 通知队列</span>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节概述：为什么需要后台任务？</a></li>
+    <li><a href="#s2">最小心智模型：单主线 + 异步执行</a></li>
+    <li><a href="#s3">全局变量：状态容器 + 线程锁</a></li>
+    <li><a href="#s4">is_slow_operation：启发式判断慢命令</a></li>
+    <li><a href="#s5">should_run_background：决策路由</a></li>
+    <li><a href="#s6">execute_tool：统一执行入口</a></li>
+    <li><a href="#s7">start_background_task：启动后台任务</a></li>
+    <li><a href="#s8">threading.Thread 详解：target、daemon、闭包</a></li>
+    <li><a href="#s9">daemon=True 到底在干什么？</a></li>
+    <li><a href="#s10">collect_background_results：收作业</a></li>
+    <li><a href="#s11">agent_loop 里的整合逻辑</a></li>
+    <li><a href="#s12">with 锁的用法详解</a></li>
+    <li><a href="#s13">s13 vs s12 完整对比</a></li>
+    <li><a href="#s14">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- 1 -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节概述：为什么需要后台任务？</h2>
+
+  <h3>核心动机</h3>
+  <p>前面几章（s00-s12）里，工具调用都是同步的：</p>
+  <pre>模型发起 → 立刻执行 → 立刻返回结果</pre>
+  <p>这对短命令没问题。但遇到 <code>npm install</code>、<code>pytest</code>、<code>docker build</code> 这些慢操作时，整个程序会被卡住——模型在等待期间什么都做不了，用户想继续别的工作也被堵住。</p>
+
+  <h3>s13 要解决的问题</h3>
+  <p><strong>把"慢执行"移到后台，让主循环继续推进别的事情。</strong></p>
+
+  <h3>三个核心概念</h3>
+  <table>
+    <tr><th>概念</th><th>含义</th><th>代码对应</th></tr>
+    <tr><td><strong>前台（同步）</strong></td><td>主循环发起后，必须立刻等结果的执行路径</td><td><code>execute_tool(block)</code> — 等返回</td></tr>
+    <tr><td><strong>后台（异步）</strong></td><td>命令在另一条线程上跑，主循环不等，先干别的</td><td><code>start_background_task(block)</code> → 1ms 返回 <code>bg_id</code></td></tr>
+    <tr><td><strong>通知队列</strong></td><td>后台任务完成后，不直接把全文塞给模型，先写一条摘要，等下一轮再带回</td><td><code>collect_background_results()</code> → <code>&lt;task_notification&gt;</code></td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>记住最关键的句子：</strong>主循环仍然只有一条，并行的是等待，不是主循环本身。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+
+  <h3>结构图</h3>
+  <div class="diagram">主循环（只有一条）
+ │
+ ├─ background_run("pytest")
+ │  → 立刻返回 task_id
+ │
+ ├─ 继续处理其他工具调用
+ │
+ ├─ 下一轮调模型前
+ │  → collect_background_results()
+ │  → 把摘要通知注入 messages
+ │
+ └─ 调模型
+
+后台执行线（另一条线程）
+ │
+ ├─ 真正执行 pytest（可能跑几分钟）
+ └─ 完成后写通知到队列</div>
+
+  <h3>s13 和 s12 任务系统的边界</h3>
+  <table>
+    <tr><th></th><th>s12 的 task</th><th>s13 的 background task</th></tr>
+    <tr><td><strong>本质</strong></td><td>工作目标</td><td>正在运行的执行单元</td></tr>
+    <tr><td><strong>关心</strong></td><td>要做什么、谁依赖谁、进度</td><td>哪个命令在跑、状态、结果</td></tr>
+    <tr><td><strong>存储</strong></td><td>磁盘（<code>.tasks/*.json</code>）</td><td>内存（两个字典，仅当前会话有效）</td></tr>
+    <tr><td><strong>类似</strong></td><td>工作看板</td><td>运行中的作业</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>初学者最容易犯的错：</strong>
+    <ol>
+      <li>以为"后台"就是更复杂的主循环——不是，主循环始终只有一条。</li>
+      <li>只开线程，不登记状态——任务一多就不知道谁还在跑。</li>
+      <li>把长日志全文塞进上下文——上下文很快被撑爆。</li>
+      <li>把 s12 的工作目标和 s13 的运行任务混为一谈。</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> 全局变量：状态容器 + 线程锁</h2>
+
+  <h3>代码位置：L287-291</h3>
+  <pre><span class="kw">_bg_counter</span> = <span class="num">0</span>
+<span class="kw">background_tasks</span>: dict[str, dict] = {}
+<span class="kw">background_results</span>: dict[str, str] = {}
+<span class="kw">background_lock</span> = threading.Lock()</pre>
+
+  <h3>逐变量解释</h3>
+  <table>
+    <tr><th>变量</th><th>类型</th><th>作用</th><th>谁写</th><th>谁读/删</th></tr>
+    <tr><td><code>_bg_counter</code></td><td>int</td><td>自增计数器，生成唯一任务 ID</td><td><code>start_background_task</code></td><td>—</td></tr>
+    <tr><td><code>background_tasks</code></td><td>dict[str, dict]</td><td>存所有后台任务的元信息（命令、状态、ID）</td><td>主线程（写 running）<br>worker 线程（改 completed）</td><td><code>collect_background_results</code>（pop）</td></tr>
+    <tr><td><code>background_results</code></td><td>dict[str, str]</td><td>存后台任务的执行结果</td><td>worker 线程</td><td><code>collect_background_results</code>（pop）</td></tr>
+    <tr><td><code>background_lock</code></td><td>threading.Lock</td><td>互斥锁，保证多线程读写字典安全</td><td>所有需要读写字典的地方</td><td>所有需要读写字典的地方</td></tr>
+  </table>
+
+  <h3>关键理解：为什么这两件事要分开？</h3>
+  <p>两个字典分工明确：</p>
+  <ul>
+    <li><code>background_tasks</code> 存的是"生命周期状态"——任务在跑还是跑完了</li>
+    <li><code>background_results</code> 存的是"执行产物"——命令的输出文本</li>
+  </ul>
+  <p>分开的好处：<code>collect_background_results</code> 可以分别 <code>pop</code>，一个任务取完了两个字典都清干净，不会残留脏数据。</p>
+
+  <div class="callout">
+    <strong>为什么需要锁？</strong>主线程和 worker 线程可能同时读写这两个字典。不加锁会出现"线程 A 读到写了一半的数据"等问题（竞态条件）。<code>with lock:</code> 保证同一时间只有一个线程能操作受保护的代码块。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> is_slow_operation：启发式判断慢命令</h2>
+
+  <h3>代码位置：L293-300</h3>
+  <pre><span class="kw">def</span> <span class="fn">is_slow_operation</span>(tool_name: <span class="tp">str</span>, tool_input: <span class="tp">dict</span>) -> <span class="tp">bool</span>:
+    <span class="s">"""Fallback heuristic: commands likely to take &gt; 30s."""</span>
+    <span class="kw">if</span> tool_name != <span class="s">"bash"</span>:
+        <span class="kw">return</span> <span class="tp">False</span>
+    cmd = tool_input.get(<span class="s">"command"</span>, <span class="s">""</span>).lower()
+    slow_keywords = [<span class="s">"install"</span>, <span class="s">"build"</span>, <span class="s">"test"</span>, <span class="s">"deploy"</span>, <span class="s">"compile"</span>,
+                     <span class="s">"docker build"</span>, <span class="s">"pip install"</span>, <span class="s">"npm install"</span>,
+                     <span class="s">"cargo build"</span>, <span class="s">"pytest"</span>, <span class="s">"make"</span>]
+    <span class="kw">return</span> <span class="fn">any</span>(kw <span class="kw">in</span> cmd <span class="kw">for</span> kw <span class="kw">in</span> slow_keywords)</pre>
+
+  <h3>逐行详解</h3>
+  <ul>
+    <li><strong>L295-296</strong>：只对 <code>bash</code> 工具做判断。其他工具（读文件、写文件）通常不会慢，直接返回 <code>False</code>。</li>
+    <li><strong>L297</strong>：从 <code>tool_input</code> 字典里取出 <code>"command"</code> 键的值，取不到就用空字符串 <code>""</code>，然后统一转小写以便匹配。</li>
+    <li><strong>L298-299</strong>：定义了慢命令关键词列表。</li>
+  </ul>
+
+  <h3><code>any(kw in cmd for kw in slow_keywords)</code> 拆解</h3>
+  <p>这是整个函数最核心的一行。拆开看：</p>
+  <pre><span class="cm"># 原写法（一行）：</span>
+<span class="kw">return</span> <span class="fn">any</span>(kw <span class="kw">in</span> cmd <span class="kw">for</span> kw <span class="kw">in</span> slow_keywords)
+
+<span class="cm"># 等价的 for 循环写法：</span>
+<span class="kw">for</span> kw <span class="kw">in</span> slow_keywords:
+    <span class="kw">if</span> kw <span class="kw">in</span> cmd:   <span class="cm"># 检查关键词是否作为"子串"出现在命令中</span>
+        <span class="kw">return</span> <span class="tp">True</span>
+<span class="kw">return</span> <span class="tp">False</span></pre>
+  <p>比如 <code>cmd = "sudo apt install nginx"</code>，<code>"install" in cmd</code> 是 <code>True</code>，所以函数返回 <code>True</code>。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> should_run_background：决策路由</h2>
+
+  <h3>代码位置：L302-306</h3>
+  <pre><span class="kw">def</span> <span class="fn">should_run_background</span>(tool_name: <span class="tp">str</span>, tool_input: <span class="tp">dict</span>) -> <span class="tp">bool</span>:
+    <span class="s">"""Model explicit request takes priority; fallback to heuristic."""</span>
+    <span class="kw">if</span> tool_input.get(<span class="s">"run_in_background"</span>):
+        <span class="kw">return</span> <span class="tp">True</span>
+    <span class="kw">return</span> <span class="fn">is_slow_operation</span>(tool_name, tool_input)</pre>
+
+  <h3>两条路径</h3>
+  <ul>
+    <li><strong>显式请求（优先级高）</strong>：模型在 <code>tool_input</code> 里传了 <code>run_in_background: true</code>，直接后台执行。</li>
+    <li><strong>启发式兜底（优先级低）</strong>：模型没明确说，但命令看起来像慢操作（含 install、build 等关键词），也放到后台。</li>
+  </ul>
+
+  <div class="diagram">should_run_background()
+        │
+  tool_input 里有 run_in_background?
+        │
+   ┌────┴────┐
+   YES       NO
+    │         │
+    │    is_slow_operation()
+    │         │
+    │    ┌────┴────┐
+    │    YES       NO
+    │     │        │
+    └──┬──┘        │
+       │           │
+   后台执行      前台同步</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> execute_tool：统一执行入口</h2>
+
+  <h3>代码位置：L308-312</h3>
+  <pre><span class="kw">def</span> <span class="fn">execute_tool</span>(block) -> <span class="tp">str</span>:
+    <span class="s">"""Execute a tool call block, return output."""</span>
+    handler = TOOL_HANDLERS.get(block.name)
+    <span class="kw">if</span> handler:
+        <span class="kw">return</span> handler(<span class="op">**</span>block.input)
+    <span class="kw">return</span> f<span class="s">"Unknown: {block.name}"</span></pre>
+
+  <h3>为什么需要这个函数？</h3>
+  <p>s12 里工具执行逻辑直接写在 <code>agent_loop</code> 的循环里。s13 里有两种场景都需要"执行工具"：</p>
+  <ul>
+    <li><strong>同步执行</strong>：主循环直接调 <code>execute_tool(block)</code>，等结果</li>
+    <li><strong>后台执行</strong>：worker 线程里调 <code>execute_tool(block)</code>，不等</li>
+  </ul>
+  <p>提取成独立函数避免重复代码。</p>
+
+  <h3><code>handler(**block.input)</code> 是什么意思？</h3>
+  <p><code>**dict</code> 是 Python 的字典解包语法，把字典展开成关键字参数：</p>
+  <pre><span class="cm"># 假设 block.input = {"command": "ls -la"}</span>
+handler(<span class="op">**</span>block.input)
+<span class="cm"># 等效于：</span>
+handler(command=<span class="s">"ls -la"</span>)</pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> start_background_task：启动后台任务</h2>
+
+  <h3>代码位置：L318-341</h3>
+  <pre><span class="kw">def</span> <span class="fn">start_background_task</span>(block) -> <span class="tp">str</span>:
+    <span class="s">"""Run tool in a daemon thread. Returns background task ID."""</span>
+    <span class="kw">global</span> _bg_counter
+    _bg_counter += <span class="num">1</span>
+    bg_id = f<span class="s">"bg_{_bg_counter:04d}"</span>
+    cmd = block.input.get(<span class="s">"command"</span>, block.name)
+
+    <span class="kw">def</span> <span class="fn">worker</span>():                                    <span class="cm"># ⚠️ 这里只是定义，不执行</span>
+        result = execute_tool(block)                    <span class="cm"># 真正耗时的地方</span>
+        <span class="kw">with</span> background_lock:
+            background_tasks[bg_id][<span class="s">"status"</span>] = <span class="s">"completed"</span>
+            background_results[bg_id] = result
+
+    <span class="kw">with</span> background_lock:                             <span class="cm"># ⬅ 先注册为 running</span>
+        background_tasks[bg_id] = {
+            <span class="s">"tool_use_id"</span>: block.id,
+            <span class="s">"command"</span>: cmd,
+            <span class="s">"status"</span>: <span class="s">"running"</span>
+        }
+
+    thread = threading.Thread(target=worker, daemon=<span class="tp">True</span>)
+    thread.start()                                      <span class="cm"># ⬅ 到这行 worker 才开始执行</span>
+    print(f<span class="s">"  \033[33m[background] dispatched {bg_id}: {cmd[:40]}\033[0m"</span>)
+    <span class="kw">return</span> bg_id</pre>
+
+  <h3>执行顺序（这是最容易搞混的部分）</h3>
+  <p><code>def worker()</code> 只是"定义"一个函数，里面的代码<strong>不会立即执行</strong>。真实顺序是：</p>
+  <div class="diagram">行号    代码                            谁在跑       什么时候
+────     ────                            ─────        ──────────
+L321     def worker():                   主线程        立即（只定义，不执行）
+L322-324  execute_tool / 加锁            —            还没执行！
+L326-330 注册任务为 running              主线程        def 之后立即执行
+L332     Thread(target=worker)           主线程        立即创建线程对象
+L333     thread.start()                  主线程        创建新线程
+L334     print(...)                      主线程        start 后立即
+L335     return bg_id                    主线程        立即返回
+                                                ↓
+                                        新线程启动后：
+L322     execute_tool(block)             后台线程      start() 后在后台跑
+L323-324 with lock / 改状态              后台线程      execute_tool 返回后</div>
+
+  <h3>关键理解：这个函数很快返回是故意的</h3>
+  <p><code>start_background_task</code> 本身只做"安排任务"的事（注册状态 + 启动线程），大约耗时 1ms。真正的耗时操作在 worker 线程里，跟这个函数没关系。</p>
+
+  <div class="callout green">
+    <strong>注意：</strong>先注册为 <code>"running"</code>，再 <code>thread.start()</code>。等 worker 执行完 <code>execute_tool</code> 后，再把状态改为 <code>"completed"</code>。<code>collect_background_results</code> 通过检查状态变化来发现"哪个任务完成了"。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> threading.Thread 详解</h2>
+
+  <h3>最基础用法</h3>
+  <pre><span class="kw">import</span> threading
+
+<span class="kw">def</span> <span class="fn">say_hello</span>():
+    print(<span class="s">"我在新线程里！"</span>)
+
+t = threading.Thread(target=say_hello)   <span class="cm"># 告诉线程：去执行 say_hello 函数</span>
+t.start()                                 <span class="cm"># 创建新线程，开始运行</span>
+                                          <span class="cm"># 主线程不等，继续往下走</span></pre>
+
+  <h3>target 的三种写法</h3>
+  <table>
+    <tr><th>写法</th><th>示例</th><th>适用场景</th></tr>
+    <tr><td>传已有函数名</td><td><code>Thread(target=my_func)</code></td><td>函数已定义好</td></tr>
+    <tr><td>传 lambda</td><td><code>Thread(target=lambda: print("hi"))</code></td><td>逻辑简单，一行搞定</td></tr>
+    <tr><td>传内部函数（闭包）</td><td><code>def outer():<br>&nbsp;&nbsp;x = 10<br>&nbsp;&nbsp;def inner():<br>&nbsp;&nbsp;&nbsp;&nbsp;print(x)<br>&nbsp;&nbsp;Thread(target=inner)</code></td><td><strong>你的代码用的方式</strong>——可以访问外部函数里的局部变量</td></tr>
+  </table>
+
+  <h3>带括号和不带括号的关键区别</h3>
+  <pre><span class="cm"># ✅ 正确：传函数本身</span>
+t = threading.Thread(target=worker)     <span class="cm"># worker 是函数对象</span>
+t.start()                               <span class="cm"># 新线程去执行 worker()</span>
+
+<span class="cm"># ❌ 错误：传函数的返回值</span>
+t = threading.Thread(target=worker())   <span class="cm"># 先执行了 worker()，把返回值传给 target</span>
+t.start()                               <span class="cm"># 新线程试图执行返回值（字符串），报错</span></pre>
+  <p>区分方法：<code>worker</code> = 菜谱（函数本身），<code>worker()</code> = 做出来的菜（调用结果）。</p>
+
+  <h3>闭包（Closure）</h3>
+  <p>你的代码里的 <code>worker</code> 定义在 <code>start_background_task</code> 内部，可以访问外部的 <code>block</code> 和 <code>bg_id</code>：</p>
+  <pre><span class="kw">def</span> <span class="fn">start_background_task</span>(block):
+    bg_id = ...
+    cmd = ...
+
+    <span class="kw">def</span> <span class="fn">worker</span>():
+        result = execute_tool(block)        <span class="cm"># 访问了外部的 block</span>
+        background_tasks[bg_id][...] = ...   <span class="cm"># 访问了外部的 bg_id</span>
+
+    thread = threading.Thread(target=worker)
+    thread.start()</pre>
+  <p>这省去了用 <code>args</code> 传参的麻烦。worker 自然"记住"了它定义时外面的变量值。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> daemon=True 到底在干什么？</h2>
+
+  <h3>普通线程 vs 守护线程</h3>
+  <pre><span class="cm"># 普通线程（daemon=False，默认值）</span>
+t = threading.Thread(target=worker)
+t.start()
+<span class="cm"># 即使主线程执行完了，也会等待 worker 执行完才退出程序</span>
+
+<span class="cm"># 守护线程（daemon=True）</span>
+t = threading.Thread(target=worker, daemon=<span class="tp">True</span>)
+t.start()
+<span class="cm"># 主线程执行完了，不管 worker 有没有跑完，程序直接退出</span>
+<span class="cm"># worker 被强制终止</span></pre>
+
+  <h3>在 s13 中 daemon=True 保护什么？</h3>
+  <p>保护的是：<strong>用户主动退出程序时，不需要等没跑完的后台任务</strong>。</p>
+
+  <div class="diagram">场景：用户启动了 "npm install"（要跑 2 分钟），又不想等了：
+
+第 10 秒：用户输入 q
+         → 主循环 break，程序准备退出
+
+如果没有 daemon=True：
+         → Python 检查：还有后台线程在跑
+         → 等它跑完！（等 110 秒）
+         → 用户按了 q，但程序卡住不动了
+
+有 daemon=True：
+         → 主线程退出
+         → 后台线程被强制终止
+         → 程序立即退出</div>
+
+  <div class="callout green">
+    <strong>但正常情况 worker 不会被杀死！</strong>因为程序在 <code>while True</code> 循环里一直运行，除非用户输入 q 退出，否则后台线程有充足的时间跑完。daemon=True 只在用户明确退出时生效。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> collect_background_results：收作业</h2>
+
+  <h3>代码位置：L343-363</h3>
+  <pre><span class="kw">def</span> <span class="fn">collect_background_results</span>() -> <span class="tp">list[str]</span>:
+    <span class="s">"""Collect completed background results as task_notification messages."""</span>
+    <span class="kw">with</span> background_lock:
+        ready_ids = [bid <span class="kw">for</span> bid, task <span class="kw">in</span> background_tasks.items()
+                     <span class="kw">if</span> task[<span class="s">"status"</span>] == <span class="s">"completed"</span>]
+    notifications = []
+    <span class="kw">for</span> bg_id <span class="kw">in</span> ready_ids:
+        <span class="kw">with</span> background_lock:
+            task = background_tasks.pop(bg_id)
+            output = background_results.pop(bg_id, <span class="s">""</span>)
+        summary = output[:<span class="num">200</span>] <span class="kw">if</span> <span class="fn">len</span>(output) &gt; <span class="num">200</span> <span class="kw">else</span> output
+        notifications.append(
+            f<span class="s">"&lt;task_notification&gt;\n"</span>
+            f<span class="s">"  &lt;task_id&gt;{bg_id}&lt;/task_id&gt;\n"</span>
+            f<span class="s">"  &lt;status&gt;completed&lt;/status&gt;\n"</span>
+            f<span class="s">"  &lt;command&gt;{task['command']}&lt;/command&gt;\n"</span>
+            f<span class="s">"  &lt;summary&gt;{summary}&lt;/summary&gt;\n"</span>
+            f<span class="s">"&lt;/task_notification&gt;"</span>
+        )
+        print(f<span class="s">"  \033[32m[background done] {bg_id}: "</span>
+              f<span class="s">"{task['command'][:40]} ({len(output)} chars)\033[0m"</span>)
+    <span class="kw">return</span> notifications</pre>
+
+  <h3>三步流程</h3>
+
+  <h4>步骤 1：找出已完成的任务（L344-346）</h4>
+  <pre>ready_ids = [bid <span class="kw">for</span> bid, task <span class="kw">in</span> background_tasks.items()
+             <span class="kw">if</span> task[<span class="s">"status"</span>] == <span class="s">"completed"</span>]</pre>
+  <ul>
+    <li>遍历 <code>background_tasks</code> 字典，找到所有状态为 <code>"completed"</code> 的任务 ID</li>
+    <li>注意这里先只拿 ID，不放锁后才逐个处理——尽量减少锁的持有时间</li>
+  </ul>
+
+  <h4>步骤 2：取出并删除（L349-351）</h4>
+  <pre><span class="kw">with</span> background_lock:
+    task = background_tasks.pop(bg_id)          <span class="cm"># pop = 取出 + 删除</span>
+    output = background_results.pop(bg_id, <span class="s">""</span>)</pre>
+  <ul>
+    <li><code>pop(key)</code>：从字典中取出 key 对应的值，同时删除这个 key</li>
+    <li><code>pop(key, default)</code>：如果 key 不存在，返回 default 而不是抛异常</li>
+    <li>用 <code>pop</code> 而非 <code>get</code> 的好处：取完即删，下次再调这个函数就不会重复处理同一个任务</li>
+  </ul>
+
+  <h4>步骤 3：截断 + 格式化 + 返回（L352-363）</h4>
+  <pre>summary = output[:<span class="num">200</span>] <span class="kw">if</span> <span class="fn">len</span>(output) &gt; <span class="num">200</span> <span class="kw">else</span> output</pre>
+  <ul>
+    <li>输出只取前 200 个字符作为摘要，防止上下文被撑爆</li>
+    <li>格式化为 XML 风格的通知字符串，方便 AI 模型解析</li>
+  </ul>
+
+  <p>生成的通知消息示例：</p>
+  <pre>&lt;task_notification&gt;
+  &lt;task_id&gt;bg_0001&lt;/task_id&gt;
+  &lt;status&gt;completed&lt;/status&gt;
+  &lt;command&gt;pip install torch&lt;/command&gt;
+  &lt;summary&gt;Collecting torch... Successfully installed torch-2.0.0&lt;/summary&gt;
+&lt;/task_notification&gt;</pre>
+
+  <h3>完整执行示例</h3>
+  <div class="diagram">调用前：
+  background_tasks = {
+    "bg_0001": {..., "status": "completed"},
+    "bg_0002": {..., "status": "running"},    ← 还在跑，跳过
+    "bg_0003": {..., "status": "completed"},
+  }
+
+collect_background_results() 执行后：
+  background_tasks = {
+    "bg_0002": {..., "status": "running"},    ← 没完成的还在
+  }
+
+返回：
+  ["&lt;task_notification&gt;...bg_0001...&lt;/task_notification&gt;",
+   "&lt;task_notification&gt;...bg_0003...&lt;/task_notification&gt;"]</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> agent_loop 里的整合逻辑</h2>
+
+  <h3>代码位置：L399-427</h3>
+  <pre><span class="cm"># -- Process tool calls --</span>
+results = []
+<span class="kw">for</span> block <span class="kw">in</span> response.content:
+    <span class="kw">if</span> block.type != <span class="s">"tool_use"</span>:
+        <span class="kw">continue</span>
+
+    <span class="kw">if</span> <span class="fn">should_run_background</span>(block.name, block.input):  <span class="cm"># ← 判断是否后台</span>
+        bg_id = <span class="fn">start_background_task</span>(block)            <span class="cm"># ← 1ms 返回</span>
+        results.append({
+            <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+            <span class="s">"tool_use_id"</span>: block.id,
+            <span class="s">"content"</span>: f<span class="s">"[Background task {bg_id} started] ..."</span>  <span class="cm"># ← 占位结果</span>
+        })
+    <span class="kw">else</span>:
+        output = <span class="fn">execute_tool</span>(block)                     <span class="cm"># ← 同步执行</span>
+        results.append({
+            <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+            <span class="s">"tool_use_id"</span>: block.id,
+            <span class="s">"content"</span>: output
+        })
+
+<span class="cm"># 注入后台通知</span>
+user_content = <span class="fn">list</span>(results)
+bg_notifications = <span class="fn">collect_background_results</span>()       <span class="cm"># ← 检查后台完成情况</span>
+<span class="kw">if</span> bg_notifications:
+    <span class="kw">for</span> notif <span class="kw">in</span> bg_notifications:
+        user_content.append({<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: notif})
+
+messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: user_content})</pre>
+
+  <h3>这个循环做了什么？</h3>
+
+  <table>
+    <tr><th>步骤</th><th>代码</th><th>说明</th></tr>
+    <tr><td>1</td><td><code>results = []</code></td><td>准备结果列表</td></tr>
+    <tr><td>2</td><td><code>for block in response.content</code></td><td>遍历 AI 模型返回的每个内容块</td></tr>
+    <tr><td>3</td><td><code>if block.type != "tool_use": continue</code></td><td>跳过文本回答，只处理工具调用</td></tr>
+    <tr><td>4</td><td><code>should_run_background(...)</code></td><td>判断该放后台还是同步执行</td></tr>
+    <tr><td>5a</td><td><code>start_background_task(block)</code></td><td>后台执行 → 立即返回 bg_id，放占位结果</td></tr>
+    <tr><td>5b</td><td><code>execute_tool(block)</code></td><td>同步执行 → 等结果出来，放真实结果</td></tr>
+    <tr><td>6</td><td><code>collect_background_results()</code></td><td>检查之前启动的所有后台任务，有完成的就取出来</td></tr>
+    <tr><td>7</td><td>追加通知到 <code>user_content</code></td><td>有完成的通知就一起发给模型</td></tr>
+    <tr><td>8</td><td><code>messages.append(...)</code></td><td>所有结果打包成一条用户消息发给 AI</td></tr>
+  </table>
+
+  <h3>完整的时间线</h3>
+  <div class="diagram">用户输入："安装 torch 然后看看目录"
+
+第 1 轮 agent_loop：
+  AI 返回：tool_use bash "pip install torch"
+            tool_use bash "ls"
+  │
+  ├─ should_run_background("pip install torch") → True
+  │   └─ start_background_task → "bg_0001" 已启动（占位）
+  │
+  ├─ should_run_background("ls") → False
+  │   └─ execute_tool → "main.py\n..."（真实结果）
+  │
+  ├─ collect_background_results() → 空（torch 还在装）
+  │
+  └─ 把结果发给 AI
+
+第 2 轮 agent_loop：
+  │
+  ├─ collect_background_results() → ["&lt;task_notification&gt;bg_0001 完成&lt;/...&gt;"]
+  │
+  └─ 把任务结果 + 通知一起发给 AI</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> with 锁的用法详解</h2>
+
+  <h3>为什么需要锁？</h3>
+  <p>多个线程同时读写同一个字典可能出问题：</p>
+  <pre><span class="cm"># 场景：线程 A 在读，线程 B 同时在写</span>
+<span class="cm"># 线程A: if task["status"] == "completed"   ← 读到一半的数据？</span>
+<span class="cm"># 线程B: task["status"] = "completed"        ← 写了一半</span></pre>
+
+  <h3>with lock 的等价展开</h3>
+  <pre><span class="cm"># 写法 A（实际代码）：</span>
+<span class="kw">with</span> background_lock:
+    background_tasks[bg_id][<span class="s">"status"</span>] = <span class="s">"completed"</span>
+    background_results[bg_id] = result
+
+<span class="cm"># 写法 B（等价的）</span>
+background_lock.acquire()            <span class="cm"># 上锁——如果锁被人拿着，会阻塞等待</span>
+<span class="kw">try</span>:
+    background_tasks[bg_id][<span class="s">"status"</span>] = <span class="s">"completed"</span>
+    background_results[bg_id] = result
+<span class="kw">finally</span>:
+    background_lock.release()         <span class="cm"># 解锁——一定要在 finally 里保证释放</span></pre>
+
+  <h3>with 的好处</h3>
+  <ul>
+    <li>自动调用 <code>acquire()</code> 和 <code>release()</code></li>
+    <li>即使代码抛出异常，锁也会自动释放（不会死锁）</li>
+    <li>代码更简洁</li>
+  </ul>
+
+  <h3>with 只保护块内的代码</h3>
+  <pre><span class="kw">def</span> <span class="fn">worker</span>():
+    result = execute_tool(block)              <span class="cm"># ← 没有锁保护！执行 60 秒都没人管</span>
+    <span class="kw">with</span> background_lock:                     <span class="cm"># ← 只有这里被保护</span>
+        background_tasks[bg_id][<span class="s">"status"</span>] = <span class="s">"completed"</span>   <span class="cm"># 这几行只需要几微秒</span>
+        background_results[bg_id] = result</pre>
+  <p>只有真正操作共享字典的地方才加锁，尽量减少锁的持有时间。这样其他线程不会被长时间阻塞。</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13 -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> s13 vs s12 完整对比</h2>
+
+  <h3>总体对比</h3>
+  <table>
+    <tr><th>维度</th><th>s12</th><th>s13</th></tr>
+    <tr><td>执行方式</td><td>所有工具<strong>同步执行</strong>，等结果回来才继续</td><td>慢工具<strong>后台异步执行</strong>，快工具同步执行</td></tr>
+    <tr><td>主循环模式</td><td>等 → 执行 → 等 → 执行</td><td>丢后台 → 继续 → 收通知 → 继续</td></tr>
+    <tr><td>新增概念</td><td>任务系统（task）</td><td>后台任务（background task）+ 通知队列</td></tr>
+    <tr><td>线程</td><td>无</td><td><code>threading.Thread</code> + <code>threading.Lock</code></td></tr>
+    <tr><td>结果传递</td><td>直接返回</td><td>后台的结果通过通知队列延迟带回</td></tr>
+    <tr><td>核心新增函数</td><td>—</td><td><code>is_slow_operation</code>、<code>should_run_background</code>、<code>start_background_task</code>、<code>collect_background_results</code></td></tr>
+  </table>
+
+  <h3>新增了什么</h3>
+
+  <h4>新增 1：全局状态变量（L287-291）</h4>
+  <p><code>_bg_counter</code>（计数器）、<code>background_tasks</code>（任务表）、<code>background_results</code>（结果队列）、<code>background_lock</code>（锁）</p>
+
+  <h4>新增 2-4：四个新函数（L293-363）</h4>
+  <table>
+    <tr><th>函数</th><th>作用</th></tr>
+    <tr><td><code>is_slow_operation()</code></td><td>启发式判断：命令包含 install/build/test 等关键词就认为是慢操作</td></tr>
+    <tr><td><code>should_run_background()</code></td><td>决策路由：显式标记优先，无标记则 fallback 到启发式判断</td></tr>
+    <tr><td><code>execute_tool()</code></td><td>统一执行入口——从 agent_loop 里提取出来，同步和后台都能用</td></tr>
+    <tr><td><code>start_background_task()</code></td><td>核心函数：注册任务 → 启动线程 → 返回 ID</td></tr>
+    <tr><td><code>collect_background_results()</code></td><td>收作业：找 completed → pop 取出 → 造通知 → 返回</td></tr>
+  </table>
+
+  <h3>修改了什么</h3>
+
+  <h4>修改 1：agent_loop 里的工具处理逻辑</h4>
+  <p><strong>s12：</strong>所有工具一律同步执行</p>
+  <pre>handler = TOOL_HANDLERS.get(block.name)
+output = handler(**block.input) <span class="kw">if</span> handler <span class="kw">else</span> <span class="s">"Unknown"</span>
+results.append({<span class="s">"type"</span>: <span class="s">"tool_result"</span>, <span class="s">"content"</span>: output})</pre>
+
+  <p><strong>s13：</strong>慢的放后台，快的当场执行</p>
+  <pre><span class="kw">if</span> should_run_background(block.name, block.input):
+    bg_id = start_background_task(block)
+    results.append({<span class="s">"content"</span>: f<span class="s">"[Background task {bg_id} started]"</span>})
+<span class="kw">else</span>:
+    output = execute_tool(block)
+    results.append({<span class="s">"content"</span>: output})</pre>
+
+  <h4>修改 2：工具处理后追加通知注入</h4>
+  <p><strong>s12：</strong>处理完工具结果后直接 <code>messages.append(...)</code></p>
+  <p><strong>s13：</strong>处理完工具结果后多了一步 <code>collect_background_results()</code>，把后台完成通知也发给模型。</p>
+
+  <h3>没变的部分</h3>
+  <ul>
+    <li><strong>Task 系统</strong>（<code>@dataclass Task</code>、<code>create_task</code>、<code>claim_task</code>、<code>complete_task</code> 等）：完全复用 s12</li>
+    <li><strong>工具定义</strong>（<code>TOOLS</code> 列表）：完全没变</li>
+    <li><strong>工具处理函数</strong>（<code>run_bash</code>、<code>run_read</code>、<code>run_write</code> 等）：完全没变</li>
+    <li><strong>Prompt 组装逻辑</strong>：完全没变</li>
+    <li><strong>最外层主入口</strong>：几乎没变（只改了提示文字）</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14 -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> Python 语法小抄</h2>
+
+  <p>代码中出现的值得特别注意的语法点：</p>
+
+  <table>
+    <tr><th>语法</th><th>代码中例子</th><th>作用</th></tr>
+    <tr><td><code>any(expr for x in xs)</code></td><td><code>any(kw in cmd for kw in slow_keywords)</code></td><td>检查列表中是否有<strong>任一</strong>元素满足条件</td></tr>
+    <tr><td><code>dict.get(key, default)</code></td><td><code>tool_input.get("command", "")</code></td><td>安全取值，key 不存在时返回默认值，不抛 KeyError</td></tr>
+    <tr><td><code>dict.pop(key, default)</code></td><td><code>background_results.pop(bg_id, "")</code></td><td><strong>取出并删除</strong>key，不存在时返回默认值</td></tr>
+    <tr><td><code>f"{var:04d}"</code></td><td><code>f"bg_{_bg_counter:04d}"</code></td><td>f-string 格式化，整数至少 4 位，不足前面补 0</td></tr>
+    <tr><td><code>with lock:</code></td><td><code>with background_lock:</code></td><td>上下文管理器，自动 acquire/release 锁</td></tr>
+    <tr><td><code>Thread(target=fn, daemon=True)</code></td><td><code>Thread(target=worker, daemon=True)</code></td><td>创建守护线程，主进程退出时自动销毁</td></tr>
+    <tr><td><code>handler(**block.input)</code></td><td><code>handler(**block.input)</code></td><td>字典解包为关键字参数</td></tr>
+    <tr><td><code>\033[33m...\033[0m</code></td><td><code>print(f"\033[33m...\033[0m")</code></td><td>ANSI 终端颜色转义码（33=黄，32=绿，36=青）</td></tr>
+    <tr><td><code>闭包（Closure）</code></td><td><code>worker()</code> 内部访问外部的 <code>block</code> 和 <code>bg_id</code></td><td>内部函数"记住"了定义时外部变量的值</td></tr>
+    <tr><td><code>class method vs function</code></td><td><code>def worker(): ...</code> 定义在另一个函数内部</td><td>函数内部可以定义函数，这是 Python 的函数式特性</td></tr>
+  </table>
+
+  <h3>列表推导式复习</h3>
+  <pre><span class="cm"># 基本形式：[表达式 for 变量 in 可迭代对象 if 条件]</span>
+
+<span class="cm"># 代码中的例子：找出所有已完成的任务 ID</span>
+ready_ids = [bid <span class="kw">for</span> bid, task <span class="kw">in</span> background_tasks.items()
+             <span class="kw">if</span> task[<span class="s">"status"</span>] == <span class="s">"completed"</span>]
+
+<span class="cm"># 等效的普通 for 循环：</span>
+ready_ids = []
+<span class="kw">for</span> bid, task <span class="kw">in</span> background_tasks.items():   <span class="cm"># items() 返回 (key, value) 对</span>
+    <span class="kw">if</span> task[<span class="s">"status"</span>] == <span class="s">"completed"</span>:
+        ready_ids.append(bid)</pre>
+
+  <h3><code>def</code> 只定义不执行</h3>
+  <p>这是整个 s13 里最容易搞混的地方。记住：</p>
+  <pre><span class="kw">def</span> <span class="fn">worker</span>():        <span class="cm"># ← 这行只是定义了一个函数对象</span>
+    print(<span class="s">"hello"</span>)    <span class="cm"># ← 这行不会立即执行</span>
+
+print(<span class="s">"world"</span>)          <span class="cm"># ← 这行先执行</span>
+
+thread = Thread(target=worker)
+thread.start()            <span class="cm"># ← 到这行 worker 里的 print 才执行</span>
+
+<span class="cm"># 输出顺序：world → hello</span></pre>
+</div>
+
+</div>
+</body>
+</html>
