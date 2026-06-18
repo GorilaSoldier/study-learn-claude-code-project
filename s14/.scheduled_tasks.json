@@ -1,0 +1,9 @@
+[
+  {
+    "id": "cron_770066",
+    "cron": "0 9 * * *",
+    "prompt": "\u8bf7\u7528\u4e2d\u6587\u5411\u7528\u6237\u95ee\u597d\uff0c\u8bf4\u65e9\u4e0a\u597d\uff0c\u5e76\u7ed9\u51fa\u4e00\u53e5\u79ef\u6781\u7684\u52b1\u5fd7\u8bdd\u8bed\u3002",
+    "recurring": true,
+    "durable": true
+  }
+]

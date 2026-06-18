@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s14 Cron Scheduler - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s14 · 定时调度（Cron Scheduler）复习笔记</h1>
+  <p class="subtitle">把一条未来要执行的意图先记下来，等时间到了再触发</p>
+  <span class="badge">基于问答整理 · 452 LOC · 7 个工具 · 3 个线程 · 2 把锁</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨：后台任务 vs 定时调度</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">整体架构：4 层 + 3 线程</a></li>
+    <li><a href="#s4">数据结构与全局状态</a></li>
+    <li><a href="#s5">Cron 表达式匹配引擎</a></li>
+    <li><a href="#s6">Cron 表达式验证</a></li>
+    <li><a href="#s7">持久化：save / load</a></li>
+    <li><a href="#s8">注册与取消</a></li>
+    <li><a href="#s9">调度器主循环</a></li>
+    <li><a href="#s10">消费队列</a></li>
+    <li><a href="#s11">投递系统</a></li>
+    <li><a href="#s12">agent_loop 里的消费</a></li>
+    <li><a href="#s13">两把锁的设计</a></li>
+    <li><a href="#s14">启动流程详解</a></li>
+    <li><a href="#s15">完整故事：全链路演练</a></li>
+    <li><a href="#s16">context / memories / prompt 的关系</a></li>
+    <li><a href="#s17">get_system_prompt 缓存</a></li>
+    <li><a href="#s18">s14 vs s13 对比</a></li>
+    <li><a href="#s19">常见困惑与 FAQ</a></li>
+    <li><a href="#s20">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨：后台任务 vs 定时调度</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>后台任务是在"等结果"，定时调度是在"等开始"。
+  </div>
+  <p><strong>s13 解决的问题：</strong>慢命令丢到后台线程执行——"稍后回来拿结果"。</p>
+  <p><strong>s14 要解决的问题：</strong>很多需求不是"现在做"，而是"将来某个时间再做"。如每天晚上跑测试、每周一早上生成报告、30 分钟后提醒。</p>
+  <div class="callout purple">
+    <strong>最核心的设计思想：</strong>定时任务并不是另一套 agent——它最终还是回到同一条主循环。调度器做的是"记住未来"，不是"取代主循环"。
+  </div>
+  <table>
+    <tr><th>机制</th><th>回答的问题</th></tr>
+    <tr><td>后台任务（s13）</td><td>"已经启动的慢操作，结果什么时候回来？"</td></tr>
+    <tr><td>定时调度（s14）</td><td>"一件事应该在未来什么时候开始？"</td></tr>
+  </table>
+</div>
+
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+  <div class="diagram">1. 调度记录 (Schedule Record) — 记住未来什么时间要做什么事
+2. 定时检查器 (Timer Checker) — 后台线程每秒检查"现在是否匹配"
+3. 通知队列 (Notification Queue) — 如果匹配，把任务放进队列等主循环处理</div>
+  <p>它们的关系：<code>schedule_job()</code> → 写入 <code>scheduled_jobs</code> + 磁盘 → <code>cron_scheduler_loop</code> 每秒检查 → 匹配则放入 <code>cron_queue</code> → <code>queue_processor_loop</code> 空闲时取走 → <code>agent_loop</code> 伪装成用户消息喂给 AI。</p>
+</div>
+
+<div class="card" id="s3">
+  <h2><span class="num">3</span> 整体架构：4 层 + 3 线程</h2>
+  <table>
+    <tr><th>层</th><th>名称</th><th>职责</th></tr>
+    <tr><td>1</td><td>Scheduler</td><td>守护线程检查时间 → 放行匹配的 job</td></tr>
+    <tr><td>2</td><td>Queue</td><td>cron_queue 解耦调度器和 agent 循环</td></tr>
+    <tr><td>3</td><td>Queue Processor</td><td>空闲时唤醒 agent 处理队列中的工作</td></tr>
+    <tr><td>4</td><td>Consumer</td><td>agent_loop 消费队列中的 job，注入到消息中</td></tr>
+  </table>
+  <div class="diagram">┌─ 主线程 ───────────────────────────────────────────┐
+│  while True: input() → with agent_lock:             │
+│    run_agent_turn_locked(query)                     │
+└────────────────────────────────────────────────────┘
+┌─ 调度线程 #1 (daemon) ──────────────────────────────┐
+│  cron_scheduler_loop(): while True: sleep(1); 检查   │
+└────────────────────────────────────────────────────┘
+┌─ 投递线程 #2 (daemon) ──────────────────────────────┐
+│  queue_processor_loop(): while True: sleep(0.2); 投递│
+└────────────────────────────────────────────────────┘</div>
+  <div class="diagram">schedule_job() → scheduled_jobs{} → cron_scheduler_loop()
+                                         ↓
+                                    cron_queue[] ← cancel_job()
+                                         ↓
+                                    queue_processor_loop()
+                                         ↓
+                                    agent_loop() → consume → 伪装 → AI</div>
+</div>
+
+<div class="card" id="s4">
+  <h2><span class="num">4</span> 数据结构与全局状态</h2>
+  <p><strong>代码位置：L270-L288</strong></p>
+  <pre><span class="kw">DURABLE_PATH</span> = WORKDIR / <span class="s">".scheduled_tasks.json"</span>
+<span class="kw">@dataclass</span> <span class="kw">class</span> <span class="fn">CronJob</span>:
+    id: <span class="tp">str</span>; cron: <span class="tp">str</span>; prompt: <span class="tp">str</span>
+    recurring: <span class="tp">bool</span>; durable: <span class="tp">bool</span>
+<span class="kw">scheduled_jobs</span>: dict[str, CronJob] = {}
+<span class="kw">cron_queue</span>: list[CronJob] = []
+<span class="kw">cron_lock</span> = threading.Lock()
+<span class="kw">agent_lock</span> = threading.Lock()
+<span class="kw">_last_fired</span>: dict[str, str] = {}</pre>
+  <table>
+    <tr><th>变量</th><th>作用</th></tr>
+    <tr><td><code>DURABLE_PATH</code></td><td>持久化文件路径</td></tr>
+    <tr><td><code>CronJob</code></td><td>数据类，记录 cron 任务的全部信息</td></tr>
+    <tr><td><code>scheduled_jobs</code></td><td>全局注册表（内存），key=job_id</td></tr>
+    <tr><td><code>cron_queue</code></td><td>线程安全队列，调度线程写，投递线程读</td></tr>
+    <tr><td><code>cron_lock</code></td><td>保护调度数据</td></tr>
+    <tr><td><code>agent_lock</code></td><td>保护 AI agent 执行，保证用户和 cron 互斥</td></tr>
+    <tr><td><code>_last_fired</code></td><td>防重复触发：job_id → "YYYY-MM-DD HH:MM"</td></tr>
+  </table>
+  <div class="callout purple"><strong>为什么两把锁？</strong>调度数据和 agent 执行是不同资源，分开加锁避免不必要阻塞。</div>
+</div>
+
+<div class="card" id="s5">
+  <h2><span class="num">5</span> Cron 表达式匹配引擎</h2>
+  <h3>5.1 单字段匹配 (L289-L307)</h3>
+  <pre><span class="kw">def</span> <span class="fn">_cron_field_matches</span>(field: <span class="tp">str</span>, value: <span class="tp">int</span>) -> <span class="tp">bool</span>:
+    <span class="kw">if</span> field == <span class="s">"*"</span>: <span class="kw">return</span> <span class="tp">True</span>
+    <span class="kw">if</span> field.startswith(<span class="s">"*/"</span>): step = int(field[<span class="num">2</span>:]); <span class="kw">return</span> value % step == <span class="num">0</span>
+    <span class="kw">if</span> <span class="s">","</span> <span class="kw">in</span> field: <span class="kw">return</span> <span class="fn">any</span>(_cron_field_matches(f.strip(), value) <span class="kw">for</span> f <span class="kw">in</span> field.split(<span class="s">","</span>))
+    <span class="kw">if</span> <span class="s">"-"</span> <span class="kw">in</span> field: lo, hi = field.split(<span class="s">"-"</span>, <span class="num">1</span>); <span class="kw">return</span> int(lo) <= value <= int(hi)
+    <span class="kw">return</span> value == int(field)</pre>
+  <table>
+    <tr><th>语法</th><th>示例</th><th>逻辑</th></tr>
+    <tr><td><code>*</code></td><td><code>"*"</code></td><td>通配符，永远匹配</td></tr>
+    <tr><td><code>*/N</code></td><td><code>"*/15"</code></td><td><code>value % N == 0</code></td></tr>
+    <tr><td><code>A,B,C</code></td><td><code>"1,3,5"</code></td><td>递归检查，任一匹配即可</td></tr>
+    <tr><td><code>L-H</code></td><td><code>"9-17"</code></td><td><code>L <= value <= H</code></td></tr>
+    <tr><td>精确值</td><td><code>"30"</code></td><td><code>value == int(field)</code></td></tr>
+  </table>
+  <h3>5.2 完整表达式匹配 (L308-L339)</h3>
+  <p>5 个字段：minute, hour, day-of-month (dom), month, day-of-week (dow)。</p>
+  <p><strong>星期坐标转换：</strong><code>dow_val = (dt.weekday() + 1) % 7</code>（Python Monday=0 → Cron Sunday=0）。</p>
+  <h3>5.3 DOM 和 DOW 的 OR 逻辑（核心）</h3>
+  <p>标准 cron 语义：<strong>分钟、小时、月用 AND；日和星期用 OR。</strong></p>
+  <table>
+    <tr><th>DOM</th><th>DOW</th><th>结果</th></tr>
+    <tr><td><code>*</code></td><td><code>*</code></td><td>每天匹配</td></tr>
+    <tr><td><code>*</code></td><td>有约束</td><td>只看 DOW</td></tr>
+    <tr><td>有约束</td><td><code>*</code></td><td>只看 DOM</td></tr>
+    <tr><td>有约束</td><td>有约束</td><td><strong>OR：任一匹配即可</strong></td></tr>
+  </table>
+  <div class="callout orange"><strong>为什么用 OR？</strong> 例：<code>"0 9 15 * 5"</code> = "每月15号以及每个周五"，不是"每月15号且恰好是周五"。</div>
+</div>
+
+<div class="card" id="s6">
+  <h2><span class="num">6</span> Cron 表达式验证</h2>
+  <h3>6.1 单字段验证 (L340-L380)</h3>
+  <p><code>_validate_cron_field(field, lo, hi) -> str | None</code>：与匹配函数结构对称，返回 <code>None</code>（合法）或 <code>str</code>（错误信息）。</p>
+  <table>
+    <tr><th>语法</th><th>验证逻辑</th></tr>
+    <tr><td><code>"*"</code></td><td>永远合法</td></tr>
+    <tr><td><code>"*/5"</code></td><td>step 是否为正整数</td></tr>
+    <tr><td><code>"1,3,5"</code></td><td>递归验证每个值</td></tr>
+    <tr><td><code>"1-5"</code></td><td>起止在 [lo, hi] 内，且起始 ≤ 结束</td></tr>
+    <tr><td><code>"30"</code></td><td>是数字且在范围内</td></tr>
+  </table>
+  <h3>6.2 完整验证 (L381-L387)</h3>
+  <pre>bounds = [(<span class="num">0</span>,<span class="num">59</span>), (<span class="num">0</span>,<span class="num">23</span>), (<span class="num">1</span>,<span class="num">31</span>), (<span class="num">1</span>,<span class="num">12</span>), (<span class="num">0</span>,<span class="num">6</span>)]
+names = [<span class="s">"minute"</span>,<span class="s">"hour"</span>,<span class="s">"day-of-month"</span>,<span class="s">"month"</span>,<span class="s">"day-of-week"</span>]
+<span class="kw">for</span> field, (lo, hi), name <span class="kw">in</span> <span class="fn">zip</span>(fields, bounds, names):
+    err = _validate_cron_field(field, lo, hi)
+    <span class="kw">if</span> err: <span class="kw">return</span> f<span class="s">"{name}: {err}"</span>
+<span class="kw">return</span> <span class="tp">None</span></pre>
+</div>
+
+<div class="card" id="s7">
+  <h2><span class="num">7</span> 持久化：save / load durable jobs</h2>
+  <h3>保存 (L388-L393)</h3>
+  <pre><span class="kw">def</span> <span class="fn">save_durable_jobs</span>():
+    durable = [<span class="fn">asdict</span>(j) <span class="kw">for</span> j <span class="kw">in</span> scheduled_jobs.values() <span class="kw">if</span> j.durable]
+    DURABLE_PATH.write_text(json.dumps(durable, indent=<span class="num">2</span>))</pre>
+  <p>遍历所有 job，取 <code>durable=True</code> 的写入磁盘。<strong>覆盖写</strong>——始终与内存状态一致。</p>
+  <h3>加载 (L394-L409)</h3>
+  <pre><span class="kw">def</span> <span class="fn">load_durable_jobs</span>():
+    <span class="kw">if not</span> DURABLE_PATH.exists(): <span class="kw">return</span>
+    <span class="kw">try</span>:
+        jobs = json.loads(DURABLE_PATH.read_text())
+        <span class="kw">for</span> j <span class="kw">in</span> jobs:
+            job = CronJob(<span class="op">**</span>j)               <span class="cm"># 字典解包</span>
+            err = validate_cron(job.cron)     <span class="cm"># 防御性校验</span>
+            <span class="kw">if</span> err: <span class="kw">continue</span>
+            scheduled_jobs[job.id] = job</pre>
+  <p><code>CronJob(**j)</code> = <code>CronJob(id=j["id"], cron=j["cron"], ...)</code>。加载时重新校验 cron 表达式，防止磁盘文件被手动编辑出错。</p>
+  <p><strong>关系：</strong><code>schedule_job</code> = 存（内存+磁盘）；<code>load_durable_jobs</code> = 取（磁盘→内存）。</p>
+</div>
+
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 注册与取消：schedule_job / cancel_job</h2>
+  <h3>注册 (L410-L419)</h3>
+  <pre><span class="kw">def</span> <span class="fn">schedule_job</span>(cron, prompt, recurring=<span class="tp">True</span>, durable=<span class="tp">True</span>) -> <span class="tp">CronJob | str</span>:
+    err = validate_cron(cron)
+    <span class="kw">if</span> err: <span class="kw">return</span> err
+    job = CronJob(id=f<span class="s">"cron_{random.randint(0,999999):06d}"</span>, ...)
+    <span class="kw">with</span> cron_lock: scheduled_jobs[job.id] = job
+    <span class="kw">if</span> durable: save_durable_jobs()
+    <span class="kw">return</span> job</pre>
+  <p>成功返回 <code>CronJob</code> 对象，失败返回错误字符串。<code>:06d</code> 格式化为至少 6 位十进制补零。</p>
+  <h3>取消 (L420-L429)</h3>
+  <pre><span class="kw">def</span> <span class="fn">cancel_job</span>(job_id):
+    <span class="kw">with</span> cron_lock: job = scheduled_jobs.pop(job_id, <span class="tp">None</span>)
+    <span class="kw">if not</span> job: <span class="kw">return</span> f<span class="s">"Job {job_id} not found"</span>
+    <span class="kw">if</span> job.durable: save_durable_jobs()
+    <span class="kw">return</span> f<span class="s">"Cancelled {job_id}"</span></pre>
+  <p><code>dict.pop(key, default)</code> 删除 key 并返回 value，不存在返回默认值（不抛 <code>KeyError</code>）。</p>
+</div>
+
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 调度器主循环：cron_scheduler_loop</h2>
+  <p><strong>代码位置：L430-L456</strong></p>
+  <pre><span class="kw">def</span> <span class="fn">cron_scheduler_loop</span>():
+    <span class="kw">while</span> <span class="tp">True</span>:
+        time.sleep(<span class="num">1</span>)
+        now = datetime.now()
+        minute_marker = now.strftime(<span class="s">"%Y-%m-%d %H:%M"</span>)
+        <span class="kw">with</span> cron_lock:
+            <span class="kw">for</span> job <span class="kw">in</span> <span class="fn">list</span>(scheduled_jobs.values()):
+                <span class="kw">try</span>:
+                    <span class="kw">if</span> cron_matches(job.cron, now):
+                        <span class="kw">if</span> _last_fired.get(job.id) != minute_marker:
+                            cron_queue.append(job)
+                            _last_fired[job.id] = minute_marker
+                        <span class="kw">if not</span> job.recurring:
+                            scheduled_jobs.pop(job.id, <span class="tp">None</span>)
+                            <span class="kw">if</span> job.durable: save_durable_jobs()
+                <span class="kw">except</span> Exception <span class="kw">as</span> e:
+                    <span class="fn">print</span>(<span class="s">f"[cron error] {job.id}: {e}"</span>)</pre>
+  <table>
+    <tr><th>设计</th><th>代码</th><th>目的</th></tr>
+    <tr><td>每秒轮询</td><td><code>time.sleep(1)</code></td><td>分钟级任务，1s 足够</td></tr>
+    <tr><td>日期感知标记</td><td><code>minute_marker</code></td><td>含日期信息，天然区分"今天"和"明天"</td></tr>
+    <tr><td>防重复触发</td><td><code>_last_fired.get(id) != marker</code></td><td>同一分钟内不放行两次</td></tr>
+    <tr><td>快照遍历</td><td><code>list(scheduled_jobs.values())</code></td><td>遍历时安全修改 dict</td></tr>
+    <tr><td>故障隔离</td><td><code>try/except</code> 包住单个 job</td><td>一个 job 抛异常不杀死整个线程</td></tr>
+  </table>
+  <div class="callout"><strong>为什么用 minute_marker 不用计数器？</strong>假设 cron="0 9 * * *"：第1天09:00 → fire；第2天09:00 → 计数器还在 → 错误跳过。用 "2026-06-19 09:00" 这样的 marker 天然知道是新的一天。</div>
+</div>
+
+<div class="card" id="s10">
+  <h2><span class="num">10</span> 消费队列：consume / has_cron_queue</h2>
+  <p><strong>代码位置：L457-L467</strong></p>
+  <pre><span class="kw">def</span> <span class="fn">consume_cron_queue</span>() -> <span class="tp">list[CronJob]</span>:
+    <span class="kw">with</span> cron_lock:
+        fired = <span class="fn">list</span>(cron_queue)
+        cron_queue.clear()
+    <span class="kw">return</span> fired
+
+<span class="kw">def</span> <span class="fn">has_cron_queue</span>() -> <span class="tp">bool</span>:
+    <span class="kw">with</span> cron_lock: <span class="kw">return</span> <span class="fn">bool</span>(cron_queue)</pre>
+  <p>这是<strong>调度线程 ↔ agent 主循环</strong>之间的桥梁。调度线程写队列，投递线程读队列。</p>
+  <div class="callout red"><strong>为什么用 <code>list(cron_queue)</code> + <code>clear()</code>？</strong> 不能直接 <code>return cron_queue</code>（外部可能修改），也不能在锁外清空（可能丢失数据）。锁内拷贝快照 + 清空原列表是标准做法。</div>
+  <p>不能写成 <code>cron_queue = []</code> 重新赋值——这会断开引用，其他线程如果还持有旧列表引用，会继续往旧列表里写，导致数据丢失。</p>
+</div>
+
+<div class="card" id="s11">
+  <h2><span class="num">11</span> 投递系统：queue_processor_loop</h2>
+  <p><strong>代码位置：L640-L652</strong></p>
+  <pre><span class="kw">def</span> <span class="fn">queue_processor_loop</span>():
+    <span class="kw">global</span> session_context
+    <span class="kw">while</span> <span class="tp">True</span>:
+        time.sleep(<span class="num">0.2</span>)
+        <span class="kw">if not</span> <span class="fn">has_cron_queue</span>(): <span class="kw">continue</span>
+        <span class="kw">if not</span> agent_lock.acquire(blocking=<span class="tp">False</span>): <span class="kw">continue</span>
+        <span class="kw">try</span>:
+            <span class="kw">if not</span> <span class="fn">has_cron_queue</span>(): <span class="kw">continue</span>
+            <span class="fn">run_agent_turn_locked</span>()
+        <span class="kw">finally</span>:
+            agent_lock.release()</pre>
+  <table>
+    <tr><th>设计</th><th>目的</th></tr>
+    <tr><td><code>agent_lock.acquire(blocking=False)</code></td><td>非阻塞获取锁。agent 忙就不等，下次再试。不打断用户交互。</td></tr>
+    <tr><td>双重检查 <code>has_cron_queue()</code></td><td>防止拿到锁后 job 已被取走的竞态条件</td></tr>
+    <tr><td><code>try/finally</code></td><td>保证锁一定会释放，即使抛异常</td></tr>
+    </table>
+</div>
+
+<div class="card" id="s12">
+  <h2><span class="num">12</span> agent_loop 里的消费逻辑</h2>
+  <p><strong>代码位置：L567-L571</strong></p>
+  <pre><span class="cm"># agent_loop 每轮循环开头：</span>
+fired = <span class="fn">consume_cron_queue</span>()                    <span class="cm"># ⭐ 从队列取出</span>
+<span class="kw">for</span> job <span class="kw">in</span> fired:
+    messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,               <span class="cm"># 伪装成用户消息</span>
+                     <span class="s">"content"</span>: f<span class="s">"[Scheduled] {job.prompt}"</span>})</pre>
+  <div class="callout green">
+    <strong>关键理解：</strong><code>run_agent_turn_locked</code> 本身没有投递逻辑。真正的投递发生在 <code>agent_loop</code> 内部——每轮循环开始时第一件事就是 <code>consume_cron_queue()</code>。<br><br>
+    调用链：<code>queue_processor_loop</code> → <code>run_agent_turn_locked()</code> → <code>agent_loop()</code> → 开头 <code>consume_cron_queue()</code> → 注入到 messages → AI 看到并回复。
+  </div>
+  <p>AI 看到 <code>[Scheduled] 早上好</code> 这条"用户消息"，就会像回复用户一样处理这个 cron job。</p>
+</div>
+
+<div class="card" id="s13">
+  <h2><span class="num">13</span> 两把锁的设计：cron_lock vs agent_lock</h2>
+  <table>
+    <tr><th>锁</th><th>保护什么</th><th>使用场景</th></tr>
+    <tr><td><code>cron_lock</code></td><td>scheduled_jobs, cron_queue, _last_fired</td><td>调度线程和投递线程同时读写调度数据</td></tr>
+    <tr><td><code>agent_lock</code></td><td>AI agent 的执行状态</td><td>保证同一时间只有一个人（用户或 cron）使用 AI</td></tr>
+  </table>
+  <div class="callout"><strong>比喻：</strong><code>agent_lock</code> 像一把"只允许一个人说话"的麦克风。你打字时，cron 等着；你空闲时，cron 自动处理。</div>
+</div>
+
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 启动流程详解：模块级别代码执行顺序</h2>
+  <p>Python 执行规则：<strong>模块级别代码（不在任何函数/类内部）从上到下依次执行</strong>。函数定义只是"定义"，不执行函数体。</p>
+  <pre><span class="cm">═══ 定义阶段（模块级别，从上到下）═══</span>
+① import ...                               <span class="cm">← L1-L11</span>
+② 定义 Task 类、各种函数                     <span class="cm">← L40-L257</span>
+③ 定义 CronJob、cron 函数                   <span class="cm">← L270-L463</span>
+④ <span class="hl">⭐ 模块级别代码！</span>                         <span class="cm">← L468-L470</span>
+   load_durable_jobs()                      <span class="cm">← 从磁盘恢复任务</span>
+   Thread(cron_scheduler_loop).start()      <span class="cm">← 启动调度线程</span>
+⑤ 定义 cron 工具、TOOLS 等                   <span class="cm">← L473-L550</span>
+⑥ 定义 agent_loop、queue_processor 等       <span class="cm">← L563-L652</span>
+
+<span class="cm">═══ if __name__ == "__main__" ═══</span>
+⑦ Thread(queue_processor).start()           <span class="cm">← L655，启动投递线程</span>
+⑧ while True: input()                       <span class="cm">← L657，进入主循环</span></pre>
+  <div class="callout">
+    <strong><code>if __name__ == "__main__"</code> 并不是入口。</strong> 真正的执行起点是第④步的 <code>load_durable_jobs()</code>。<code>if __name__</code> 只是一个条件判断——确保只有直接运行此文件时才执行内部代码。
+  </div>
+</div>
+
+<div class="card" id="s15">
+  <h2><span class="num">15</span> 完整故事：全链路演练</h2>
+  <p><strong>场景：</strong>启动程序 → 用户说"每天早上9点发早安" → 时间到 09:00。</p>
+
+  <h3>第一阶段：启动</h3>
+  <pre>load_durable_jobs()           ← .scheduled_tasks.json 不存在 → 跳过
+Thread(scheduler).start()     ← 调度线程开始每秒轮询
+Thread(queue_proc).start()    ← 投递线程开始每0.2秒轮询
+while True: input()           ← 等待用户输入</pre>
+
+  <h3>第二阶段：注册 cron 任务</h3>
+  <pre>with agent_lock:
+  run_agent_turn_locked("帮我每天早上9点发早安")
+    └─ agent_loop()
+          ├─ consume_cron_queue() → [] (空)
+          ├─ client.messages.create() → AI 返回: schedule_cron
+          ├─ execute_tool(schedule_cron)
+          │     └─ schedule_job("0 9 * * *", "早上好")
+          │           ├─ validate_cron() → OK
+          │           ├─ scheduled_jobs["cron_000042"] = job
+          │           └─ save_durable_jobs() → 写入磁盘
+          └─ AI 回复"已注册"</pre>
+
+  <h3>第三阶段：时间到 09:00（第2天）</h3>
+  <pre>cron_scheduler_loop:
+  cron_matches("0 9 * * *", now) → True
+  _last_fired 未记录 → fire!
+  cron_queue.append(job)
+  _last_fired["cron_000042"] = "2026-06-19 09:00"
+
+queue_processor_loop:
+  has_cron_queue() → True
+  agent_lock.acquire(False) → True（主线程空闲）
+  run_agent_turn_locked()
+    └─ agent_loop()
+          ├─ consume_cron_queue() → [job]
+          ├─ messages.append("[Scheduled] 早上好")
+          ├─ client.messages.create() → "早上好！"
+          └─ return
+  agent_lock.release()</pre>
+</div>
+
+<div class="card" id="s16">
+  <h2><span class="num">16</span> context / memories / system prompt 的关系</h2>
+  <div class="diagram">磁盘 MEMORY.md → update_context() → session_context (字典)
+    → get_system_prompt() → assemble_system_prompt() → system prompt 字符串
+    → 传给 AI API (client.messages.create)</div>
+  <table>
+    <tr><th>概念</th><th>本质</th><th>类比</th></tr>
+    <tr><td><code>context</code></td><td>结构化的 JSON 字典，当前环境快照</td><td>菜谱的<strong>原料清单</strong></td></tr>
+    <tr><td><code>context["memories"]</code></td><td>磁盘 <code>.memory/MEMORY.md</code> 的缓存</td><td>之前记下的<strong>笔记</strong></td></tr>
+    <tr><td><code>assemble_system_prompt()</code></td><td>把 context 拼成一段提示文本</td><td>按菜谱<strong>做成菜</strong></td></tr>
+    <tr><td>最终 system 字符串</td><td>传给 AI 的系统提示词</td><td>端上桌的<strong>成品菜</strong></td></tr>
+  </table>
+  <p><strong>关键：</strong><code>context</code> 不是 system prompt 本身，而是"原材料"。<code>get_system_prompt</code> 每次把它拼成文本。<code>memories</code> 来自磁盘文件，AI 通过 <code>write_file</code> 写入新内容后，<code>update_context</code> 在下一次调用时自动读到。</p>
+</div>
+
+<div class="card" id="s17">
+  <h2><span class="num">17</span> get_system_prompt 缓存机制</h2>
+  <p><strong>代码位置：L128-L136</strong></p>
+  <pre>_last_context_key, _last_prompt = <span class="tp">None</span>, <span class="tp">None</span>
+<span class="kw">def</span> <span class="fn">get_system_prompt</span>(context: <span class="tp">dict</span>) -> <span class="tp">str</span>:
+    <span class="kw">global</span> _last_context_key, _last_prompt
+    key = json.dumps(context, sort_keys=<span class="tp">True</span>, ensure_ascii=<span class="tp">False</span>, default=<span class="tp">str</span>)
+    <span class="kw">if</span> key == _last_context_key <span class="kw">and</span> _last_prompt:
+        <span class="kw">return</span> _last_prompt                 <span class="cm"># 命中缓存</span>
+    _last_context_key = key
+    _last_prompt = assemble_system_prompt(context)  <span class="cm"># 重新拼接</span>
+    <span class="kw">return</span> _last_prompt</pre>
+  <p>大多数时候 <code>context</code> 没有变化，每次都重新拼接是浪费。用 <code>_last_context_key</code>（JSON 指纹）判断是否相同，相同则直接返回缓存的 prompt。</p>
+  <div class="callout">
+    <code>sort_keys=True</code> 保证相同内容生成相同字符串；<code>ensure_ascii=False</code> 让中文不被转义；<code>default=str</code> 兜底无法序列化的类型。
+  </div>
+</div>
+
+<div class="card" id="s18">
+  <h2><span class="num">18</span> s14 vs s13 完整对比</h2>
+
+  <h3>新增的内容</h3>
+  <table>
+    <tr><th>类别</th><th>具体内容</th><th>为什么加</th></tr>
+    <tr><td>数据结构</td><td><code>CronJob</code> 数据类</td><td>需要结构化的"未来任务"记录</td></tr>
+    <tr><td>Cron 匹配引擎</td><td><code>_cron_field_matches</code>, <code>cron_matches</code>, 验证函数</td><td>判断"现在是否该触发"</td></tr>
+    <tr><td>持久化</td><td><code>save/load_durable_jobs</code> + .scheduled_tasks.json</td><td>重启后任务不丢失</td></tr>
+    <tr><td>调度线程</td><td><code>cron_scheduler_loop</code> 独立守护线程</td><td>独立轮询时间，不阻塞用户交互</td></tr>
+    <tr><td>线程安全队列</td><td><code>cron_queue</code> + <code>cron_lock</code></td><td>解耦调度和 AI 处理</td></tr>
+    <tr><td>投递线程</td><td><code>queue_processor_loop</code> + <code>agent_lock</code></td><td>空闲时自动投递 cron job</td></tr>
+    <tr><td>3 个新工具</td><td><code>schedule_cron</code>, <code>list_crons</code>, <code>cancel_cron</code></td><td>AI 通过工具管理定时任务</td></tr>
+    <tr><td>防重复</td><td><code>_last_fired</code></td><td>防止同一分钟重复触发</td></tr>
+  </table>
+
+  <h3>修改的内容</h3>
+  <table>
+    <tr><th>类别</th><th>s13</th><th>s14</th><th>为什么</th></tr>
+    <tr><td>入口结构</td><td>单线程 input → agent_loop</td><td>3 个线程协作</td><td>需要后台自动处理 cron</td></tr>
+    <tr><td>session_history</td><td>局部变量</td><td>全局变量</td><td>多线程共享</td></tr>
+    <tr><td>session_context</td><td>每次局部创建</td><td>全局 + 每次更新</td><td>投递线程也需要</td></tr>
+    <tr><td>执行入口</td><td>直接调 agent_loop</td><td>run_agent_turn_locked</td><td>统一两种入口</td></tr>
+    <tr><td>run_bash 安全过滤</td><td>有 dangerous 检查</td><td>删掉了</td><td>教学简化</td></tr>
+    <tr><td>execute_tool</td><td>TOOL_HANDLERS 字典</td><td>内联 dict.get</td><td>更紧凑</td></tr>
+  </table>
+
+  <h3>没有变的</h3>
+  <p>Task 系统、PROMPT_SECTIONS、get_system_prompt 缓存、background tasks、TOOLS 定义模式、update_context、agent_loop 基本结构（开头加了 consume_cron_queue）。</p>
+</div>
+
+<div class="card" id="s19">
+  <h2><span class="num">19</span> 常见困惑与 FAQ</h2>
+
+  <p><strong>Q1: 为什么需要两把锁？</strong><br>A: <code>cron_lock</code> 保护调度数据，<code>agent_lock</code> 保护 AI 执行。不同资源分开加锁避免不必要阻塞。</p>
+
+  <p><strong>Q2: consume_cron_queue 一次性全取走，不存在多个任务吗？</strong><br>A: 对的，一次性全取走。多个 job 在同一分钟触发时，一次取走所有待处理的 job，避免频繁轮询。</p>
+
+  <p><strong>Q3: cron_queue = [] 重新赋值 vs clear() 区别？</strong><br>A: <code>clear()</code> 清空内容，对象不变，所有引用者看到"空了"。<code>= []</code> 换新列表，其他线程还在引用旧列表，导致数据丢失。</p>
+
+  <p><strong>Q4: 代码是伪代码吗？做不到真正的持久化？</strong><br>A: 教学演示代码。重启后 <code>durable=True</code> 的 cron 任务从磁盘恢复，但对话历史、后台任务状态、_last_fired 都会丢失。</p>
+
+  <p><strong>Q5: scheduled_jobs.values() 会有相同 job_id 吗？</strong><br>A: 不会。dict 的 key 唯一，CronJob.id 随机生成不重复。</p>
+
+  <p><strong>Q6: save_durable_jobs() 是追加写还是覆盖写？</strong><br>A: 覆盖写。始终与内存状态一致。追加写无法处理删除操作。</p>
+
+  <p><strong>Q7: 初学者最容易犯哪些错？</strong></p>
+  <ol>
+    <li><strong>沉迷 cron 语法细节</strong> — 主线其实是"调度记录如何进入通知队列并回到主循环"。</li>
+    <li><strong>没有 last_fired_at</strong> — 没有防重复字段，会重复触发。</li>
+    <li><strong>只放内存不支持落盘</strong> — 重启就没了。</li>
+    <li><strong>把调度触发结果在后台默默执行</strong> — 应走通知队列，让主循环决定。</li>
+    <li><strong>误以为必须绝对准点</strong> — 这里更看重"有计划地触发"。</li>
+  </ol>
+</div>
+
+<div class="card" id="s20">
+  <h2><span class="num">20</span> Python 语法小抄</h2>
+
+  <table>
+    <tr><th>语法</th><th>含义</th><th>行号</th></tr>
+    <tr><td><code>@dataclass</code></td><td>自动生成 __init__、__repr__、__eq__</td><td>L273</td></tr>
+    <tr><td><code>asdict(obj)</code></td><td>dataclass 递归转普通 dict</td><td>L390</td></tr>
+    <tr><td><code>**dict</code></td><td>字典解包为关键字参数</td><td>L399</td></tr>
+    <tr><td><code>Path / "subdir"</code></td><td>Pathlib 路径拼接</td><td>L270</td></tr>
+    <tr><td><code>f"{value:06d}"</code></td><td>f-string 至少6位补零</td><td>L417</td></tr>
+    <tr><td><code>str | None</code></td><td>Python 3.10+ 类型联合</td><td>L340</td></tr>
+    <tr><td><code>any(iterable)</code></td><td>任一元素为 True 则返回 True</td><td>L302</td></tr>
+    <tr><td><code>dict.pop(key, default)</code></td><td>删除并返回 key 的 value</td><td>L422</td></tr>
+    <tr><td><code>\033[31m</code></td><td>ANSI 终端红色</td><td>L402</td></tr>
+    <tr><td><code>\033[35m</code></td><td>ANSI 终端紫色</td><td>L432</td></tr>
+    <tr><td><code>\033[0m</code></td><td>ANSI 终端样式重置</td><td>L433</td></tr>
+    <tr><td><code>Thread(target=fn, daemon=True).start()</code></td><td>启动守护线程（非阻塞）</td><td>L469</td></tr>
+    <tr><td><code>lock.acquire(blocking=False)</code></td><td>非阻塞获取锁</td><td>L644</td></tr>
+    <tr><td><code>with lock:</code></td><td>上下文管理自动加解锁</td><td>L420</td></tr>
+    <tr><td><code>zip(a, b, c)</code></td><td>多个列表按位置配对</td><td>L364</td></tr>
+    <tr><td><code>json.dumps(obj, sort_keys=True)</code></td><td>按键排序序列化，保证一致性</td><td>L132</td></tr>
+    <tr><td><code>datetime.strftime("%Y-%m-%d %H:%M")</code></td><td>格式化 datetime</td><td>L434</td></tr>
+    <tr><td><code>list(dict.values())</code></td><td>快照拷贝，安全遍历时修改 dict</td><td>L437</td></tr>
+  </table>
+
+  <hr>
+
+  <h3>关于 <code>run_agent_turn_locked</code> 参数设计</h3>
+  <table>
+    <tr><th>调用方式</th><th>行为</th><th>场景</th></tr>
+    <tr><td><code>run_agent_turn_locked("你好")</code></td><td>加入历史 → agent_loop</td><td>用户手动输入</td></tr>
+    <tr><td><code>run_agent_turn_locked()</code></td><td>不追加 → agent_loop</td><td>cron 触发（consume_cron_queue 注入消息）</td></tr>
+  </table>
+
+  <hr>
+
+  <h3>关于 <code>if __name__ == "__main__"</code></h3>
+  <p>模块级别代码从上到下依次执行。函数定义只定义不执行。<code>if __name__ == "__main__"</code> 是条件判断，确保直接运行时执行，被 import 时不执行。</p>
+  <div class="callout">
+    <strong>注意：</strong>s14 的 <code>load_durable_jobs()</code> 和 <code>Thread(cron_scheduler_loop).start()</code> 在模块级别（L468-L469），不在 <code>if __name__</code> 内。所以它们在文件被 import 时也会执行，设计上值得注意。
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 40px; color: var(--text-muted); font-size: .85rem; padding: 20px 0; border-top: 1px solid var(--border);">
+  <p>s14 · Cron Scheduler 复习笔记 — 基于与 AI 的对话整理</p>
+  <p>后台任务是在"等结果"，定时调度是在"等开始"</p>
+</div>
+
+</div>
+
+</body>
+</html>

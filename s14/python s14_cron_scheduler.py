@@ -18,59 +18,81 @@ Four layers:
   3. Queue processor: wakes the agent when queued work exists and it is idle
   4. Consumer: agent_loop consumes queued jobs and injects them into messages
 """
-import os, subprocess, json, time, random, threading
+
+import json
+import random
+import threading
+import os
+import time
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict
+
 try:
     import readline
     readline.parse_and_bind('set bind-tty-special-chars off')
 except ImportError:
     pass
+
 from anthropic import Anthropic
 from dotenv import load_dotenv
+
 load_dotenv(override=True)
+
 if os.getenv("ANTHROPIC_BASE_URL"):
     os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
+
 WORKDIR = Path.cwd()
 MEMORY_DIR = WORKDIR / ".memory"
 MEMORY_INDEX = MEMORY_DIR / "MEMORY.md"
 client = Anthropic(base_url=os.getenv("ANTHROPIC_BASE_URL"))
 MODEL = os.environ["MODEL_ID"]
+
 # ── Task System (from s12, synced) ──
+
 TASKS_DIR = WORKDIR / ".tasks"
 TASKS_DIR.mkdir(exist_ok=True)
+
 @dataclass
 class Task:
     id: str
     subject: str
     description: str
     status: str          # pending | in_progress | completed
-    owner: str | None
-    blockedBy: list[str]
+    owner: str | None    # Agent name (multi-agent scenarios)
+    blockedBy: list[str] # Dependency task IDs
+
 def _task_path(task_id: str) -> Path:
     return TASKS_DIR / f"{task_id}.json"
-def create_task(subject: str, description: str = "",
-                blockedBy: list[str] | None = None) -> Task:
+
+def create_task(subject: str, description: str = "", blockedBy: list[str] | None = None) -> Task:
     task = Task(
         id=f"task_{int(time.time())}_{random.randint(0, 9999):04d}",
-        subject=subject, description=description,
-        status="pending", owner=None,
+        subject=subject,
+        description=description,
+        status="pending",
+        owner=None,
         blockedBy=blockedBy or [],
     )
     save_task(task)
     return task
+
 def save_task(task: Task):
     _task_path(task.id).write_text(json.dumps(asdict(task), indent=2))
+
 def load_task(task_id: str) -> Task:
     return Task(**json.loads(_task_path(task_id).read_text()))
+
 def list_tasks() -> list[Task]:
     return [Task(**json.loads(p.read_text()))
             for p in sorted(TASKS_DIR.glob("task_*.json"))]
+
 def get_task(task_id: str) -> str:
-    """Return full task details as JSON."""
+    """Return full task details as JSON"""
     task = load_task(task_id)
     return json.dumps(asdict(task), indent=2)
+
 def can_start(task_id: str) -> bool:
     """Check if all blockedBy dependencies are completed.
     Missing dependencies are treated as blocked."""
@@ -81,19 +103,21 @@ def can_start(task_id: str) -> bool:
         if load_task(dep_id).status != "completed":
             return False
     return True
+
 def claim_task(task_id: str, owner: str = "agent") -> str:
     task = load_task(task_id)
     if task.status != "pending":
         return f"Task {task_id} is {task.status}, cannot claim"
     if not can_start(task_id):
         deps = [d for d in task.blockedBy
-                if not _task_path(d).exists() or load_task(d).status != "completed"]
+                           if not _task_path(d).exists() or load_task(d).status != "completed"]
         return f"Blocked by: {deps}"
     task.owner = owner
     task.status = "in_progress"
     save_task(task)
     print(f"  \033[36m[claim] {task.subject} → in_progress (owner: {owner})\033[0m")
     return f"Claimed {task.id} ({task.subject})"
+
 def complete_task(task_id: str) -> str:
     task = load_task(task_id)
     if task.status != "in_progress":
@@ -101,31 +125,34 @@ def complete_task(task_id: str) -> str:
     task.status = "completed"
     save_task(task)
     unblocked = [t.subject for t in list_tasks()
-                 if t.status == "pending" and t.blockedBy and can_start(t.id)]
+                           if t.status == "pending" and t.blockedBy and can_start(t.id)]
     print(f"  \033[32m[complete] {task.subject} ✓\033[0m")
     msg = f"Completed {task.id} ({task.subject})"
     if unblocked:
         msg += f"\nUnblocked: {', '.join(unblocked)}"
         print(f"  \033[33m[unblocked] {', '.join(unblocked)}\033[0m")
-    return msg
+    return msg        
+
 # ── Prompt Assembly (from s10, synced) ──
 PROMPT_SECTIONS = {
     "identity": "You are a coding agent. Act, don't explain.",
     "tools": "Available tools: bash, read_file, write_file, "
-             "create_task, list_tasks, get_task, claim_task, complete_task, "
-             "schedule_cron, list_crons, cancel_cron.",
+             "create_task, list_tasks, get_task, claim_task, complete_task.",
     "workspace": f"Working directory: {WORKDIR}",
     "memory": "Relevant memories are injected below when available.",
 }
+
 def assemble_system_prompt(context: dict) -> str:
     sections = [PROMPT_SECTIONS["identity"],
-                PROMPT_SECTIONS["tools"],
-                PROMPT_SECTIONS["workspace"]]
+                           PROMPT_SECTIONS["tools"],
+                           PROMPT_SECTIONS["workspace"]]
     memories = context.get("memories", "")
     if memories:
         sections.append(f"Relevant memories:\n{memories}")
     return "\n\n".join(sections)
+
 _last_context_key, _last_prompt = None, None
+
 def get_system_prompt(context: dict) -> str:
     global _last_context_key, _last_prompt
     key = json.dumps(context, sort_keys=True, ensure_ascii=False, default=str)
@@ -134,14 +161,18 @@ def get_system_prompt(context: dict) -> str:
     _last_context_key = key
     _last_prompt = assemble_system_prompt(context)
     return _last_prompt
-# ── Tools ──
+
+# -- Tool implementations --
 def safe_path(p: str) -> Path:
     path = (WORKDIR / p).resolve()
     if not path.is_relative_to(WORKDIR):
         raise ValueError(f"Path escapes workspace: {p}")
     return path
-def run_bash(command: str, run_in_background: bool = False) -> str:
-    # run_in_background is handled by agent_loop dispatch, not here
+ 
+def run_bash(command: str) -> str:
+    dangerous = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"]
+    if any(d in command for d in dangerous):
+        return "Error: Dangerous command blocked"
     try:
         r = subprocess.run(command, shell=True, cwd=WORKDIR,
                            capture_output=True, text=True, timeout=120)
@@ -149,29 +180,34 @@ def run_bash(command: str, run_in_background: bool = False) -> str:
         return out[:50000] if out else "(no output)"
     except subprocess.TimeoutExpired:
         return "Error: Timeout (120s)"
-def run_read(path: str, limit: int | None = None) -> str:
-    try:
+
+def run_read(path: str, limit: int = None) -> str:
+    try:        
         lines = safe_path(path).read_text().splitlines()
         if limit and limit < len(lines):
             lines = lines[:limit] + [f"... ({len(lines) - limit} more lines)"]
-        return "\n".join(lines)
-    except Exception as e:
-        return f"Error: {e}"
+        return "\n".join(lines)[:50000]
+    except Exception as exc:
+        return f"Error: {exc}"
+    
 def run_write(path: str, content: str) -> str:
     try:
-        fp = safe_path(path)
-        fp.parent.mkdir(parents=True, exist_ok=True)
-        fp.write_text(content)
+        file_path = safe_path(path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
         return f"Wrote {len(content)} bytes to {path}"
-    except Exception as e:
-        return f"Error: {e}"
+    except Exception as exc:
+        return f"Error: {exc}"
+    
 # Task tools
+
 def run_create_task(subject: str, description: str = "",
                     blockedBy: list[str] | None = None) -> str:
     task = create_task(subject, description, blockedBy)
     deps = f" (blockedBy: {', '.join(blockedBy)})" if blockedBy else ""
     print(f"  \033[34m[create] {task.subject}{deps}\033[0m")
     return f"Created {task.id}: {task.subject}{deps}"
+
 def run_list_tasks() -> str:
     tasks = list_tasks()
     if not tasks:
@@ -185,20 +221,27 @@ def run_list_tasks() -> str:
         lines.append(f"  {icon} {t.id}: {t.subject} "
                      f"[{t.status}]{owner}{deps}")
     return "\n".join(lines)
+
 def run_get_task(task_id: str) -> str:
     try:
         return get_task(task_id)
     except FileNotFoundError:
         return f"Error: Task {task_id} not found"
+
 def run_claim_task(task_id: str) -> str:
     return claim_task(task_id, owner="agent")
+
+
 def run_complete_task(task_id: str) -> str:
-    return complete_task(task_id)
+    return complete_task(task_id)    
+
 # ── Background Tasks (from s13, synced) ──
+
 _bg_counter = 0
 background_tasks: dict[str, dict] = {}
 background_results: dict[str, str] = {}
 background_lock = threading.Lock()
+
 def is_slow_operation(tool_name: str, tool_input: dict) -> bool:
     """Fallback heuristic: commands likely to take > 30s."""
     if tool_name != "bash":
@@ -208,11 +251,14 @@ def is_slow_operation(tool_name: str, tool_input: dict) -> bool:
                      "docker build", "pip install", "npm install",
                      "cargo build", "pytest", "make"]
     return any(kw in cmd for kw in slow_keywords)
+
+
 def should_run_background(tool_name: str, tool_input: dict) -> bool:
     """Model explicit request takes priority; fallback to heuristic."""
     if tool_input.get("run_in_background"):
         return True
     return is_slow_operation(tool_name, tool_input)
+
 def execute_tool(block) -> str:
     """Execute a tool call block, return output."""
     handler = {
@@ -226,26 +272,32 @@ def execute_tool(block) -> str:
     if handler:
         return handler(**block.input)
     return f"Unknown tool: {block.name}"
+
 def start_background_task(block) -> str:
     """Run tool in a daemon thread. Returns background task ID."""
     global _bg_counter
     _bg_counter += 1
     bg_id = f"bg_{_bg_counter:04d}"
     cmd = block.input.get("command", block.name)
+    
     def worker():
         result = execute_tool(block)
         with background_lock:
             background_tasks[bg_id]["status"] = "completed"
             background_results[bg_id] = result
+            
     with background_lock:
         background_tasks[bg_id] = {
             "tool_use_id": block.id,
             "command": cmd,
-            "status": "running",
+            "status": "running"
         }
-    threading.Thread(target=worker, daemon=True).start()
+        
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
     print(f"  \033[33m[background] dispatched {bg_id}: {cmd[:40]}\033[0m")
     return bg_id
+
 def collect_background_results() -> list[str]:
     """Collect completed background results as task_notification messages."""
     with background_lock:
@@ -263,12 +315,17 @@ def collect_background_results() -> list[str]:
             f"  <status>completed</status>\n"
             f"  <command>{task['command']}</command>\n"
             f"  <summary>{summary}</summary>\n"
-            f"</task_notification>")
+            f"</task_notification>"
+        )
         print(f"  \033[32m[background done] {bg_id}: "
               f"{task['command'][:40]} ({len(output)} chars)\033[0m")
     return notifications
+# Context
+
 # ── Cron Scheduler (s14 new) ──
+
 DURABLE_PATH = WORKDIR / ".scheduled_tasks.json"
+
 @dataclass
 class CronJob:
     id: str
@@ -276,11 +333,13 @@ class CronJob:
     prompt: str      # message to inject when fired
     recurring: bool  # True = recurring, False = one-shot
     durable: bool    # True = persist to disk
+
 scheduled_jobs: dict[str, CronJob] = {}
 cron_queue: list[CronJob] = []
 cron_lock = threading.Lock()
 agent_lock = threading.Lock()
-_last_fired: dict[str, str] = {}  # job_id → "YYYY-MM-DD HH:MM"
+_last_fired: dict[str, str] = {} # job_id → "YYYY-MM-DD HH:MM"
+
 def _cron_field_matches(field: str, value: int) -> bool:
     """Match a single cron field against a value."""
     if field == "*":
@@ -295,6 +354,7 @@ def _cron_field_matches(field: str, value: int) -> bool:
         lo, hi = field.split("-", 1)
         return int(lo) <= value <= int(hi)
     return value == int(field)
+
 def cron_matches(cron_expr: str, dt: datetime) -> bool:
     """Check if a 5-field cron expression matches the given datetime.
     Standard cron semantics: DOM and DOW use OR when both are constrained."""
@@ -302,12 +362,14 @@ def cron_matches(cron_expr: str, dt: datetime) -> bool:
     if len(fields) != 5:
         return False
     minute, hour, dom, month, dow = fields
-    dow_val = (dt.weekday() + 1) % 7  # Python Monday=0 → cron Sunday=0
+    dow_val = (dt.weekday() + 1) % 7
+    
     m = _cron_field_matches(minute, dt.minute)
     h = _cron_field_matches(hour, dt.hour)
     dom_ok = _cron_field_matches(dom, dt.day)
     month_ok = _cron_field_matches(month, dt.month)
     dow_ok = _cron_field_matches(dow, dow_val)
+    
     # Minute, hour, month must all match
     if not (m and h and month_ok):
         return False
@@ -317,10 +379,11 @@ def cron_matches(cron_expr: str, dt: datetime) -> bool:
     if dom_unconstrained and dow_unconstrained:
         return True
     if dom_unconstrained:
-        return dow_ok
-    if dow_unconstrained:
         return dom_ok
+    if dow_unconstrained:
+        return dow_ok
     return dom_ok or dow_ok
+
 def _validate_cron_field(field: str, lo: int, hi: int) -> str | None:
     """Validate a single cron field value is within [lo, hi]."""
     if field == "*":
@@ -337,23 +400,25 @@ def _validate_cron_field(field: str, lo: int, hi: int) -> str | None:
         for part in field.split(","):
             err = _validate_cron_field(part.strip(), lo, hi)
             if err: return err
-        return None
+            return None
     if "-" in field:
         parts = field.split("-", 1)
         if not parts[0].isdigit() or not parts[1].isdigit():
             return f"Invalid range: {field}"
         a, b = int(parts[0]), int(parts[1])
-        if a < lo or a > hi or b < lo or b > hi:
+        if a< lo or a > hi or b < lo or b > hi:
             return f"Range {field} out of bounds [{lo}-{hi}]"
         if a > b:
-            return f"Range start > end: {field}"
+            return f"Range {field} start > end: {field}"
         return None
+    
     if not field.isdigit():
-        return f"Invalid field: {field}"
+        return f"Invalid value: {field}"
     val = int(field)
     if val < lo or val > hi:
         return f"Value {val} out of bounds [{lo}-{hi}]"
     return None
+
 def validate_cron(cron_expr: str) -> str | None:
     """Validate a cron expression. Returns error message or None."""
     fields = cron_expr.strip().split()
@@ -366,10 +431,12 @@ def validate_cron(cron_expr: str) -> str | None:
         if err:
             return f"{name}: {err}"
     return None
+
 def save_durable_jobs():
     """Persist durable jobs to .scheduled_tasks.json."""
     durable = [asdict(j) for j in scheduled_jobs.values() if j.durable]
     DURABLE_PATH.write_text(json.dumps(durable, indent=2))
+    
 def load_durable_jobs():
     """Load durable jobs from disk on startup."""
     if not DURABLE_PATH.exists():
@@ -382,12 +449,13 @@ def load_durable_jobs():
             if err:
                 print(f"  \033[31m[cron] skipping invalid job {job.id}: {err}\033[0m")
                 continue
-            scheduled_jobs[job.id] = job
+            scheduled_jobs[j.id] = job
         valid = [j for j in jobs if j["id"] in scheduled_jobs]
         if valid:
             print(f"  \033[35m[cron] loaded {len(valid)} durable job(s)\033[0m")
     except Exception:
         pass
+    
 def schedule_job(cron: str, prompt: str, recurring: bool = True,
                  durable: bool = True) -> CronJob | str:
     """Register a new cron job. Returns CronJob or error string."""
@@ -404,7 +472,8 @@ def schedule_job(cron: str, prompt: str, recurring: bool = True,
     if durable:
         save_durable_jobs()
     print(f"  \033[35m[cron register] {job.id} '{cron}' → {prompt[:40]}\033[0m")
-    return job
+    return job    
+
 def cancel_job(job_id: str) -> str:
     """Cancel a cron job."""
     with cron_lock:
@@ -415,6 +484,7 @@ def cancel_job(job_id: str) -> str:
         save_durable_jobs()
     print(f"  \033[31m[cron cancel] {job_id}\033[0m")
     return f"Cancelled {job_id}"
+
 def cron_scheduler_loop():
     """Independent daemon thread: poll every 1s, fire matching jobs.
     Individual job errors are caught to prevent one bad job from
@@ -439,32 +509,37 @@ def cron_scheduler_loop():
                                 save_durable_jobs()
                 except Exception as e:
                     print(f"  \033[31m[cron error] {job.id}: {e}\033[0m")
+                    
 def consume_cron_queue() -> list[CronJob]:
     """Consume fired jobs from cron_queue (called by agent_loop)."""
     with cron_lock:
         fired = list(cron_queue)
         cron_queue.clear()
     return fired
+
 def has_cron_queue() -> bool:
     """Return whether fired cron jobs are waiting to be delivered."""
     with cron_lock:
         return bool(cron_queue)
+    
 # Load durable jobs on startup, then start scheduler thread
 load_durable_jobs()
 threading.Thread(target=cron_scheduler_loop, daemon=True).start()
 print("  \033[35m[cron] scheduler thread started\033[0m")
+
 # ── Cron Tools ──
-def run_schedule_cron(cron: str, prompt: str,
+def run_schedule_cron(cron: str, prompt:str,
                       recurring: bool = True, durable: bool = True) -> str:
     result = schedule_job(cron, prompt, recurring, durable)
     if isinstance(result, str):
         return f"Error: {result}"
-    return f"Scheduled {result.id}: '{cron}' → {prompt}"
+    return f"Scheduled {result.id}: '{cron}' -> {prompt}"
+
 def run_list_crons() -> str:
     with cron_lock:
         jobs = list(scheduled_jobs.values())
     if not jobs:
-        return "No cron jobs. Use schedule_cron to add one."
+        return "No cron jobs.Use schedule_cron to add one"
     lines = []
     for j in jobs:
         tag = "recurring" if j.recurring else "one-shot"
@@ -472,15 +547,16 @@ def run_list_crons() -> str:
         lines.append(f"  {j.id}: '{j.cron}' → {j.prompt[:40]} "
                      f"[{tag}, {dur}]")
     return "\n".join(lines)
+
 def run_cancel_cron(job_id: str) -> str:
     return cancel_job(job_id)
+
 # ── Tool Definitions ──
+
 TOOLS = [
     {"name": "bash", "description": "Run a shell command.",
      "input_schema": {"type": "object",
-                      "properties": {
-                          "command": {"type": "string"},
-                          "run_in_background": {"type": "boolean"}},
+                      "properties": {"command": {"type": "string"}},
                       "required": ["command"]}},
     {"name": "read_file", "description": "Read file contents.",
      "input_schema": {"type": "object",
@@ -543,7 +619,9 @@ TOOLS = [
                       "properties": {"job_id": {"type": "string"}},
                       "required": ["job_id"]}},
 ]
+
 # ── Context ──
+
 def update_context(context: dict, messages: list) -> dict:
     """Derive context from real state."""
     memories = ""
@@ -554,13 +632,15 @@ def update_context(context: dict, messages: list) -> dict:
     return {
         "enabled_tools": [t["name"] for t in TOOLS],
         "workspace": str(WORKDIR),
-        "memories": memories,
+        "memories": memories
     }
+
+
 # ── Agent Loop (simplified, focused on cron scheduler) ──
 # Teaching code keeps a basic agent loop. S11's full error recovery is omitted.
 # cron_scheduler_loop produces work; queue_processor_loop wakes this loop when
 # queued work exists and no other agent turn is running.
-def agent_loop(messages: list, context: dict) -> dict:
+def agent_loop(messages: list, context: dict) -> None:
     system = get_system_prompt(context)
     while True:
         # Layer 4: consume fired cron jobs → inject as messages
@@ -578,41 +658,52 @@ def agent_loop(messages: list, context: dict) -> dict:
                 {"type": "text",
                  "text": f"[Error] {type(e).__name__}: {e}"}]})
             return context
+
         messages.append({"role": "assistant", "content": response.content})
         if response.stop_reason != "tool_use":
             return context
+
+        # -- Process tool calls --
         results = []
         for block in response.content:
             if block.type != "tool_use":
                 continue
             print(f"\033[36m> {block.name}\033[0m")
+            
             if should_run_background(block.name, block.input):
                 bg_id = start_background_task(block)
-                results.append({"type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": f"[Background task {bg_id} started] "
-                                           f"Result will be available when complete."})
+                results.append({
+                    "type": "tool_result", "tool_use_id": block.id,
+                    "content": f"[Background task {bg_id} started] "
+                                           f"Command: {block.input.get('command', '')}. "
+                                           f"Result will be available when complete."
+                })
             else:
                 output = execute_tool(block)
                 print(str(output)[:300])
-                results.append({"type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": output})
+                results.append({
+                    "type": "tool_result", "tool_use_id": block.id, "content": output
+                })
         # Merge background tool results + notifications into one user message
         user_content = list(results)
         bg_notifications = collect_background_results()
         if bg_notifications:
             for notif in bg_notifications:
                 user_content.append({"type": "text", "text": notif})
+            print(f"  \033[32m[inject] {len(bg_notifications)} background "
+                  f"notification(s)\033[0m")
+        
         messages.append({"role": "user", "content": user_content})
         context = update_context(context, messages)
         system = get_system_prompt(context)
+
 session_history: list = []
 session_context = update_context({}, [])
+
 def print_latest_assistant_text(messages: list):
     """Print text blocks from the latest assistant message."""
     if not messages:
-        return
+        return 
     msg = messages[-1]
     if not isinstance(msg, dict) or msg.get("role") != "assistant":
         return
@@ -624,7 +715,8 @@ def print_latest_assistant_text(messages: list):
         if getattr(block, "type", None) == "text":
             print(block.text)
         elif isinstance(block, dict) and block.get("type") == "text":
-            print(block.get("text", ""))
+            print(block.get("text", ""))    
+
 def run_agent_turn_locked(user_query: str | None = None):
     """Run one agent turn. Caller must hold agent_lock."""
     global session_context
@@ -634,6 +726,7 @@ def run_agent_turn_locked(user_query: str | None = None):
     session_context = update_context(session_context, session_history)
     print_latest_assistant_text(session_history)
     print()
+
 def queue_processor_loop():
     """Auto-deliver fired cron jobs when the agent is idle."""
     global session_context
@@ -650,6 +743,7 @@ def queue_processor_loop():
             run_agent_turn_locked()
         finally:
             agent_lock.release()
+
 if __name__ == "__main__":
     print("s14: cron scheduler")
     print("Enter a question, press Enter to send. Type q to quit.\n")
