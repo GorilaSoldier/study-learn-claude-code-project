@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s15 Agent Teams - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s15 · Agent Teams（多 Agent 组队）复习笔记</h1>
+  <p class="subtitle">一个搞不定，组队来——文件收件箱 + 队友线程</p>
+  <span class="badge">基于问答整理 · ~891 LOC · 14 个工具 · MessageBus · spawn_teammate</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">整体架构</a></li>
+    <li><a href="#s4">MessageBus 文件消息总线</a></li>
+    <li><a href="#s5">spawn_teammate_thread 队友线程</a></li>
+    <li><a href="#s6">Team Tool Handlers</a></li>
+    <li><a href="#s7">Lead 收件箱双路径</a></li>
+    <li><a href="#s8">s14 vs s15 对比</a></li>
+    <li><a href="#s9">常见困惑与 FAQ</a></li>
+    <li><a href="#s10">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>一个 Agent 搞不定整个系统——让 Lead 召唤队友，队友在后台线程独立工作，通过文件邮箱异步通信。
+  </div>
+  <p><strong>解决了什么问题：</strong>"重构整个后端"涉及认证模块、数据库层、API 路由、测试。一个 Agent 在修 API 路由时，认证模块的细节已经不在上下文里了。上下文窗口就那么大，单个 Agent 的注意力覆盖不了所有模块。</p>
+  <p><strong>s06 的子 Agent vs s15 的队友：</strong></p>
+  <table>
+    <tr><th>维度</th><th>s06 子 Agent</th><th>s15 队友</th></tr>
+    <tr><td>生命周期</td><td>一次性，用完销毁</td><td>多轮（教学版限 10 轮，真实 CC 用 idle loop）</td></tr>
+    <tr><td>通信</td><td>只回传结论</td><td>异步收件箱，随时通信</td></tr>
+    <tr><td>上下文</td><td>完全隔离</td><td>通过消息共享信息</td></tr>
+    <tr><td>数量</td><td>一个主 Agent + 偶尔子 Agent</td><td>一个 Lead + 多个队友</td></tr>
+  </table>
+  <div class="callout purple">
+    <strong>最核心的设计思想：</strong>团队 = 邮箱。每个 Agent 有自己的收件箱文件，不需要共享内存来协调。
+  </div>
+</div>
+
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+  <div class="diagram">1. 文件邮箱 (MessageBus) — 每个 Agent 一个 .jsonl 收件箱文件
+2. 队友线程 (spawn_teammate_thread) — Lead 召唤队友在后台独立运行
+3. 收件箱注入 — Lead 自动检查收件箱，队友消息注入到对话历史</div>
+  <p>它们的关系：<code>spawn_teammate</code> → 创建后台线程 → 队友独立调 LLM → 完成后 <code>BUS.send()</code> 发结果 → <code>run_check_inbox</code> / 主循环自动注入 → Lead 的 LLM 看到队友消息。</p>
+  <div class="callout orange">
+    <strong>一句话串联全流程：</strong>Lead 招人 → 队友后台干活 → 干完发邮件 → Lead 查收件箱 → 看到结果。
+  </div>
+</div>
+
+<div class="card" id="s3">
+  <h2><span class="num">3</span> 整体架构</h2>
+  <h3>3.1 ASCII 流图</h3>
+  <div class="diagram">Lead (主线程):  cron_queue → messages → prompt → LLM → TOOLS ────→ loop
+                                ↑                     ↓                        |
+                                └── inbox ← MessageBus ← teammate.send_message ←┘
+Teammate (后台线程):  inbox → LLM → bash/read/write/send → loop (max 10 turns)</div>
+  <h3>3.2 两套 Agent 循环</h3>
+  <table>
+    <tr><th>维度</th><th>Lead Agent（主线程）</th><th>Teammate（后台线程）</th></tr>
+    <tr><td>运行位置</td><td>主线程</td><td>后台 daemon 线程</td></tr>
+    <tr><td>邮箱</td><td>.mailboxes/lead.jsonl</td><td>.mailboxes/{name}.jsonl</td></tr>
+    <tr><td>对话历史</td><td>history（主循环维护）</td><td>messages（线程内部维护）</td></tr>
+    <tr><td>LLM 调用</td><td>agent_loop() 内部</td><td>run() 内部</td></tr>
+    <tr><td>工具数量</td><td>14 个（含 cron + 组队 3 个）</td><td>4 个（bash, read, write, send）</td></tr>
+    <tr><td>生命周期</td><td>整个程序运行期间</td><td>最多 10 轮后自动结束</td></tr>
+    <tr><td>驱动方式</td><td>用户输入 + cron 队列</td><td>创建时 prompt + inbox 消息</td></tr>
+  </table>
+  <h3>3.3 文件的组织</h3>
+  <div class="diagram">s15_agent_teams.py (~891 LOC)
+├── Task 系统 (L48-L170)          ← 继承 s12
+├── Prompt Assembly (L172-L210)   ← 继承 s10
+├── 基础工具函数 (L212-L260)       ← 继承 s13
+├── Background Tasks (L262-L340)  ← 继承 s13
+├── Cron Scheduler (L342-L588)    ← 继承 s14
+├── MessageBus (L608-L586)        ← ⭐ s15 新增
+├── spawn_teammate_thread (L593-L680)  ← ⭐ s15 新增
+├── Team Tool Handlers (L683-L698)     ← ⭐ s15 新增
+├── TOOLS 定义 (L707-L785)        ← 追加 3 个新工具
+├── agent_loop (L808-L878)        ← 略有修改
+└── main (L880-L891)              ← 修改：无锁 + inbox 注入</div>
+</div>
+
+<div class="card" id="s4">
+  <h2><span class="num">4</span> MessageBus 文件消息总线</h2>
+  <p><strong>代码位置：</strong><a href="file:///d:\code\learn-claude-code\s15\s15_agent_teams.py#L608-L586">L608-L586</a></p>
+  <div class="callout green">
+    <strong>核心设计：</strong>每个 Agent 有一个 .jsonl 邮箱文件。发消息 = 往对方的文件 append 一行 JSON；读消息 = 读文件内容 + 删除文件（消费式）。
+  </div>
+
+  <h3>4.1 .json vs .jsonl 格式</h3>
+  <table>
+    <tr><th>对比项</th><th>.json（传统 JSON）</th><th>.jsonl（JSON Lines）</th></tr>
+    <tr><td>格式</td><td>一个文件包含一个 JSON 对象/数组</td><td>每行一个独立的 JSON 对象</td></tr>
+    <tr><td>样子</td><td><code>[{"a":1},{"a":2}]</code></td><td><code>{"a":1}\n{"a":2}\n</code></td></tr>
+    <tr><td>追加新数据</td><td>必须读→解析→追加→写回</td><td>直接 <code>f.write(...)</code> 追加一行</td></tr>
+    <tr><td>内存占用</td><td>大文件一次性全读</td><td>可以逐行处理</td></tr>
+  </table>
+  <div class="callout orange"><strong>为什么选 .jsonl？</strong>消息是持续追加的，每次发消息都读写整个文件不可接受。.jsonl 追加是 O(1) 操作。</div>
+
+  <h3>4.2 send 方法</h3>
+  <pre><span class="kw">def</span> <span class="fn">send</span>(self, from_agent: <span class="tp">str</span>, to_agent: <span class="tp">str</span>,
+          content: <span class="tp">str</span>, msg_type: <span class="tp">str</span> = <span class="s">"message"</span>):
+    msg = {<span class="s">"from"</span>: from_agent, <span class="s">"to"</span>: to_agent,
+           <span class="s">"content"</span>: content, <span class="s">"type"</span>: msg_type,
+           <span class="s">"ts"</span>: time.time()}
+    inbox = MAILBOX_DIR / f<span class="s">"{to_agent}.jsonl"</span>
+    <span class="kw">with</span> <span class="fn">open</span>(inbox, <span class="s">"a"</span>) <span class="kw">as</span> f:
+        f.write(json.dumps(msg) + <span class="s">"\n"</span>)</pre>
+  <table>
+    <tr><th>参数</th><th>含义</th><th>示例</th></tr>
+    <tr><td><code>from_agent</code></td><td>发送者名字</td><td><code>"lead"</code>, <code>"Bob"</code></td></tr>
+    <tr><td><code>to_agent</code></td><td>接收者名字（邮箱文件名）</td><td><code>"Bob"</code> → <code>Bob.jsonl</code></td></tr>
+    <tr><td><code>content</code></td><td>消息正文</td><td><code>"查一下磁盘"</code></td></tr>
+    <tr><td><code>msg_type</code></td><td>消息类型（默认 <code>"message"</code>）</td><td><code>"result"</code>, <code>"message"</code></td></tr>
+  </table>
+
+  <h3>4.3 read_inbox 方法</h3>
+  <pre><span class="kw">def</span> <span class="fn">read_inbox</span>(self, agent: <span class="tp">str</span>) -> <span class="tp">list[dict]</span>:
+    inbox = MAILBOX_DIR / f<span class="s">"{agent}.jsonl"</span>
+    <span class="kw">if not</span> inbox.exists():
+        <span class="kw">return</span> []
+    msgs = [json.loads(line) <span class="kw">for</span> line <span class="kw">in</span> inbox.read_text().splitlines()
+                       <span class="kw">if</span> line.strip()]
+    inbox.unlink()    <span class="cm"># 消费式读取：读完删除</span>
+    <span class="kw">return</span> msgs</pre>
+  <p><strong>拆解列表推导式：</strong></p>
+  <table>
+    <tr><th>Step</th><th>代码</th><th>结果</th></tr>
+    <tr><td>1</td><td><code>inbox.read_text()</code></td><td>整个文件 → 字符串</td></tr>
+    <tr><td>2</td><td><code>.splitlines()</code></td><td>按换行拆成行列表</td></tr>
+    <tr><td>3</td><td><code>if line.strip()</code></td><td>过滤空行</td></tr>
+    <tr><td>4</td><td><code>json.loads(line)</code></td><td>每行 JSON → Python 字典</td></tr>
+    <tr><td>5</td><td><code>inbox.unlink()</code></td><td>删除文件（不可恢复）</td></tr>
+  </table>
+  <div class="callout purple">
+    <strong>为什么 unlink（读完就删）？</strong>消息 = 队列，每读一次就是 pop 所有消息。不需要日志/保留，下次再读就是新文件。
+  </div>
+
+  <h3>4.4 真实 CC 的差异</h3>
+  <table>
+    <tr><th>方面</th><th>教学版</th><th>真实 Claude Code</th></tr>
+    <tr><td>并发安全</td><td>无文件锁</td><td><code>proper-lockfile</code> 文件锁</td></tr>
+    <tr><td>收件箱路径</td><td><code>.mailboxes/{name}.jsonl</code></td><td><code>~/.claude/teams/{team}/inboxes/{name}.json</code></td></tr>
+    <tr><td>文件格式</td><td>JSON Lines，追加写入</td><td>JSON 数组，读→追加→写回</td></tr>
+    <tr><td>锁重试</td><td>无</td><td>最多重试 10 次</td></tr>
+  </table>
+</div>
+
+<div class="card" id="s5">
+  <h2><span class="num">5</span> spawn_teammate_thread 队友线程</h2>
+  <p><strong>代码位置：</strong><a href="file:///d:\code\learn-claude-code\s15\s15_agent_teams.py#L593-L680">L593-L680</a></p>
+  <div class="callout green">
+    <strong>核心：</strong>在后台线程中创建一个独立的 Agent，有自己的 system prompt、对话历史、工具集和主循环。
+  </div>
+
+  <h3>5.1 完整的执行流程</h3>
+  <div class="diagram">spawn_teammate_thread("Bob", "helper", "查日志")
+   │
+   ├──▶ L596: 防重复检查 (name in active_teammates?)
+   ├──▶ L598-L600: 构造 system prompt
+   │
+   ├──▶ L602: 定义 run()（嵌套函数/闭包）
+   │     └── 能访问外部变量：name, system, prompt, BUS, client 等
+   │
+   ├──▶ L677: active_teammates[name] = True ← 注册花名册
+   ├──▶ L678: Thread(target=run, daemon=True).start() ← 启动线程
+   ├──▶ L679: print("Bob spawned") ← 立即返回
+   └──▶ L680: return "Teammate 'Bob' spawned"
+            │
+            ▼ 后台线程独立运行：
+   ┌─────────────────────────────────────────────────┐
+   │  run():                                          │
+   │    messages = [{"role":"user", "content":prompt}] │
+   │    sub_tools = [bash, read_file, write_file, send]│
+   │    sub_handlers = {...}                           │
+   │    for _ in range(10):  ← 最多 10 轮              │
+   │      1. 读收件箱 (BUS.read_inbox)                  │
+   │      2. 调 LLM (client.messages.create)           │
+   │      3. 如果是 tool_use → 执行工具                 │
+   │         如果是 end_turn → break                    │
+   │      4. 结果送回 LLM                              │
+   │    BUS.send(name, "lead", summary, "result")      │
+   │    active_teammates.pop(name)                      │
+   │    print("Bob finished")                           │
+   └─────────────────────────────────────────────────┘</div>
+
+  <h3>5.2 嵌套函数 run() 的作用域（闭包）</h3>
+  <pre><span class="kw">def</span> <span class="fn">spawn_teammate_thread</span>(name, role, prompt):
+    system = <span class="s">f"You are '{name}'..."</span>
+
+    <span class="kw">def</span> <span class="fn">run</span>():                              <span class="cm"># 嵌套函数</span>
+        messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}]  <span class="cm"># 访问外层 prompt</span>
+        BUS.send(name, <span class="s">"lead"</span>, summary)      <span class="cm"># 访问外层 name + 全局 BUS</span>
+        result = client.messages.create(...) <span class="cm"># 访问全局 client</span></pre>
+  <p><code>run()</code> 能访问三个层级：<strong>全局变量</strong>（BUS, client, run_bash, json 等）+ <strong>外层函数局部变量</strong>（name, system, prompt）+ <strong>自己的局部变量</strong>（messages, inbox 等）。</p>
+
+  <h3>5.3 收件箱检查 + LLM 调用循环</h3>
+  <pre><span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+    inbox = BUS.read_inbox(name)                    <span class="cm"># 1. 检查收件箱</span>
+    <span class="kw">if</span> inbox:                                      <span class="cm"># 2. 有消息注入</span>
+        messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                         <span class="s">"content"</span>: f<span class="s">"&lt;inbox&gt;{json.dumps(inbox)}&lt;/inbox&gt;"</span>})
+    response = client.messages.create(              <span class="cm"># 3. 调 LLM</span>
+        model=MODEL, system=system,
+        messages=messages[-<span class="num">20</span>:],                  <span class="cm"># 只取最近 20 条</span>
+        tools=sub_tools, max_tokens=<span class="num">8000</span>)
+    messages.append({...})                           <span class="cm"># 4. 记录回复</span>
+    <span class="kw">if</span> response.stop_reason != <span class="s">"tool_use"</span>:          <span class="cm"># 5. 判断是否继续</span>
+        <span class="kw">break</span>
+    <span class="cm"># 6. 执行工具，结果送回 messages</span>
+    results = []
+    <span class="kw">for</span> block <span class="kw">in</span> response.content:
+        <span class="kw">if</span> block.type == <span class="s">"tool_use"</span>:
+            handler = sub_handlers.get(block.name)   <span class="cm"># 查字典找处理器</span>
+            output = handler(<span class="op">**</span>block.input)          <span class="cm"># 解包参数并调用</span>
+            results.append({<span class="s">"type"</span>: <span class="s">"tool_result"</span>, ...})
+    messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})</pre>
+
+  <h3>5.4 工具查表机制</h3>
+  <pre>sub_handlers = {
+    <span class="s">"bash"</span>: run_bash,         <span class="cm"># 字符串 "bash" → 函数 run_bash</span>
+    <span class="s">"read_file"</span>: run_read,    <span class="cm"># 字符串 "read_file" → 函数 run_read</span>
+    <span class="s">"write_file"</span>: run_write,  <span class="cm"># 字符串 "write_file" → 函数 run_write</span>
+    <span class="s">"send_message"</span>: <span class="kw">lambda</span> to, content: (BUS.send(name, to, content), <span class="s">"Sent"</span>)[<span class="num">1</span>],
+}</pre>
+  <p>LLM 返回 <code>block.name = "bash"</code>, <code>block.input = {"command": "ls"}</code> → <code>sub_handlers.get("bash")</code> 找到 <code>run_bash</code> → <code>run_bash(**{"command": "ls"})</code> 等价于 <code>run_bash(command="ls")</code>。</p>
+  <div class="callout orange">
+    <strong>lambda 技巧拆解：</strong><code>(BUS.send(name, to, content), "Sent")[1]</code> —— 先执行 send() 获取副作用（写文件），然后取元组第二个元素返回 <code>"Sent"</code>。因为 send() 返回 None，不能直接给 LLM 看。
+  </div>
+
+  <h3>5.5 收尾：提取最后一段文本</h3>
+  <pre>summary = <span class="s">"Done."</span>
+<span class="kw">for</span> msg <span class="kw">in</span> <span class="fn">reversed</span>(messages):                   <span class="cm"># 从最新消息往前</span>
+    <span class="kw">if</span> msg[<span class="s">"role"</span>] == <span class="s">"assistant"</span> <span class="kw">and</span> <span class="fn">isinstance</span>(msg[<span class="s">"content"</span>], <span class="tp">list</span>):
+        <span class="kw">for</span> b <span class="kw">in</span> msg[<span class="s">"content"</span>]:
+            <span class="kw">if</span> <span class="fn">getattr</span>(b, <span class="s">"type"</span>, <span class="tp">None</span>) == <span class="s">"text"</span>:  <span class="cm"># 找到 text block</span>
+                summary = b.text
+                <span class="kw">break</span>
+BUS.send(name, <span class="s">"lead"</span>, summary, <span class="s">"result"</span>)     <span class="cm"># 发总结给 Lead</span>
+active_teammates.pop(name, <span class="tp">None</span>)                  <span class="cm"># 从花名册移除</span></pre>
+  <p><code>response.content</code> 的 block 有两种类型：<code>"text"</code>（LLM 说的话）和 <code>"tool_use"</code>（调用的工具）。<code>"tool_result"</code> 不在 response 中，是代码执行后构造并塞入 messages 的。</p>
+</div>
+
+<div class="card" id="s6">
+  <h2><span class="num">6</span> Team Tool Handlers</h2>
+  <p><strong>代码位置：</strong><a href="file:///d:\code\learn-claude-code\s15\s15_agent_teams.py#L683-L698">L683-L698</a></p>
+  <div class="callout green">
+    <strong>为什么需要包装一层？</strong>适配器模式——将底层函数的接口适配成工具调度系统 <code>execute_tool(block)</code> 的统一接口：接收 <code>**block.input</code> 解包的关键字参数，返回字符串。
+  </div>
+
+  <h3>6.1 三个新增工具</h3>
+  <table>
+    <tr><th>工具名</th><th>包装函数</th><th>底层调用</th><th>作用</th></tr>
+    <tr><td><code>spawn_teammate</code></td><td><code>run_spawn_teammate</code></td><td><code>spawn_teammate_thread</code></td><td>创建队友线程</td></tr>
+    <tr><td><code>send_message</code></td><td><code>run_send_message</code></td><td><code>BUS.send("lead", to, content)</code></td><td>Lead 发消息给队友</td></tr>
+    <tr><td><code>check_inbox</code></td><td><code>run_check_inbox</code></td><td><code>BUS.read_inbox("lead")</code></td><td>检查 Lead 收件箱</td></tr>
+  </table>
+
+  <h3>6.2 为什么不能直接调用底层函数？</h3>
+  <pre><span class="cm"># BUS.send 的原始签名</span>
+<span class="kw">def</span> <span class="fn">send</span>(self, from_agent, to_agent, content, msg_type=<span class="s">"message"</span>):
+    ...
+
+<span class="cm"># LLM 调 send_message 时 block.input 只有 {to, content}</span>
+<span class="cm"># 如果直接 BUS.send(**block.input) → 缺少 from_agent ❌</span>
+
+<span class="cm"># 包装函数补上缺失的参数</span>
+<span class="kw">def</span> <span class="fn">run_send_message</span>(to: <span class="tp">str</span>, content: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    BUS.send(<span class="s">"lead"</span>, to, content)     <span class="cm"># 补上 from_agent = "lead"</span>
+    <span class="kw">return</span> f<span class="s">"Sent to {to}"</span>           <span class="cm"># 返回友好字符串而非 None</span></pre>
+
+  <table>
+    <tr><th>适配点</th><th>底层签名</th><th>包装后</th></tr>
+    <tr><td><code>from_agent</code></td><td>需要传入</td><td>硬编码为 <code>"lead"</code></td></tr>
+    <tr><td><code>msg_type</code></td><td>有默认值</td><td>不传，用默认值</td></tr>
+    <tr><td>返回值</td><td><code>None</code></td><td><code>"Sent to X"</code></td></tr>
+  </table>
+
+  <h3>6.3 run_check_inbox</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_check_inbox</span>() -> <span class="tp">str</span>:
+    msgs = BUS.read_inbox(<span class="s">"lead"</span>)
+    <span class="kw">if not</span> msgs:
+        <span class="kw">return</span> <span class="s">"(inbox empty)"</span>
+    lines = []
+    <span class="kw">for</span> m <span class="kw">in</span> msgs:
+        lines.append(f<span class="s">" [{m['from']} {m['content'][:200]}]"</span>)
+    <span class="kw">return</span> <span class="s">"\n"</span>.join(lines)</pre>
+  <p>返回格式举例：<code>[Bob 清理完成，释放了 2GB 空间]</code>。LLM 看到这个字符串，就知道队友干了什么。</p>
+</div>
+
+<div class="card" id="s7">
+  <h2><span class="num">7</span> Lead 收件箱双路径</h2>
+  <div class="callout red">
+    <strong>重要理解：</strong><code>run_check_inbox</code>（路径 A）和 main 循环中的自动注入（路径 B）都读取 <code>lead.jsonl</code>，但触发时机不同，互为补充。
+  </div>
+
+  <h3>7.1 两条路径对比</h3>
+  <table>
+    <tr><th>维度</th><th>路径 A: check_inbox 工具</th><th>路径 B: 主循环自动注入</th></tr>
+    <tr><td>代码</td><td><code>run_check_inbox()</code></td><td><code>main()</code> 中 L884-L889</td></tr>
+    <tr><td>谁触发</td><td>LLM 主动决定调用工具</td><td>系统自动执行</td></tr>
+    <tr><td>何时触发</td><td>agent_loop 工具循环中间</td><td>agent_loop 结束后、下次输入前</td></tr>
+    <tr><td>消息可见性</td><td>LLM 立刻看到，当场应对</td><td>LLM 下一轮才看到</td></tr>
+    <tr><td>类比</td><td>项目经理主动问"有回信吗？"</td><td>秘书自动把信件放在桌上</td></tr>
+  </table>
+
+  <div class="diagram">用户输入 → agent_loop(history)
+              │
+              ├── LLM 可能调 check_inbox → read_inbox("lead")
+              │      └── 消费消息 → 文件被删
+              │
+              └── agent_loop 结束
+                    │
+                    ▼ main 循环自动执行:
+              read_inbox("lead")
+              ├── 如果 LLM 已消费 → inbox 为空 → 不注入
+              └── 如果 LLM 没消费  → inbox 有内容 → 注入 history</div>
+
+  <div class="callout purple">
+    <strong>路径 B 是安全网：</strong>防止 LLM 忘记调 check_inbox 导致队友消息永远被晾在邮箱里。路径 A 给 LLM 主动能力。因为 read_inbox 是"读+删"原子操作，谁先读谁消费，不会重复。
+  </div>
+</div>
+
+<div class="card" id="s8">
+  <h2><span class="num">8</span> s14 vs s15 对比</h2>
+
+  <h3>8.1 总体变化</h3>
+  <table>
+    <tr><th>维度</th><th>s14 (Cron Scheduler)</th><th>s15 (Agent Teams)</th></tr>
+    <tr><td>总行数</td><td>~760 行</td><td>~891 行</td></tr>
+    <tr><td>Agent 数量</td><td>1 个</td><td>1 Lead + N 队友（后台线程）</td></tr>
+    <tr><td>通信方式</td><td>无</td><td>MessageBus + .mailboxes/*.jsonl</td></tr>
+    <tr><td>Lead 工具数</td><td>11</td><td>14（+ spawn_teammate, send_message, check_inbox）</td></tr>
+    <tr><td>队友工具</td><td>—</td><td>bash, read_file, write_file, send_message</td></tr>
+  </table>
+
+  <h3>8.2 删除的内容（s14 有，s15 没有）</h3>
+  <table>
+    <tr><th>删除项</th><th>作用</th><th>为什么删</th></tr>
+    <tr><td><code>queue_processor_loop</code></td><td>守护线程：cron 触发时主动唤醒 Agent</td><td>s15 是用户输入驱动 + inbox 注入，不再需要主动唤醒</td></tr>
+    <tr><td><code>agent_lock</code></td><td>防止 cron 和用户输入同时调 agent_loop</td><td>删了 queue_processor，没有并发风险了</td></tr>
+    <tr><td><code>run_agent_turn_locked</code></td><td>加锁的执行包装函数</td><td>同上</td></tr>
+    <tr><td><code>session_history</code> 全局变量</td><td>跨循环维护对话历史</td><td>s15 用局部变量 <code>history</code>，更简洁</td></tr>
+    <tr><td><code>print_latest_assistant_text</code></td><td>输出辅助函数</td><td>内联到 main 循环了</td></tr>
+    <tr><td><code>has_cron_queue</code></td><td>判断 cron 队列是否有任务</td><td>唯一使用者 queue_processor 被删了</td></tr>
+  </table>
+
+  <h3>8.3 新增的内容（s15 独有的）</h3>
+  <table>
+    <tr><th>新增项</th><th>作用</th><th>行号</th></tr>
+    <tr><td><code>MessageBus</code> 类</td><td>文件级消息总线（send + read_inbox）</td><td>L608-L586</td></tr>
+    <tr><td><code>BUS</code> 全局单例</td><td>唯一的 MessageBus 实例</td><td>L584</td></tr>
+    <tr><td><code>active_teammates</code></td><td>记录活跃队友的花名册</td><td>L591</td></tr>
+    <tr><td><code>spawn_teammate_thread</code></td><td>创建队友后台线程</td><td>L593-L680</td></tr>
+    <tr><td><code>run_spawn_teammate</code></td><td>spawn_teammate 工具处理器</td><td>L683</td></tr>
+    <tr><td><code>run_send_message</code></td><td>send_message 工具处理器</td><td>L686</td></tr>
+    <tr><td><code>run_check_inbox</code></td><td>check_inbox 工具处理器</td><td>L690</td></tr>
+    <tr><td>TOOLS 中 3 个新工具定义</td><td>spawn_teammate, send_message, check_inbox</td><td>L767-L784</td></tr>
+    <tr><td>PROMPT_SECTIONS 新工具名</td><td>把 3 个新工具写入 system prompt</td><td>L181</td></tr>
+    <tr><td>execute_tool 字典 3 个新条目</td><td>注册新工具的处理器</td><td>L270-L272</td></tr>
+    <tr><td>主循环 inbox 自动注入</td><td>安全网：自动检查收件箱</td><td>L884-L889</td></tr>
+  </table>
+
+  <h3>8.4 演进的本质</h3>
+  <div class="callout green">
+    <strong>演进路线：</strong>s13 Background Tasks（放后台跑）→ s14 Cron Scheduler（定时触发）→ s15 Agent Teams（多 Agent 协作）。<br>
+    从"单 Agent 如何更强大"走向了"如何让多个 Agent 一起工作"。
+  </div>
+</div>
+
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 常见困惑与 FAQ</h2>
+
+  <h4>Q: .json 和 .jsonl 有什么区别？</h4>
+  <p>.json 一个文件一个对象/数组。.jsonl 每行一个独立 JSON 对象，适合追加写入（O(1)）。消息是持续追加的，所以用 .jsonl。</p>
+
+  <h4>Q: unlink 是什么意思？</h4>
+  <p>删除文件。Unix 术语："文件名是指向硬盘数据的链接，删除文件就是断开这个链接"。<code>Path.unlink()</code> = <code>os.remove()</code>。</p>
+
+  <h4>Q: json.loads 是把 JSON 转成字典吗？</h4>
+  <p>不只是字典。它把 JSON 格式字符串转成对应的 Python 对象——可能是字典、列表、字符串、数字、None、布尔值，取决于 JSON 内容。</p>
+
+  <h4>Q: read_inbox 是一次性全读出来吗？</h4>
+  <p>是的。<code>read_text()</code> 一次读完整个文件，逐行解析，然后 <code>unlink</code> 删除文件。下次再读文件不存在，返回空列表。</p>
+
+  <h4>Q: run() 能访问哪些变量（闭包作用域）？</h4>
+  <p>三层：<strong>全局变量</strong>（BUS, client, run_bash 等）+ <strong>外层函数局部变量</strong>（name, system, prompt）+ <strong>自己的局部变量</strong>（messages, inbox 等）。</p>
+
+  <h4>Q: "bash" 怎么和 run_bash 对应上？</h4>
+  <p>通过 <code>sub_handlers</code> 字典查表。<code>sub_handlers.get("bash")</code> 找到 <code>run_bash</code> 函数对象，然后 <code>handler(**block.input)</code> 调用它。这是"命令模式"的简单实现。</p>
+
+  <h4>Q: handler(**block.input) 为什么能直接调函数？</h4>
+  <p><code>**dict</code> 把字典的 key-value 展开为关键字参数。例如 <code>block.input = {"command": "ls"}</code> → 实际调用 <code>run_bash(command="ls")</code>。</p>
+
+  <h4>Q: response.content 里的 block 有哪些类型？</h4>
+  <p><code>response.content</code> 中的 block：<code>"text"</code>（LLM 说的话）和 <code>"tool_use"</code>（LLM 要调用的工具）。<code>"tool_result"</code> 不在 response 中，是代码执行工具后构造并塞入 messages 的。</p>
+
+  <h4>Q: content 和 messages 是什么关系？</h4>
+  <p><code>messages</code> 是完整的对话历史（列表）。<code>content</code> 是其中一条消息的内容（可以是字符串或列表）。<code>messages[-20:]</code> 是取最近 20 条消息。</p>
+
+  <h4>Q: 工具调用的循环流程是怎样的？</h4>
+  <p>LLM 返回 text + tool_use → 执行工具 → 构造 tool_result → 注入 messages → 再调 LLM → 直到 LLM 返回纯文本（end_turn）→ 跳出循环。</p>
+
+  <h4>Q: 提取最后一个 text 的原因？</h4>
+  <p>最后一段文本是队友做完所有事情后的最终总结，最有信息量。把这段发给 Lead 汇报。</p>
+
+  <h4>Q: run_check_inbox 和主循环自动注入不是重复吗？</h4>
+  <p>不是重复，是<strong>两条互补路径</strong>。路径 A（check_inbox 工具）让 LLM 在工具循环中主动查询；路径 B（主循环自动注入）是安全网，防止 LLM 忘记查 inbox 导致队友消息永久丢失。因为 <code>read_inbox</code> 是"读+删"操作，谁先读谁消费，不会冲突。</p>
+
+  <h4>Q: 队友线程和主线程是并行的吗？</h4>
+  <p>Python 多线程受 GIL 限制不能并行 CPU 计算，但队友主要做 IO 密集任务（调 LLM API、读写文件）。一个线程等 API 响应时，另一个线程可以执行，所以实际上是并发的。</p>
+
+  <h4>Q: 为什么工具处理器要包装一层（适配器模式）？</h4>
+  <p>因为底层函数（如 <code>BUS.send</code>）的接口和工具调度系统 <code>execute_tool</code> 的接口不匹配——<code>BUS.send</code> 需要 <code>from_agent</code> 参数且返回 None，而工具只能从 <code>block.input</code> 得到 <code>{to, content}</code> 且需要返回字符串。包装函数补上了缺失的参数，调整了返回值。</p>
+</div>
+
+<div class="card" id="s10">
+  <h2><span class="num">10</span> Python 语法小抄</h2>
+  <table>
+    <tr><th>语法/API</th><th>含义</th><th>行号 (s15)</th></tr>
+    <tr><td><code>Path / "subdir"</code></td><td>pathlib 路径拼接</td><td>L559</td></tr>
+    <tr><td><code>.mkdir(exist_ok=True)</code></td><td>创建目录，存在不报错</td><td>L560</td></tr>
+    <tr><td><code>open(path, "a")</code></td><td>追加模式打开，不覆盖</td><td>L571</td></tr>
+    <tr><td><code>json.dumps(obj)</code></td><td>Python 对象 → JSON 字符串</td><td>L572</td></tr>
+    <tr><td><code>json.loads(str)</code></td><td>JSON 字符串 → Python 对象</td><td>L578</td></tr>
+    <tr><td><code>.read_text()</code></td><td>一次性读文件为字符串</td><td>L578</td></tr>
+    <tr><td><code>.splitlines()</code></td><td>字符串按换行拆成行列表</td><td>L578</td></tr>
+    <tr><td><code>.strip()</code></td><td>去掉字符串首尾空白</td><td>L579</td></tr>
+    <tr><td><code>.unlink()</code></td><td>删除文件</td><td>L580</td></tr>
+    <tr><td><code>\033[33m</code></td><td>ANSI 颜色转义码（黄色）</td><td>L573</td></tr>
+    <tr><td><code>content[:50]</code></td><td>字符串切片，取前 N 字符</td><td>L574</td></tr>
+    <tr><td><code>dict[str, bool]</code></td><td>类型注解，键/值类型</td><td>L591</td></tr>
+    <tr><td><code>def run(): ...</code> 嵌套</td><td>闭包——内部函数可访问外部变量</td><td>L602</td></tr>
+    <tr><td><code>**dict</code></td><td>字典解包为关键字参数</td><td>L640</td></tr>
+    <tr><td><code>dict.get(key, default)</code></td><td>安全取值，不存在返回 default</td><td>L639</td></tr>
+    <tr><td><code>dict.pop(key, None)</code></td><td>删除 key，不存在不抛异常</td><td>L657</td></tr>
+    <tr><td><code>getattr(obj, attr, default)</code></td><td>安全访问属性</td><td>L653</td></tr>
+    <tr><td><code>range(10)</code></td><td>生成 0~9 整数序列</td><td>L623</td></tr>
+    <tr><td><code>messages[-20:]</code></td><td>列表切片，取最后 20 个元素</td><td>L630</td></tr>
+    <tr><td><code>for ... else</code></td><td>else 在循环没被 break 时执行</td><td>L654</td></tr>
+    <tr><td><code>reversed(list)</code></td><td>反向迭代列表</td><td>L648</td></tr>
+    <tr><td><code>isinstance(x, list)</code></td><td>检查对象是否为 list 类型</td><td>L649</td></tr>
+    <tr><td><code>lambda to, content: ...</code></td><td>匿名函数</td><td>L620</td></tr>
+    <tr><td><code>(expr1, expr2)[1]</code></td><td>元组取第二个元素</td><td>L620</td></tr>
+    <tr><td><code>threading.Thread(target=fn, daemon=True)</code></td><td>创建守护线程</td><td>L661</td></tr>
+    <tr><td><code>f"{var:06d}"</code></td><td>格式化：至少 6 位十进制，补零</td><td>cron ID</td></tr>
+  </table>
+
+  <h3>真实 CC vs 教学版对照</h3>
+  <table>
+    <tr><th>功能</th><th>教学版</th><th>真实 Claude Code</th></tr>
+    <tr><td>消息类型</td><td>4 种（message, result）</td><td>15 种（含 permission_request, shutdown_request 等）</td></tr>
+    <tr><td>文件锁</td><td>无</td><td><code>proper-lockfile</code>，最多重试 10 次</td></tr>
+    <tr><td>队友循环</td><td>固定 10 轮后退出</td><td>idle loop：发 idle_notification，等 inbox，直到 shutdown_request</td></tr>
+    <tr><td>收件箱轮询</td><td>每轮循环检查一次</td><td>Lead 的 <code>useInboxPoller</code> 每秒检查一次</td></tr>
+    <tr><td>权限冒泡</td><td>省略</td><td>队友发 permission_request → Lead 审批 → permission_response</td></tr>
+    <tr><td>队友嵌套</td><td>未禁止（但工具集没给 spawn）</td><td>显式禁止"队友召唤队友"</td></tr>
+    <tr><td>团队配置</td><td>无</td><td><code>~/.claude/teams/{team}/config.json</code></td></tr>
+    <tr><td>进程模型</td><td>线程（共享进程）</td><td>tmux 窗格或独立子进程</td></tr>
+  </table>
+
+  <hr>
+  <p style="text-align:center;color:var(--text-muted);font-size:.85rem;">
+    基于 <a href="https://learn.shareai.run/zh/s15/">s15 Agent Teams 课程</a> 和 <a href="file:///d:\code\learn-claude-code\s15\s15_agent_teams.py">s15_agent_teams.py 源码</a> 整理 · 2026-06-21
+  </p>
+</div>
+
+</div>
+</body>
+</html>
