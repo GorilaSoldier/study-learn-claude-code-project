@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 s16: Team Protocols — request-response protocol + request_id + dispatch + state machine.
+
 Run:  python s16_team_protocols/code.py
 Need: pip install anthropic python-dotenv + .env with ANTHROPIC_API_KEY
+
 Changes from s15:
   - ProtocolState dataclass (request_id, type, sender, status, created_at)
   - pending_requests dict: tracks in-flight protocol requests
@@ -15,19 +17,14 @@ Changes from s15:
   - Unified consume_lead_inbox: protocol routing + injection into history
   - 3 new Lead tools: request_shutdown, request_plan, review_plan
   - 1 new teammate tool: submit_plan
+
 ASCII flow:
   Lead: BUS.send("shutdown_request", {request_id}) ──────→ teammate inbox
   Teammate: dispatch → handler → BUS.send("shutdown_response", {request_id}) ─→ Lead inbox
   Lead: consume_lead_inbox → match_response(request_id) → pending_requests[req_id].status = approved
 """
 
-
-import json
-import random
-import threading
-import os
-import time
-import subprocess
+import os, subprocess, json, time, random, threading
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict, field
@@ -42,7 +39,6 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
-
 if os.getenv("ANTHROPIC_BASE_URL"):
     os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
 
@@ -57,44 +53,51 @@ MODEL = os.environ["MODEL_ID"]
 TASKS_DIR = WORKDIR / ".tasks"
 TASKS_DIR.mkdir(exist_ok=True)
 
+
 @dataclass
 class Task:
     id: str
     subject: str
     description: str
     status: str          # pending | in_progress | completed
-    owner: str | None    # Agent name (multi-agent scenarios)
-    blockedBy: list[str] # Dependency task IDs
+    owner: str | None
+    blockedBy: list[str]
+
 
 def _task_path(task_id: str) -> Path:
     return TASKS_DIR / f"{task_id}.json"
 
-def create_task(subject: str, description: str = "", blockedBy: list[str] | None = None) -> Task:
+
+def create_task(subject: str, description: str = "",
+                blockedBy: list[str] | None = None) -> Task:
     task = Task(
         id=f"task_{int(time.time())}_{random.randint(0, 9999):04d}",
-        subject=subject,
-        description=description,
-        status="pending",
-        owner=None,
+        subject=subject, description=description,
+        status="pending", owner=None,
         blockedBy=blockedBy or [],
     )
     save_task(task)
     return task
 
+
 def save_task(task: Task):
     _task_path(task.id).write_text(json.dumps(asdict(task), indent=2))
 
+
 def load_task(task_id: str) -> Task:
     return Task(**json.loads(_task_path(task_id).read_text()))
+
 
 def list_tasks() -> list[Task]:
     return [Task(**json.loads(p.read_text()))
             for p in sorted(TASKS_DIR.glob("task_*.json"))]
 
+
 def get_task(task_id: str) -> str:
-    """Return full task details as JSON"""
+    """Return full task details as JSON."""
     task = load_task(task_id)
     return json.dumps(asdict(task), indent=2)
+
 
 def can_start(task_id: str) -> bool:
     """Check if all blockedBy dependencies are completed.
@@ -107,19 +110,21 @@ def can_start(task_id: str) -> bool:
             return False
     return True
 
+
 def claim_task(task_id: str, owner: str = "agent") -> str:
     task = load_task(task_id)
     if task.status != "pending":
         return f"Task {task_id} is {task.status}, cannot claim"
     if not can_start(task_id):
         deps = [d for d in task.blockedBy
-                           if not _task_path(d).exists() or load_task(d).status != "completed"]
+                if not _task_path(d).exists() or load_task(d).status != "completed"]
         return f"Blocked by: {deps}"
     task.owner = owner
     task.status = "in_progress"
     save_task(task)
     print(f"  \033[36m[claim] {task.subject} → in_progress (owner: {owner})\033[0m")
     return f"Claimed {task.id} ({task.subject})"
+
 
 def complete_task(task_id: str) -> str:
     task = load_task(task_id)
@@ -128,35 +133,40 @@ def complete_task(task_id: str) -> str:
     task.status = "completed"
     save_task(task)
     unblocked = [t.subject for t in list_tasks()
-                           if t.status == "pending" and t.blockedBy and can_start(t.id)]
+                 if t.status == "pending" and t.blockedBy and can_start(t.id)]
     print(f"  \033[32m[complete] {task.subject} ✓\033[0m")
     msg = f"Completed {task.id} ({task.subject})"
     if unblocked:
         msg += f"\nUnblocked: {', '.join(unblocked)}"
         print(f"  \033[33m[unblocked] {', '.join(unblocked)}\033[0m")
-    return msg        
+    return msg
+
 
 # ── Prompt Assembly (from s10, synced) ──
+
 PROMPT_SECTIONS = {
     "identity": "You are a coding agent. Act, don't explain.",
     "tools": "Available tools: bash, read_file, write_file, "
              "get_task, create_task, list_tasks, claim_task, complete_task, "
-             "schedule_cron, list_crons, cancel_cron, "
-             "spawn_teammate, send_message, check_inbox.",
+             "spawn_teammate, send_message, check_inbox, "
+             "request_shutdown, request_plan, review_plan.",
     "workspace": f"Working directory: {WORKDIR}",
     "memory": "Relevant memories are injected below when available.",
 }
 
+
 def assemble_system_prompt(context: dict) -> str:
     sections = [PROMPT_SECTIONS["identity"],
-                           PROMPT_SECTIONS["tools"],
-                           PROMPT_SECTIONS["workspace"]]
+                PROMPT_SECTIONS["tools"],
+                PROMPT_SECTIONS["workspace"]]
     memories = context.get("memories", "")
     if memories:
         sections.append(f"Relevant memories:\n{memories}")
     return "\n\n".join(sections)
 
+
 _last_context_key, _last_prompt = None, None
+
 
 def get_system_prompt(context: dict) -> str:
     global _last_context_key, _last_prompt
@@ -167,17 +177,18 @@ def get_system_prompt(context: dict) -> str:
     _last_prompt = assemble_system_prompt(context)
     return _last_prompt
 
-# -- Tool implementations --
+
+# ── Tools ──
+
 def safe_path(p: str) -> Path:
     path = (WORKDIR / p).resolve()
     if not path.is_relative_to(WORKDIR):
         raise ValueError(f"Path escapes workspace: {p}")
     return path
- 
-def run_bash(command: str) -> str:
-    dangerous = ["rm -rf /", "sudo", "shutdown", "reboot", "> /dev/"]
-    if any(d in command for d in dangerous):
-        return "Error: Dangerous command blocked"
+
+
+def run_bash(command: str, run_in_background: bool = False) -> str:
+    # run_in_background is handled by agent_loop dispatch, not here
     try:
         r = subprocess.run(command, shell=True, cwd=WORKDIR,
                            capture_output=True, text=True, timeout=120)
@@ -186,24 +197,27 @@ def run_bash(command: str) -> str:
     except subprocess.TimeoutExpired:
         return "Error: Timeout (120s)"
 
-def run_read(path: str, limit: int = None) -> str:
-    try:        
+
+def run_read(path: str, limit: int | None = None) -> str:
+    try:
         lines = safe_path(path).read_text().splitlines()
         if limit and limit < len(lines):
             lines = lines[:limit] + [f"... ({len(lines) - limit} more lines)"]
-        return "\n".join(lines)[:50000]
-    except Exception as exc:
-        return f"Error: {exc}"
-    
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error: {e}"
+
+
 def run_write(path: str, content: str) -> str:
     try:
-        file_path = safe_path(path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(content)
+        fp = safe_path(path)
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        fp.write_text(content)
         return f"Wrote {len(content)} bytes to {path}"
-    except Exception as exc:
-        return f"Error: {exc}"
-    
+    except Exception as e:
+        return f"Error: {e}"
+
+
 # Task tools
 
 def run_create_task(subject: str, description: str = "",
@@ -212,6 +226,7 @@ def run_create_task(subject: str, description: str = "",
     deps = f" (blockedBy: {', '.join(blockedBy)})" if blockedBy else ""
     print(f"  \033[34m[create] {task.subject}{deps}\033[0m")
     return f"Created {task.id}: {task.subject}{deps}"
+
 
 def run_list_tasks() -> str:
     tasks = list_tasks()
@@ -227,18 +242,21 @@ def run_list_tasks() -> str:
                      f"[{t.status}]{owner}{deps}")
     return "\n".join(lines)
 
+
 def run_get_task(task_id: str) -> str:
     try:
         return get_task(task_id)
     except FileNotFoundError:
         return f"Error: Task {task_id} not found"
 
+
 def run_claim_task(task_id: str) -> str:
     return claim_task(task_id, owner="agent")
 
 
 def run_complete_task(task_id: str) -> str:
-    return complete_task(task_id)    
+    return complete_task(task_id)
+
 
 # ── Background Tasks (from s13, synced) ──
 
@@ -246,6 +264,7 @@ _bg_counter = 0
 background_tasks: dict[str, dict] = {}
 background_results: dict[str, str] = {}
 background_lock = threading.Lock()
+
 
 def is_slow_operation(tool_name: str, tool_input: dict) -> bool:
     """Fallback heuristic: commands likely to take > 30s."""
@@ -271,24 +290,23 @@ def start_background_task(block) -> str:
     _bg_counter += 1
     bg_id = f"bg_{_bg_counter:04d}"
     cmd = block.input.get("command", block.name)
-    
+
     def worker():
         result = execute_tool(block)
         with background_lock:
             background_tasks[bg_id]["status"] = "completed"
             background_results[bg_id] = result
-            
+
     with background_lock:
         background_tasks[bg_id] = {
             "tool_use_id": block.id,
             "command": cmd,
-            "status": "running"
+            "status": "running",
         }
-        
-    thread = threading.Thread(target=worker, daemon=True)
-    thread.start()
+    threading.Thread(target=worker, daemon=True).start()
     print(f"  \033[33m[background] dispatched {bg_id}: {cmd[:40]}\033[0m")
     return bg_id
+
 
 def collect_background_results() -> list[str]:
     """Collect completed background results as task_notification messages."""
@@ -307,47 +325,50 @@ def collect_background_results() -> list[str]:
             f"  <status>completed</status>\n"
             f"  <command>{task['command']}</command>\n"
             f"  <summary>{summary}</summary>\n"
-            f"</task_notification>"
-        )
+            f"</task_notification>")
         print(f"  \033[32m[background done] {bg_id}: "
               f"{task['command'][:40]} ({len(output)} chars)\033[0m")
     return notifications
-# Context
+
 
 # ── MessageBus (from s15) ──
 
 MAILBOX_DIR = WORKDIR / ".mailboxes"
 MAILBOX_DIR.mkdir(exist_ok=True)
 
+
 class MessageBus:
     """File-based message bus. Each agent has a .jsonl inbox.
     Read is destructive: read_text + unlink (consumes messages).
     Teaching version: no file locking; real CC uses proper-lockfile."""
 
-    def send(self, from_agent: str, to_agent: str, content: str, msg_type: str = "message", metadata: dict = None):
-        msg = {"from": from_agent, "to": to_agent, "content": content,
-                               "type": msg_type, "ts": time.time(), "metadata": metadata or {}
-        }
+    def send(self, from_agent: str, to_agent: str, content: str,
+             msg_type: str = "message", metadata: dict = None):
+        msg = {"from": from_agent, "to": to_agent,
+               "content": content, "type": msg_type,
+               "ts": time.time(), "metadata": metadata or {}}
         inbox = MAILBOX_DIR / f"{to_agent}.jsonl"
         with open(inbox, "a") as f:
             f.write(json.dumps(msg) + "\n")
         print(f"  \033[33m[bus] {from_agent} → {to_agent}: "
-              f"{content[:50]}\033[0m")
+              f"({msg_type}) {content[:50]}\033[0m")
 
     def read_inbox(self, agent: str) -> list[dict]:
         inbox = MAILBOX_DIR / f"{agent}.jsonl"
         if not inbox.exists():
             return []
         msgs = [json.loads(line) for line in inbox.read_text().splitlines()
-                           if line.strip()]
-        inbox.unlink()
+                if line.strip()]
+        inbox.unlink()  # consume: read + delete
         return msgs
+
 
 BUS = MessageBus()
 active_teammates: dict[str, bool] = {}
 
 # ── Protocol State (s16 new) ──
-@dataclass 
+
+@dataclass
 class ProtocolState:
     request_id: str
     type: str       # "shutdown" | "plan_approval"
@@ -357,10 +378,13 @@ class ProtocolState:
     payload: str    # plan text or shutdown reason
     created_at: float = field(default_factory=time.time)
 
+
 pending_requests: dict[str, ProtocolState] = {}
+
 
 def new_request_id() -> str:
     return f"req_{random.randint(0, 999999):06d}"
+
 
 def match_response(response_type: str, request_id: str, approve: bool):
     """Correlate a response to the original request via request_id.
@@ -410,6 +434,7 @@ def consume_lead_inbox(route_protocol: bool = True) -> list[dict]:
                 match_response(msg_type, req_id, approve)
     return msgs
 
+
 # ── Teammate Thread (s16: idle loop + dispatch) ──
 
 def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
@@ -418,11 +443,11 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
     (shutdown_request, new task) instead of exiting."""
     if name in active_teammates:
         return f"Teammate '{name}' already exists"
-    
-    system = (f"You are '{name}', a {role}."\
-                   f"Use tools to complete tasks."
-                   f"Send results via send_message to 'lead'.")
-    
+
+    system = (f"You are '{name}', a {role}. "
+              f"Use tools to complete tasks. "
+              f"Check inbox for protocol messages (shutdown_request, etc).")
+
     def handle_inbox_message(name: str, msg: dict, messages: list) -> bool:
         """Dispatch incoming protocol messages by type.
         Returns True if teammate should stop."""
@@ -442,12 +467,12 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
             approve = meta.get("approve", False)
             if approve:
                 messages.append({"role": "user",
-                        "content": f"[Plan approved] Proceed with the task."})
+                    "content": f"[Plan approved] Proceed with the task."})
             else:
                 messages.append({"role": "user",
-                        "content": f"[Plan rejected] Feedback: {msg['content']}"})
-        
-        return False
+                    "content": f"[Plan rejected] Feedback: {msg['content']}"})
+
+        return False  # continue
 
     def run():
         messages = [{"role": "user", "content": prompt}]
@@ -483,7 +508,7 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
                                                   "Sent")[1],
             "submit_plan": lambda plan: _teammate_submit_plan(name, plan),
         }
-        
+
         shutdown_requested = False
         while not shutdown_requested:
             # Check inbox for protocol messages
@@ -509,10 +534,10 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
             try:
                 response = client.messages.create(
                     model=MODEL, system=system, messages=messages[-20:],
-                    tools=sub_tools, max_tokens=8000
-                )
+                    tools=sub_tools, max_tokens=8000)
             except Exception:
                 break
+
             messages.append({"role": "assistant", "content": response.content})
             if response.stop_reason != "tool_use":
                 # Idle: wait for inbox messages instead of exiting
@@ -538,7 +563,7 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
                             "content": "<inbox>" + inbox_json + "</inbox>"})
                         break  # back to LLM turn with new messages
 
-            # Execute tool calls        
+            # Execute tool calls
             results = []
             for block in response.content:
                 if block.type == "tool_use":
@@ -560,7 +585,6 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
                 else:
                     continue
                 break
-        
         BUS.send(name, "lead", summary, "result")
         active_teammates.pop(name, None)
         print(f"  \033[32m[teammate] {name} finished\033[0m")
@@ -570,8 +594,10 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
     print(f"  \033[36m[teammate] {name} spawned as {role}\033[0m")
     return f"Teammate '{name}' spawned as {role}"
 
+
 def _teammate_submit_plan(from_name: str, plan: str) -> str:
     """Teammate submits a plan to Lead for approval.
+
     Note: This is a protocol-level request, not a code-level gate.
     After submitting, the teammate's thread continues running — it can
     still call bash/write/etc. Real enforcement relies on the model
@@ -589,14 +615,15 @@ def _teammate_submit_plan(from_name: str, plan: str) -> str:
              {"request_id": req_id})
     return f"Plan submitted ({req_id}). Waiting for approval..."
 
+
 # ── Lead Protocol Tools (s16 new) ──
+
 def run_request_shutdown(teammate: str) -> str:
     req_id = new_request_id()
     pending_requests[req_id] = ProtocolState(
         request_id=req_id, type="shutdown",
         sender="lead", target=teammate,
-        status="pending", payload=""
-    )
+        status="pending", payload="")
     BUS.send("lead", teammate, "Please shut down gracefully.",
              "shutdown_request",
              {"request_id": req_id})
@@ -604,17 +631,19 @@ def run_request_shutdown(teammate: str) -> str:
           f"({req_id})\033[0m")
     return f"Shutdown request sent to {teammate} (req: {req_id})"
 
+
 def run_request_plan(teammate: str, task: str) -> str:
     """Lead asks a teammate to submit a plan for a task."""
     BUS.send("lead", teammate, f"Please submit a plan for: {task}",
              "message")
     return f"Asked {teammate} to submit a plan"
 
+
 def run_review_plan(request_id: str, approve: bool, feedback: str = "") -> str:
     state = pending_requests.get(request_id)
     if not state:
         return f"Request {request_id} not found"
-    if state.status != "pending":      
+    if state.status != "pending":
         return f"Request {request_id} already {state.status}"
     state.status = "approved" if approve else "rejected"
     BUS.send("lead", state.sender, feedback or ("Approved" if approve else "Rejected"),
@@ -626,12 +655,15 @@ def run_review_plan(request_id: str, approve: bool, feedback: str = "") -> str:
 
 
 # ── Other Lead Tool Handlers ──
+
 def run_spawn_teammate(name: str, role: str, prompt: str) -> str:
     return spawn_teammate_thread(name, role, prompt)
+
 
 def run_send_message(to: str, content: str) -> str:
     BUS.send("lead", to, content)
     return f"Sent to {to}"
+
 
 def run_check_inbox() -> str:
     """Check Lead's inbox. Routes protocol responses via match_response."""
@@ -646,7 +678,9 @@ def run_check_inbox() -> str:
         lines.append(f"  [{m['from']}]{tag} {m['content'][:200]}")
     return "\n".join(lines)
 
+
 # ── Tool Dispatch ──
+
 def execute_tool(block) -> str:
     """Execute a tool call block, return output."""
     handler = {
@@ -663,12 +697,15 @@ def execute_tool(block) -> str:
         return handler(**block.input)
     return f"Unknown tool: {block.name}"
 
+
 # ── Tool Definitions ──
 
 TOOLS = [
     {"name": "bash", "description": "Run a shell command.",
      "input_schema": {"type": "object",
-                      "properties": {"command": {"type": "string"}},
+                      "properties": {
+                          "command": {"type": "string"},
+                          "run_in_background": {"type": "boolean"}},
                       "required": ["command"]}},
     {"name": "read_file", "description": "Read file contents.",
      "input_schema": {"type": "object",
@@ -708,28 +745,6 @@ TOOLS = [
      "input_schema": {"type": "object",
                       "properties": {"task_id": {"type": "string"}},
                       "required": ["task_id"]}},
-    {"name": "schedule_cron",
-     "description": "Schedule a cron job. cron is 5-field: min hour dom month dow.",
-     "input_schema": {"type": "object",
-                      "properties": {
-                          "cron": {"type": "string",
-                                   "description": "5-field cron expression"},
-                          "prompt": {"type": "string",
-                                     "description": "Message to inject when fired"},
-                          "recurring": {"type": "boolean",
-                                        "description": "True=recurring, False=one-shot"},
-                          "durable": {"type": "boolean",
-                                      "description": "True=persist to disk"}},
-                      "required": ["cron", "prompt"]}},
-    {"name": "list_crons",
-     "description": "List all registered cron jobs.",
-     "input_schema": {"type": "object", "properties": {},
-                      "required": []}},
-    {"name": "cancel_cron",
-     "description": "Cancel a cron job by ID.",
-     "input_schema": {"type": "object",
-                      "properties": {"job_id": {"type": "string"}},
-                      "required": ["job_id"]}},
     {"name": "spawn_teammate",
      "description": "Spawn a teammate agent in a background thread.",
      "input_schema": {"type": "object",
@@ -739,13 +754,13 @@ TOOLS = [
                           "prompt": {"type": "string"}},
                       "required": ["name", "role", "prompt"]}},
     {"name": "send_message",
-     "description": "Send a message to a teammate via MessageBus.",
+     "description": "Send message to a teammate via MessageBus.",
      "input_schema": {"type": "object",
                       "properties": {"to": {"type": "string"},
                                      "content": {"type": "string"}},
                       "required": ["to", "content"]}},
     {"name": "check_inbox",
-     "description": "Check Lead's inbox for teammate messages.",
+     "description": "Check Lead's inbox. Routes protocol responses automatically.",
      "input_schema": {"type": "object", "properties": {},
                       "required": []}},
     {"name": "request_shutdown",
@@ -769,6 +784,7 @@ TOOLS = [
                       "required": ["request_id", "approve"]}},
 ]
 
+
 # ── Context ──
 
 def update_context(context: dict, messages: list) -> dict:
@@ -781,13 +797,13 @@ def update_context(context: dict, messages: list) -> dict:
     return {
         "enabled_tools": [t["name"] for t in TOOLS],
         "workspace": str(WORKDIR),
-        "memories": memories
+        "memories": memories,
     }
 
 
-# ── Agent Loop (simplified, focused on cron scheduler) ──
+# ── Agent Loop ──
 
-def agent_loop(messages: list, context: dict) -> None:
+def agent_loop(messages: list, context: dict):
     system = get_system_prompt(context)
     while True:
         try:
@@ -798,45 +814,41 @@ def agent_loop(messages: list, context: dict) -> None:
             messages.append({"role": "assistant", "content": [
                 {"type": "text",
                  "text": f"[Error] {type(e).__name__}: {e}"}]})
-            return context
+            return
 
         messages.append({"role": "assistant", "content": response.content})
         if response.stop_reason != "tool_use":
-            return context
+            return
 
-        # -- Process tool calls --
         results = []
         for block in response.content:
             if block.type != "tool_use":
                 continue
             print(f"\033[36m> {block.name}\033[0m")
-            
+
             if should_run_background(block.name, block.input):
                 bg_id = start_background_task(block)
-                results.append({
-                    "type": "tool_result", "tool_use_id": block.id,
-                    "content": f"[Background task {bg_id} started] "
-                                           f"Command: {block.input.get('command', '')}. "
-                                           f"Result will be available when complete."
-                })
+                results.append({"type": "tool_result",
+                                "tool_use_id": block.id,
+                                "content": f"[Background task {bg_id} started] "
+                                           f"Result will be available when complete."})
             else:
                 output = execute_tool(block)
                 print(str(output)[:300])
-                results.append({
-                    "type": "tool_result", "tool_use_id": block.id, "content": output
-                })
+                results.append({"type": "tool_result",
+                                "tool_use_id": block.id,
+                                "content": output})
+
         # Merge background tool results + notifications into one user message
         user_content = list(results)
         bg_notifications = collect_background_results()
         if bg_notifications:
             for notif in bg_notifications:
                 user_content.append({"type": "text", "text": notif})
-            print(f"  \033[32m[inject] {len(bg_notifications)} background "
-                  f"notification(s)\033[0m")
-        
         messages.append({"role": "user", "content": user_content})
         context = update_context(context, messages)
         system = get_system_prompt(context)
+
 
 if __name__ == "__main__":
     print("s16: team protocols")
@@ -857,12 +869,12 @@ if __name__ == "__main__":
             if getattr(block, "type", None) == "text":
                 print(block.text)
 
-         # Check inbox for teammate results → inject into history
+        # Check inbox → route protocol + inject into history
         inbox_msgs = consume_lead_inbox(route_protocol=True)
         if inbox_msgs:
             inbox_text = "\n".join(
                 f"From {m['from']}: {m['content'][:200]}" for m in inbox_msgs)
             history.append({"role": "user",
                             "content": f"[Inbox]\n{inbox_text}"})
-        print(f"\n\033[33m[Inbox: {len(inbox_msgs)} messages injected]\033[0m")
-        print()        
+            print(f"\n\033[33m[Inbox: {len(inbox_msgs)} messages injected]\033[0m")
+        print()

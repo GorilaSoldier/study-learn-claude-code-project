@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s16 Team Protocols - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .bug { background: #ffebe9; border: 1px solid var(--red); border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+  .bug h4 { color: var(--red); margin-top: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s16 · Team Protocols（团队协议）复习笔记</h1>
+  <p class="subtitle">邮箱让团队能说话，协议让团队按规矩协作</p>
+  <span class="badge">基于问答整理 · ~845 LOC · 15 个工具 · ProtocolState · 请求-响应协议</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">ProtocolState 与 pending_requests</a></li>
+    <li><a href="#s4">match_response 核心函数</a></li>
+    <li><a href="#s5">consume_lead_inbox 统一收件入口</a></li>
+    <li><a href="#s6">spawn_teammate_thread 架构概览</a></li>
+    <li><a href="#s7">handle_inbox_message 协议分发</a></li>
+    <li><a href="#s8">外层循环 vs 内层循环</a></li>
+    <li><a href="#s9">完整执行流程举例</a></li>
+    <li><a href="#s10">协议通信函数</a></li>
+    <li><a href="#s11">s15 vs s16 对比</a></li>
+    <li><a href="#s12">已知 Bug</a></li>
+    <li><a href="#s13">常见困惑与 FAQ</a></li>
+    <li><a href="#s14">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1 ==================== -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>给团队通信加上"编号 + 状态机 + 回执"，把自由聊天升级为结构化协议。
+  </div>
+  <p><strong>解决了什么问题：</strong>s15 让队友之间可以互相发消息。但如果所有事情都靠自由文本，会有两个明显问题：</p>
+  <ul>
+    <li>某些动作必须明确批准或拒绝，不能只靠一句模糊回复</li>
+    <li>一旦多个请求同时存在，系统很难知道"这条回复对应哪一件事"</li>
+  </ul>
+  <p><strong>最典型的两个场景：</strong></p>
+  <ol>
+    <li>队友要不要优雅关机</li>
+    <li>某个高风险计划要不要先审批</li>
+  </ol>
+  <p>这两件事看起来不同，但结构一样：一方发请求，另一方明确回复，双方都能用同一个 request_id 对上号。</p>
+  <div class="callout purple">
+    <strong>课程原话：</strong>"有了邮箱以后，团队已经能说话；有了协议以后，团队才开始会'按规矩协作'。"
+  </div>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+  <p>从教学角度，协议可以看成两层：</p>
+  <div class="diagram">第1层：协议消息（ProtocolEnvelope）
+  {
+    "type": "shutdown_request",
+    "from": "lead", "to": "alice",
+    "request_id": "req_001",
+    "payload": {},
+  }
+
+第2层：请求追踪表（RequestRecord）
+  requests = {
+    "req_001": { "kind": "shutdown", "status": "pending" },
+  }</div>
+  <p>两层合在一起，系统就能同时回答两个问题：</p>
+  <ul>
+    <li><strong>现在发生了什么</strong>（协议消息）</li>
+    <li><strong>这件事走到哪一步了</strong>（请求追踪表）</li>
+  </ul>
+
+  <h3>普通消息 vs 协议消息</h3>
+  <table>
+    <tr><th>维度</th><th>普通消息</th><th>协议消息</th></tr>
+    <tr><td>适用场景</td><td>讨论、提醒、补充说明</td><td>审批、关机、交接、签收</td></tr>
+    <tr><td>最小字段</td><td>from / to / content</td><td>type / request_id / from / to / payload</td></tr>
+    <tr><td>回答的问题</td><td>"说了什么"</td><td>"这件事走到哪一步了"</td></tr>
+    <tr><td>处理方式</td><td>注入 LLM 对话历史</td><td>先 match_response 更新状态表，再注入</td></tr>
+  </table>
+
+  <h3>四个容易打结的对象</h3>
+  <table>
+    <tr><th>对象</th><th>回答的问题</th><th>典型字段</th></tr>
+    <tr><td>MessageEnvelope</td><td>谁跟谁说了什么</td><td>from / to / content</td></tr>
+    <tr><td>ProtocolEnvelope</td><td>这是不是结构化请求/响应</td><td>type / request_id / payload</td></tr>
+    <tr><td>RequestRecord</td><td>协作流程走到哪一步</td><td>kind / status / from / to</td></tr>
+    <tr><td>TaskRecord</td><td>真正的工作项是啥、谁在做</td><td>subject / status / blockedBy / owner</td></tr>
+  </table>
+  <div class="callout orange">
+    <strong>切记：</strong>协议请求不是任务本身。请求状态表也不是任务板。协议只负责"协作流程"，任务系统才负责"真正的工作推进"。
+  </div>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> ProtocolState 与 pending_requests</h2>
+
+  <h3>3.1 ProtocolState dataclass</h3>
+  <pre><span class="kw">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="fn">ProtocolState</span>:
+    request_id: <span class="tp">str</span>             <span class="cm"># 请求的唯一标识，如 "req_000042"</span>
+    type: <span class="tp">str</span>                   <span class="cm"># "shutdown" | "plan_approval"</span>
+    sender: <span class="tp">str</span>                 <span class="cm"># 谁发的请求</span>
+    target: <span class="tp">str</span>                 <span class="cm"># 发给谁</span>
+    status: <span class="tp">str</span>                 <span class="cm"># "pending" | "approved" | "rejected"</span>
+    payload: <span class="tp">str</span>               <span class="cm"># 方案原文或关机原因</span>
+    created_at: <span class="tp">float</span> = <span class="fn">field</span>(default_factory=time.time)</pre>
+
+  <table>
+    <tr><th>字段</th><th>说明</th><th>类比</th></tr>
+    <tr><td><code>request_id</code></td><td>请求的唯一编号</td><td>快递单号</td></tr>
+    <tr><td><code>type</code></td><td>两种：shutdown 或 plan_approval</td><td>业务类型</td></tr>
+    <tr><td><code>sender</code></td><td>发起方</td><td>寄件人</td></tr>
+    <tr><td><code>target</code></td><td>目标方</td><td>收件人</td></tr>
+    <tr><td><code>status</code></td><td>三态：pending → approved/rejected</td><td>物流状态</td></tr>
+    <tr><td><code>payload</code></td><td>附带的方案文本或原因</td><td>包裹内容</td></tr>
+    <tr><td><code>created_at</code></td><td><code>field(default_factory=time.time)</code></td><td>寄件时间戳，每次实例化时调用 <code>time.time()</code>，不共享</td></tr>
+  </table>
+
+  <h3>3.2 pending_requests 全局字典</h3>
+  <pre>pending_requests: <span class="tp">dict[str, ProtocolState]</span> = {}</pre>
+  <p><strong>这就是"请求追踪表"（RequestRecord）</strong>——键是 request_id，值是 ProtocolState。当一个请求发出后但还没收到回复时，它的记录就在这里。回复到来时通过 request_id 查到这个记录，更新状态。</p>
+  <p>相当于一个<strong>"在途请求登记簿"</strong>。</p>
+
+  <h3>3.3 new_request_id 生成器</h3>
+  <pre><span class="kw">def</span> <span class="fn">new_request_id</span>() -> <span class="tp">str</span>:
+    <span class="kw">return</span> f<span class="s">"req_{random.randint(0, 999999):06d}"</span></pre>
+  <table>
+    <tr><th>片段</th><th>解释</th></tr>
+    <tr><td><code>f"..."</code></td><td>f-string，花括号内写表达式</td></tr>
+    <tr><td><code>random.randint(0, 999999)</code></td><td>0~999999 的随机整数（100 万种可能）</td></tr>
+    <tr><td><code>:06d</code></td><td>格式化：至少 6 位十进制，不足补零。42 → 000042</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> match_response 核心函数</h2>
+  <p><strong>职责：</strong>Lead 收到 Teammate 的响应消息时，用来将响应关联到原始请求。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">match_response</span>(response_type: <span class="tp">str</span>, request_id: <span class="tp">str</span>, approve: <span class="tp">bool</span>):
+    state = pending_requests.get(request_id)
+    <span class="kw">if not</span> state:                                        <span class="cm"># 找不到记录</span>
+        print(<span class="s">f"  \033[31m[protocol] unknown request_id: {request_id}\033[0m"</span>)
+        <span class="kw">return</span>
+
+    <span class="cm"># 验证响应类型与请求类型匹配</span>
+    <span class="kw">if</span> state.type == <span class="s">"shutdown"</span> <span class="kw">and</span> response_type != <span class="s">"shutdown_response"</span>:
+        print(<span class="s">f"...type mismatch..."</span>); <span class="kw">return</span>
+    <span class="kw">if</span> state.type == <span class="s">"plan_approval"</span> <span class="kw">and</span> response_type != <span class="s">"plan_approval_response"</span>:
+        print(<span class="s">f"...type mismatch..."</span>); <span class="kw">return</span>
+
+    <span class="kw">if</span> state.status != <span class="s">"pending"</span>:                          <span class="cm"># 重复响应防御</span>
+        print(<span class="s">f"  \033[33m[protocol] ...already {state.status}...\033[0m"</span>)
+        <span class="kw">return</span>
+
+    state.status = <span class="s">"approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"rejected"</span>  <span class="cm"># 更新状态</span>
+    print(<span class="s">f"  \033[{color}m[protocol] {state.type} {icon} ...\033[0m"</span>)</pre>
+
+  <h3>逐块拆解</h3>
+  <table>
+    <tr><th>步骤</th><th>代码</th><th>做了什么</th></tr>
+    <tr><td>1</td><td><code>pending_requests.get(request_id)</code></td><td>用 request_id 查找登记簿。用 <code>get</code> 不抛异常，找不到返回 None</td></tr>
+    <tr><td>2</td><td><code>if not state: return</code></td><td>找不到记录 → 打印红色错误，拒绝处理</td></tr>
+    <tr><td>3</td><td>类型匹配检查</td><td>如果请求是 shutdown，响应必须是 shutdown_response；plan_approval 同理</td></tr>
+    <tr><td>4</td><td><code>status != "pending"</code></td><td>防止重复处理：如果请求已经被批准/拒绝了，第二次响应是多余的</td></tr>
+    <tr><td>5</td><td><code>state.status = "approved"/"rejected"</code></td><td>更新状态表中的记录</td></tr>
+    <tr><td>6</td><td>打印日志</td><td>绿色 ✓ = 批准，红色 ✗ = 拒绝</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>ANSI 颜色码：</strong><code>\033[31m</code> 红色（错误），<code>\033[33m</code> 黄色（警告），<code>\033[32m</code> 绿色（成功），<code>\033[0m</code> 重置。
+  </div>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> consume_lead_inbox 统一收件入口</h2>
+  <div class="callout green">
+    <strong>设计意图（s16 fix）：</strong>在此之前，run_check_inbox 工具和主循环各自由地读 inbox，导致协议响应消息被当成普通消息消费了，但没有经过 match_response 处理——请求就一直停留在 pending 状态，永远得不到更新。
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">consume_lead_inbox</span>(route_protocol: <span class="tp">bool</span> = <span class="hl">True</span>) -> <span class="tp">list[dict]</span>:
+    msgs = BUS.read_inbox(<span class="s">"lead"</span>)
+    <span class="kw">if not</span> msgs:
+        <span class="kw">return</span> []
+    <span class="kw">if</span> route_protocol:                              <span class="cm"># 开关参数</span>
+        <span class="kw">for</span> msg <span class="kw">in</span> msgs:
+            meta = msg.get(<span class="s">"metadata"</span>, {})            <span class="cm"># 取元数据</span>
+            req_id = meta.get(<span class="s">"request_id"</span>, <span class="s">""</span>)      <span class="cm"># 取 request_id</span>
+            msg_type = msg.get(<span class="s">"type"</span>, <span class="s">""</span>)            <span class="cm"># 取消息类型</span>
+            <span class="kw">if</span> req_id <span class="kw">and</span> msg_type.endswith(<span class="s">"_response"</span>):  <span class="cm"># 判断是否协议响应</span>
+                approve = meta.get(<span class="s">"approve"</span>, <span class="hl">False</span>)    <span class="cm"># 默认拒绝（安全设计）</span>
+                match_response(msg_type, req_id, approve)  <span class="cm"># 关联到原始请求</span>
+    <span class="kw">return</span> msgs</pre>
+
+  <h3>关键细节</h3>
+  <table>
+    <tr><th>代码</th><th>解释</th></tr>
+    <tr><td><code>msg.get("metadata", {})</code></td><td>从消息中取 metadata 字典。用 <code>get</code> 防旧消息没有 metadata 字段</td></tr>
+    <tr><td><code>msg_type.endswith("_response")</code></td><td>只处理响应消息，不处理请求消息（请求由普通注入处理）</td></tr>
+    <tr><td><code>approve = meta.get("approve", False)</code></td><td>默认为 False——如果没传 approve，默认拒绝。这是"default deny"安全原则</td></tr>
+    <tr><td><code>match_response(msg_type, req_id, approve)</code></td><td>调用核心匹配函数更新 pending_requests</td></tr>
+  </table>
+
+  <h3>被谁调用</h3>
+  <ul>
+    <li><strong>run_check_inbox 工具</strong>——当 Lead LLM 主动调用 check_inbox 时</li>
+    <li><strong>主循环末尾</strong>——每次用户输入一轮对话后，自动检查 inbox 并注入</li>
+  </ul>
+
+  <div class="callout orange">
+    <strong>关键：</strong>无论是哪种调用路径，协议响应都会被正确路由到 match_response。这是 s16 解决的一个真实 bug，也是 s15 中存在的隐患。
+  </div>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> spawn_teammate_thread 架构概览</h2>
+  <p>这是 s16 最复杂的部分——在后台线程中运行一个"协作者 Agent"。</p>
+
+  <div class="diagram">┌────────────────────────────────────────────────────┐
+│               Main Thread (Lead)                    │
+│  agent_loop (LLM + tools)                           │
+│  consume_lead_inbox()                               │
+│  TOOLS: 15 个（含 request_shutdown 等 3 个新工具）    │
+└──────────┬─────────────────────────────────────────┘
+           │ BUS.send / BUS.read_inbox (文件 .jsonl)
+┌──────────▼─────────────────────────────────────────┐
+│       Background Thread (Teammate)                 │
+│  spawn_teammate_thread → run()                     │
+│  LLM 循环 + 5 个工具 + 收件箱监听                   │
+│  外层循环: 读 inbox → LLM → 执行工具                │
+│  内层循环: sleep(1) → 读 inbox → 处理/等待           │
+└────────────────────────────────────────────────────┘</div>
+
+  <h3>函数签名</h3>
+  <pre><span class="kw">def</span> <span class="fn">spawn_teammate_thread</span>(name: <span class="tp">str</span>, role: <span class="tp">str</span>, prompt: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    <span class="kw">if</span> name <span class="kw">in</span> active_teammates:          <span class="cm"># 防重复创建</span>
+        <span class="kw">return</span> <span class="s">f"Teammate '{name}' already exists"</span>
+
+    system = (f<span class="s">"You are '{name}', a {role}..."</span>)  <span class="cm"># 系统提示词</span>
+
+    <span class="kw">def</span> <span class="fn">run</span>():                                 <span class="cm"># 闭包——后台线程入口</span>
+        messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}]
+        sub_tools = [bash, read, write, send_message, submit_plan]  <span class="cm"># 5 个工具</span>
+        sub_handlers = {...}                     <span class="cm"># 工具 → 函数映射表</span>
+
+        shutdown_requested = <span class="hl">False</span>
+        <span class="kw">while not</span> shutdown_requested:           <span class="cm"># 外层循环（永远运行直到关闭）</span>
+            ...外层循环体...
+        ...发送 summary...
+
+    active_teammates[name] = <span class="hl">True</span>
+    threading.Thread(target=run, daemon=<span class="hl">True</span>).start()  <span class="cm"># 启动后台线程</span>
+    <span class="kw">return</span> f<span class="s">"Teammate '{name}' spawned as {role}"</span></pre>
+
+  <h3>Teammate 的 5 个工具</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>Handler 实现</th></tr>
+    <tr><td><code>bash</code></td><td>执行 shell 命令</td><td><code>run_bash</code>（和 Lead 共用）</td></tr>
+    <tr><td><code>read_file</code></td><td>读文件</td><td><code>run_read</code>（和 Lead 共用）</td></tr>
+    <tr><td><code>write_file</code></td><td>写文件</td><td><code>run_write</code>（和 Lead 共用）</td></tr>
+    <tr><td><code>send_message</code></td><td>发消息给其他 Agent</td><td><code>lambda to, content: (BUS.send(name, to, content), "Sent")[1]</code></td></tr>
+    <tr><td><code>submit_plan</code></td><td><strong>s16 新增：</strong>提交方案给 Lead 审批</td><td><code>lambda plan: _teammate_submit_plan(name, plan)</code></td></tr>
+  </table>
+
+  <h3>send_message 的 lambda 技巧</h3>
+  <pre>lambda to, content: (BUS.send(name, to, content), <span class="s">"Sent"</span>)[<span class="num">1</span>]</pre>
+  <table>
+    <tr><th>步骤</th><th>表达式</th><th>结果</th></tr>
+    <tr><td>1</td><td><code>BUS.send(name, to, content)</code></td><td>发消息，返回 <code>None</code></td></tr>
+    <tr><td>2</td><td><code>(None, "Sent")</code></td><td>构造元组</td></tr>
+    <tr><td>3</td><td><code>(None, "Sent")[1]</code></td><td>取第二个元素 → <code>"Sent"</code></td></tr>
+  </table>
+  <p>因为 tool handler 需要返回字符串作为 tool result，而 <code>BUS.send</code> 返回 <code>None</code>，所以用这个技巧绕过去。</p>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> handle_inbox_message 协议分发</h2>
+  <p><strong>内嵌函数</strong>定义在 <code>spawn_teammate_thread</code> 内部。当 Teammate 的收件箱有协议消息时，由它来分派处理。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">handle_inbox_message</span>(name: <span class="tp">str</span>, msg: <span class="tp">dict</span>, messages: <span class="tp">list</span>) -> <span class="tp">bool</span>:
+    msg_type = msg.get(<span class="s">"type"</span>, <span class="s">"message"</span>)
+    meta = msg.get(<span class="s">"metadata"</span>, {})
+    req_id = meta.get(<span class="s">"request_id"</span>, <span class="s">""</span>)
+
+    <span class="kw">if</span> msg_type == <span class="s">"shutdown_request"</span>:                          <span class="cm"># 关闭请求</span>
+        BUS.send(name, <span class="s">"lead"</span>, <span class="s">"Shutting down gracefully."</span>,
+                 <span class="s">"shutdown_response"</span>,
+                 {<span class="s">"request_id"</span>: req_id, <span class="s">"approve"</span>: <span class="hl">True</span>})
+        <span class="kw">return</span> <span class="hl">True</span>   <span class="cm"># → 触发 break，退出循环</span>
+
+    <span class="kw">if</span> msg_type == <span class="s">"plan_approval_response"</span>:                     <span class="cm"># 方案审批回复</span>
+        approve = meta.get(<span class="s">"approve"</span>, <span class="hl">False</span>)
+        <span class="kw">if</span> approve:
+            messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                    <span class="s">"content"</span>: <span class="s">"[Plan approved] Proceed with the task."</span>})
+        <span class="kw">else</span>:
+            messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                    <span class="s">"content"</span>: <span class="s">"[Plan rejected] Feedback: {msg['content']}"</span>})
+        <span class="kw">return</span> <span class="hl">False</span>  <span class="cm"># 🐛 不触发 break（见 Bug 章节）</span></pre>
+
+  <h3>两种协议消息的处理对比</h3>
+  <table>
+    <tr><th></th><th>shutdown_request</th><th>plan_approval_response</th></tr>
+    <tr><td>返回值</td><td>True</td><td>False</td></tr>
+    <tr><td>对循环的影响</td><td>触发 break，退出 inner while → 退出 outer while → summary</td><td>不触发 break，继续 inner while 轮询</td></tr>
+    <tr><td>对 messages 的影响</td><td>无</td><td>注入 [Plan approved/rejected]</td></tr>
+    <tr><td>对 Lead 的回复</td><td>自动发 shutdown_response</td><td>无回复（已收到 response 了）</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 外层循环 vs 内层循环（核心难点）</h2>
+  <p>这是整个 s16 中最容易搞混的部分，也是被问得最多的问题。</p>
+
+  <h3>8.1 两个循环的分工</h3>
+  <table>
+    <tr><th>循环</th><th>什么时候运行</th><th>干什么</th><th>费用</th><th>类比</th></tr>
+    <tr><td><strong>外层循环</strong> (outer while)</td><td>始终运行（直到 shutdown）</td><td>完整的"想→做"轮次：读消息 → 调用 LLM → 执行工具 → 再读消息...</td><td>调用 LLM（花钱）</td><td>上班时间：接活 → 想 → 干 → 再接活</td></tr>
+    <tr><td><strong>内层循环</strong> (idle while)</td><td>仅在 LLM 说完了没事做时（end_turn）</td><td>零成本等待：sleep(1) → 读 inbox → 空就继续等</td><td>0 元（不调 LLM）</td><td>午休：没活干，趴着等，有活了再开工</td></tr>
+  </table>
+
+  <h3>8.2 为什么要有内层循环（不直接回到外层顶部）？</h3>
+  <p>假设没有内层循环，LLM 返回 end_turn 后直接回到外层顶部：</p>
+  <pre>shutdown_requested = False
+<span class="kw">while not</span> shutdown_requested:
+    读 inbox → 空
+    调用 LLM → LLM 看到和之前一样的消息 → 返回一样的 "Done"
+    执行工具 → 空操作
+  → 回到 while 顶部
+    读 inbox → 还是空
+    调用 LLM → 又调一次！烧钱！
+    执行工具 → 空操作
+  → 回到 while 顶部
+    读 inbox → 还是空
+    调用 LLM → <span class="hl">又调一次！！无限烧钱！！！</span></pre>
+  <div class="callout red">
+    <strong>内层循环的本质就是"零成本等待"阶段。</strong>没有新消息时绝不再调 LLM。用 sleep(1) 代替 API 调用，0 费用。只有确认有新消息进来了，才 break 出去让外层重新调 LLM。
+  </div>
+
+  <h3>8.3 内层循环的"怎么轮询"——关键在 continue 而不是 break</h3>
+  <pre><span class="kw">while not</span> shutdown_requested:           <span class="cm"># 内层循环</span>
+    time.sleep(<span class="num">1</span>)                       <span class="cm"># 睡 1 秒</span>
+    inbox = BUS.read_inbox(name)         <span class="cm"># 读收件箱</span>
+    <span class="kw">if not</span> inbox:
+        <span class="hl">continue</span>                           <span class="cm"># 空 → 回到 while 顶部，继续 sleep→read→sleep→read</span>
+    <span class="cm"># 有消息 → 处理...</span></pre>
+  <p><code>continue</code> 让流程回到 while 顶部，不退出 while。所以只要一直没消息，它就一直在 <code>sleep(1) → read_inbox → 空 → continue → sleep(1) → ...</code> 这个循环里打转。这就是轮询。</p>
+
+  <h3>8.4 内层循环的三个出口</h3>
+  <table>
+    <tr><th>出口</th><th>触发条件</th><th>跳出什么</th><th>跳出后到哪里</th></tr>
+    <tr><td><code>break</code> (L532)</td><td>收到 shutdown_request → shutdown_requested=True</td><td>跳出 inner while</td><td>空工具执行段 → outer while 条件 False → summary</td></tr>
+    <tr><td><code>break</code> (L537)</td><td>收到普通消息 → non_protocol 不为空 → 注入对话</td><td>跳出 inner while</td><td>空工具执行段 → outer while 顶部 → 下一轮调 LLM 处理新消息</td></tr>
+    <tr><td><code>continue</code> (L522)</td><td>inbox 为空</td><td>回到 inner while 顶部</td><td>继续轮询（不退出）</td></tr>
+  </ul>
+
+  <h3>8.5 内联 for 循环中的 break</h3>
+  <pre><span class="kw">for</span> msg <span class="kw">in</span> inbox:
+    <span class="kw">if</span> 协议消息:
+        should_stop = handle_inbox_message(...)
+        <span class="kw">if</span> should_stop:
+            <span class="hl">break</span>                              <span class="cm"># 只跳出 for，不跳出 inner while</span>
+    <span class="kw">else</span>:
+        non_protocol.append(msg)
+<span class="kw">if</span> shutdown_requested:
+    <span class="hl">break</span>                                  <span class="cm"># 跳出 inner while</span>
+<span class="kw">if</span> non_protocol:
+    ...注入对话...
+    <span class="hl">break</span>                                  <span class="cm"># 跳出 inner while</span></pre>
+  <p>这里有两层 break：</p>
+  <ul>
+    <li><strong>内层 break</strong>（在 for 内部）：只跳出 for 循环——因为已经收到了 shutdown_request，不需要继续遍历剩余的 inbox 消息了</li>
+    <li><strong>外层 break</strong>（在 for 外部）：跳出 inner while——无论是 shutdown 还是收到普通消息，都要退出空闲等待状态</li>
+  </ul>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 完整执行流程举例</h2>
+  <p>假设 Teammate "Alice" 被创建，经历了一个完整的生命周期：</p>
+
+  <h3>场景：创建 → 干活 → 等待 → 新任务 → 关闭</h3>
+
+  <div class="diagram">第1轮 外层循环:
+  读 inbox → 空（初始任务在 messages 参数中）
+  调用 LLM → LLM 返回 tool_use（要创建 a.py）
+  stop_reason == "tool_use" → 跳过内层循环
+  执行工具 → run_bash 创建文件
+  回到外层顶部
+
+第2轮 外层循环:
+  读 inbox → 空
+  调用 LLM → LLM 返回 "Done"（end_turn）
+  stop_reason != "tool_use" → 进入内层循环！
+      ↓
+  内层循环:
+    sleep(1) → 读 inbox → 空 → continue
+    sleep(1) → 读 inbox → 空 → continue
+    sleep(1) → 读 inbox → Lead 发来 "请修改 b.py"
+    普通消息 → non_protocol → 注入对话
+    break 出内层循环
+      ↓
+  （空工具执行段 → 回到外层顶部）
+
+第3轮 外层循环:
+  读 inbox → 空（内层已取走）
+  调用 LLM → LLM 看到新任务，调用 bash 修改 b.py
+  tool_use → 执行工具 → 回到外层顶部
+
+第4轮 外层循环:
+  读 inbox → 空
+  调用 LLM → "Done"（end_turn）
+  进入内层循环:
+    sleep(1) → 读 inbox → 空 → continue
+    ...
+    → Lead 发来 shutdown_request
+    → handle_inbox_message 处理
+    → 自动发 shutdown_response 给 Lead
+    → should_stop=True → shutdown_requested=True
+    → break for → break inner while
+      ↓
+  （空工具执行段）
+  outer while 条件 False → 退出外层循环
+      ↓
+  发 summary 给 Lead
+  active_teammates.pop("alice")
+  线程结束</div>
+
+  <h3>停止循环的路径</h3>
+  <table>
+    <tr><th>路径</th><th>触发条件</th><th>如何到 summary</th></tr>
+    <tr><td>路径1</td><td>外层循环开头收到 shutdown_request</td><td>should_stop=True → outer while break → summary</td></tr>
+    <tr><td>路径2</td><td>LLM 调用抛异常</td><td>except: break → summary</td></tr>
+    <tr><td>路径3</td><td>内层循环中收到 shutdown_request</td><td>shutdown_requested=True → break inner → 外层条件 False → summary</td></tr>
+  </table>
+
+  <div class="callout purple">
+    <strong>注意：</strong>如果没有以上三个条件中的任何一个，Teammate 线程永不会走到 summary，会一直在内层循环中轮询等待。这是设计意图——后台 worker 永远在线。
+  </div>
+</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> 协议通信函数</h2>
+  <p>四个函数构成了两个协议的完整通信链路。</p>
+
+  <h3>10.1 协议全貌</h3>
+  <table>
+    <tr><th></th><th>关机协议</th><th>方案审批协议</th></tr>
+    <tr><td>请求方</td><td>Lead</td><td>Teammate</td></tr>
+    <tr><td>响应方</td><td>Teammate</td><td>Lead</td></tr>
+    <tr><td>请求消息类型</td><td><code>shutdown_request</code></td><td><code>plan_approval_request</code></td></tr>
+    <tr><td>响应消息类型</td><td><code>shutdown_response</code></td><td><code>plan_approval_response</code></td></tr>
+    <tr><td>状态变化</td><td>pending → approved</td><td>pending → approved/rejected</td></tr>
+    <tr><td>发起函数</td><td><code>run_request_shutdown</code></td><td><code>_teammate_submit_plan</code></td></tr>
+    <tr><td>响应函数</td><td>自动回复（<code>handle_inbox_message</code> 内）</td><td><code>run_review_plan</code></td></tr>
+  </table>
+
+  <h3>10.2 Lead 发起关机</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_request_shutdown</span>(teammate: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    req_id = new_request_id()
+    pending_requests[req_id] = ProtocolState(           <span class="cm"># 登记</span>
+        request_id=req_id, type=<span class="s">"shutdown"</span>,
+        sender=<span class="s">"lead"</span>, target=teammate,
+        status=<span class="s">"pending"</span>, payload=<span class="s">""</span>)
+    BUS.send(<span class="s">"lead"</span>, teammate, <span class="s">"Please shut down gracefully."</span>,  <span class="cm"># 发送</span>
+             <span class="s">"shutdown_request"</span>,
+             {<span class="s">"request_id"</span>: req_id})</pre>
+
+  <h3>10.3 Teammate 提交方案</h3>
+  <pre><span class="kw">def</span> <span class="fn">_teammate_submit_plan</span>(from_name: <span class="tp">str</span>, plan: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    req_id = new_request_id()
+    pending_requests[req_id] = ProtocolState(           <span class="cm"># 登记</span>
+        request_id=req_id, type=<span class="s">"plan_approval"</span>,
+        sender=from_name, target=<span class="s">"lead"</span>,
+        status=<span class="s">"pending"</span>, payload=plan)
+    BUS.send(from_name, <span class="s">"lead"</span>, plan,                  <span class="cm"># 发送</span>
+             <span class="s">"plan_approval_request"</span>,
+             {<span class="s">"request_id"</span>: req_id})
+    <span class="kw">return</span> f<span class="s">"Plan submitted ({req_id}). Waiting for approval..."</span></pre>
+
+  <h3>10.4 Lead 要求提交方案（不走协议）</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_request_plan</span>(teammate: <span class="tp">str</span>, task: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    BUS.send(<span class="s">"lead"</span>, teammate, f<span class="s">"Please submit a plan for: {task}"</span>,
+             <span class="s">"message"</span>)                                    <span class="cm"># 普通消息！</span>
+    <span class="kw">return</span> f<span class="s">"Asked {teammate} to submit a plan"</span></pre>
+  <p><strong>注意：</strong>这个函数发的不是协议消息（msg_type 是 "message" 而不是 "plan_approval_request"）。它只是提醒 Teammate 要交方案，Teammate 的 LLM 看到后自己调用 <code>submit_plan</code> 工具来发起协议。</p>
+
+  <h3>10.5 Lead 审批方案</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_review_plan</span>(request_id: <span class="tp">str</span>, approve: <span class="tp">bool</span>, feedback: <span class="tp">str</span> = <span class="s">""</span>) -> <span class="tp">str</span>:
+    state = pending_requests.get(request_id)
+    <span class="kw">if not</span> state: <span class="kw">return</span> <span class="s">"not found"</span>                  <span class="cm"># 找不到记录</span>
+    <span class="kw">if</span> state.status != <span class="s">"pending"</span>:                     <span class="cm"># 防重复审批</span>
+        <span class="kw">return</span> f<span class="s">"Request already {state.status}"</span>
+    state.status = <span class="s">"approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"rejected"</span>  <span class="cm"># 更新状态</span>
+    BUS.send(<span class="s">"lead"</span>, state.sender,                      <span class="cm"># 发响应</span>
+             feedback <span class="kw">or</span> (<span class="s">"Approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"Rejected"</span>),
+             <span class="s">"plan_approval_response"</span>,
+             {<span class="s">"request_id"</span>: request_id, <span class="s">"approve"</span>: approve})</pre>
+
+  <h3>10.6 完整通信链路</h3>
+  <div class="diagram">关机协议:
+  Lead: run_request_shutdown("alice")
+    → 登记 pending_requests
+    → BUS.send(shutdown_request, {request_id})
+    ───────────────────────────────→ alice.jsonl
+                                    alice 内层循环读到
+                                    → handle_inbox_message
+                                    → BUS.send(shutdown_response, {approve:True})
+    ←─────────────────────────────── lead.jsonl
+  Lead: consume_lead_inbox()
+    → match_response()
+    → status = "approved"
+
+方案审批协议:
+  Teammate: _teammate_submit_plan("alice", "步骤1...")
+    → 登记 pending_requests
+    → BUS.send(plan_approval_request, {request_id})
+    ───────────────────────────────→ lead.jsonl
+    Lead: consume_lead_inbox()
+      → 不调 match_response（不是 _response）
+      → 注入对话 → Lead LLM 看到方案
+      → 调用 review_plan
+      → run_review_plan(request_id, approve=True)
+      → BUS.send(plan_approval_response, {request_id, approve})
+    ←─────────────────────────────── alice.jsonl
+    Teammate: 内层循环读到 plan_approval_response
+      → handle_inbox_message
+      → 注入 [Plan approved]
+      → 返回 False（不 break） 🐛</div>
+</div>
+
+<!-- ==================== 11 ==================== -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> s15 vs s16 对比</h2>
+
+  <h3>11.1 新增内容</h3>
+  <table>
+    <tr><th>新增</th><th>位置</th><th>为什么加</th></tr>
+    <tr><td><code>metadata</code> 参数（MessageBus.send）</td><td>send 方法</td><td>协议消息需要附带 request_id、approve 等结构化信息</td></tr>
+    <tr><td><code>ProtocolState</code> dataclass</td><td>L351-358</td><td>核心数据结构——记录每个协议请求的完整生命周期</td></tr>
+    <tr><td><code>pending_requests</code> 字典</td><td>L360</td><td>请求追踪表，用 request_id 索引</td></tr>
+    <tr><td><code>new_request_id()</code></td><td>L362-363</td><td>生成唯一请求编号</td></tr>
+    <tr><td><code>match_response()</code></td><td>L365-394</td><td>核心函数——Lead 将响应关联到原始请求</td></tr>
+    <tr><td><code>consume_lead_inbox()</code></td><td>L396-411</td><td>统一收件入口，确保协议响应不被旁路消费</td></tr>
+    <tr><td><code>handle_inbox_message()</code></td><td>内嵌函数</td><td>Teammate 侧的协议消息分发器</td></tr>
+    <tr><td>内层循环（idle while）</td><td>L518-537</td><td>替代 s15 的 10 轮上限</td></tr>
+    <tr><td><code>_teammate_submit_plan()</code></td><td>L573-589</td><td>Teammate 提交方案</td></tr>
+    <tr><td><code>run_request_shutdown()</code></td><td>L593-604</td><td>Lead 发关机请求</td></tr>
+    <tr><td><code>run_request_plan()</code></td><td>L607-611</td><td>Lead 要求提交方案</td></tr>
+    <tr><td><code>run_review_plan()</code></td><td>L613-627</td><td>Lead 审批方案</td></tr>
+    <tr><td><code>submit_plan</code> 工具</td><td>sub_tools</td><td>Teammate 侧的提交方案工具</td></tr>
+    <tr><td><code>execute_tool()</code> 统一分发</td><td>-</td><td>s15 把 handler 写在 agent_loop 中，s16 抽成独立函数</td></tr>
+    <tr><td><code>request_shutdown</code>/<code>request_plan</code>/<code>review_plan</code> 三个 Lead 工具</td><td>TOOLS</td><td>让 Lead LLM 能发起协议操作</td></tr>
+  </table>
+
+  <h3>11.2 删除 / 变更内容</h3>
+  <table>
+    <tr><th>变更项</th><th>s15</th><th>s16</th><th>为什么</th></tr>
+    <tr><td>Teammate 循环上限</td><td><code>for _ in range(10)</code></td><td><code>while not shutdown_requested</code></td><td>Teammate 应该是永不下线的 worker</td></tr>
+    <tr><td>LLM end_turn 后</td><td><code>if stop_reason != "tool_use": break</code></td><td>进入内层循环轮询等待</td><td>后台驻留才能随时接收新任务</td></tr>
+    <tr><td>Teammate 收件箱处理</td><td>一次性注入所有消息</td><td>先按协议/普通分拣</td><td>协议消息需要特殊处理</td></tr>
+    <tr><td>Lead 收件箱读取</td><td>主循环和 tool 各自读<br>（可能旁路协议响应）</td><td>统一走 <code>consume_lead_inbox</code></td><td>避免协议响应被消费但未匹配</td></tr>
+    <tr><td>Lead 的 run_check_inbox</td><td>直接用 BUS.read_inbox</td><td>使用 consume_lead_inbox</td><td>同上</td></tr>
+    <tr><td>MessageBus.send</td><td>无 metadata 参数</td><td>有 metadata 参数</td><td>协议消息需要结构化元数据</td></tr>
+    <tr><td>Lead agent_loop 中的 cron 消费</td><td>有</td><td>移除（cron 函数还在）</td><td>s16 聚焦协议，cron 不是主题</td></tr>
+    <tr><td>Teammate 工具数量</td><td>4 个</td><td>5 个（新增 submit_plan）</td><td>方案审批需要提交工具</td></tr>
+    <tr><td>Lead 工具数量</td><td>14 个</td><td>15 个（新增 3 个协议工具，去掉？）</td><td>协议操作需要新工具</td></tr>
+    <tr><td>execute_tool 组织</td><td>handler 写在 agent_loop 中</td><td>抽成独立函数</td><td>更清晰的结构</td></tr>
+  </table>
+
+  <h3>11.3 保留不变的部分</h3>
+  <ul>
+    <li>Task 系统（create / claim / complete / list / get）——一字未改</li>
+    <li>基础工具（run_bash / run_read / run_write）——完全相同</li>
+    <li>背景任务系统（start_background_task / collect_background_results）——保留</li>
+    <li>TOOLS 基础工具（bash / read_file / write_file / create_task / list_tasks / get_task / claim_task / complete_task / spawn_teammate / send_message / check_inbox）——全部保留</li>
+    <li>Lead 的 agent_loop 基本结构——保留（去掉了 cron 消费）</li>
+    <li>主循环结构——保留（但 inbox 读取改为 consume_lead_inbox）</li>
+  </ul>
+
+  <div class="callout green">
+    <strong>一句话总结 s15→s16：</strong>s15 给了团队"邮箱"，s16 给邮箱里的某些消息加上"编号 + 状态机 + 回执"。s15 的 Teammate 用完 10 轮就退，s16 的 Teammate 变成了永不退出的后台 worker。
+  </div>
+</div>
+
+<!-- ==================== 12 ==================== -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> 已知 Bug</h2>
+
+  <div class="bug">
+    <h4>Bug 1：plan_approval_response 不触发 break（源码自带）</h4>
+    <p><strong>位置：</strong><code>handle_inbox_message</code> 中的 <code>plan_approval_response</code> 分支返回 <code>False</code>（L449）</p>
+    <p><strong>问题：</strong>Teammate 提交方案后，Lead 批准了，发回 <code>plan_approval_response</code>。Teammate 端收到后，注入 <code>[Plan approved]</code> 到 messages，但因为没有触发 break 出内层循环，LLM 永远不会被再次调用，方案永远不会被执行。</p>
+    <p><strong>现象：</strong></p>
+    <pre>内层循环:
+  sleep(1) → 读 inbox → 收到 plan_approval_response
+  → handle_inbox_message 注入 [Plan approved] 到 messages
+  → 返回 False → should_stop=False → 不 break for
+  → plan_approval_response 不进 else → non_protocol 为空
+  → if shutdown_requested: False
+  → if non_protocol: False（空的）
+  → 回到内层循环顶部
+  sleep(1) → 读 inbox → 空（已经读走了）
+  continue → 继续轮询
+  sleep(1) → 读 inbox → 空
+  continue → 继续轮询
+  ...无限等待...</pre>
+    <p><strong>修复方案：</strong>把返回 True 即可：</p>
+    <pre><span class="kw">if</span> msg_type == <span class="s">"plan_approval_response"</span>:
+    ...
+    <span class="kw">return</span> <span class="hl">True</span>   <span class="cm"># 触发 break 出内层，让外层调 LLM 执行方案</span></pre>
+    <p><strong>变通方案：</strong>如果不改代码，Lead 再发一条普通消息就能触发 LLM 执行。<code>[Plan approved]</code> 会和新消息一起被 LLM 看到。</p>
+  </div>
+
+  <div class="bug">
+    <h4>Bug 2：内层循环中 non_protocol 变量复用（潜藏）</h4>
+    <p><strong>位置：</strong>内层循环（L531-538）使用的 <code>non_protocol</code> 来自外层循环开头定义的同一个列表（L492），内层没有重新初始化。</p>
+    <p><strong>问题：</strong>如果某次外层循环中 <code>non_protocol</code> 收集了消息但还没注入（条件不满足时），进入内层循环后又收到新消息，会追加到同一个列表，可能导致消息重复注入或内容混淆。</p>
+    <p><strong>实际影响有限：</strong>每次外层循环开头都会 <code>non_protocol = []</code>，且内层循环结束后会回到外层顶部。但极端时序下可能出现问题。</p>
+  </div>
+
+  <div class="bug">
+    <h4>Bug 3：TOOLS 残留 cron 工具定义（你的代码可能缺失协议工具）</h4>
+    <p><strong>如果你的代码是直接从 s15 复制而来：</strong>TOOLS 列表里可能还保留着 <code>schedule_cron</code> / <code>list_crons</code> / <code>cancel_cron</code>，但缺少了三个协议工具（<code>request_shutdown</code> / <code>request_plan</code> / <code>review_plan</code>）。</p>
+    <p><strong>后果：</strong>Lead 的 LLM 不知道有这三个工具，协议功能完全不可用。</p>
+  </div>
+
+  <div class="bug">
+    <h4>Bug 4：run_check_inbox 未使用 consume_lead_inbox（你的代码独有）</h4>
+    <p><strong>如果你的 run_check_inbox 直接用 BUS.read_inbox：</strong>消息被读走但没有经过 match_response，协议状态永远停留在 pending。</p>
+    <p><strong>修复：</strong>改为 <code>msgs = consume_lead_inbox(route_protocol=True)</code></p>
+  </div>
+</div>
+
+<!-- ==================== 13 ==================== -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> 常见困惑与 FAQ</h2>
+
+  <h3>Q1：metadata 是什么？</h3>
+  <p><code>metadata</code> 是 <code>BUS.send</code> 方法的第五个参数（可选字典），用于在消息本体之外附带协议相关的元信息（如 <code>request_id</code> 和 <code>approve</code>）。</p>
+  <p>可以把消息体比作信的内容（content），metadata 就是信封上的附注信息。</p>
+  <p>在 <code>BUS.send</code> 内部，metadata 被存入消息的 <code>"metadata"</code> 字段：</p>
+  <pre>msg = {<span class="s">"from"</span>: ..., <span class="s">"content"</span>: ..., <span class="s">"metadata"</span>: metadata <span class="kw">or</span> {}}</pre>
+
+  <h3>Q2：msg['content'] 怎么确保就是 Lead 的反馈意见？</h3>
+  <p>因为有且只有一个函数发送 <code>plan_approval_response</code>——<code>run_review_plan</code>，它把 <code>feedback</code> 参数放到了 content 字段里：</p>
+  <pre>BUS.send(<span class="s">"lead"</span>, state.sender, feedback <span class="kw">or</span> (<span class="s">"Approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"Rejected"</span>),
+         <span class="s">"plan_approval_response"</span>, ...)</pre>
+  <p>这是<strong>协议约定</strong>而非运行时保证——如果未来有另一段代码发送同样 type 但 content 含义不同的消息，这里就会出问题。</p>
+
+  <h3>Q3：外层循环开头读 inbox 不是多余的吗？第一次肯定是空的。</h3>
+  <p>第一次确实是空的，但后续每次都不是。代码没有区分"第一次"还是"第N次"。第一次浪费了，但后续每一次都很重要——在 LLM 思考和执行工具期间，Lead 可能已经通过 BUS 发来新消息了。</p>
+
+  <h3>Q4：外层循环负责什么？内层循环负责什么？</h3>
+  <table>
+    <tr><th></th><th>外层循环</th><th>内层循环</th></tr>
+    <tr><td>地位</td><td>主工作循环</td><td>空闲等待循环</td></tr>
+    <tr><td>触发时机</td><td>一直运行（shutdown 前）</td><td>仅在 LLM 返回 end_turn 时</td></tr>
+    <tr><td>做的事</td><td>读消息 → 调 LLM → 执行工具 → 再读</td><td>sleep → 读 inbox → 有消息就处理 → 没有继续等</td></tr>
+    <tr><td>类比</td><td>上班接活干活</td><td>午休趴着等</td></tr>
+  </table>
+
+  <h3>Q5：为什么不执行工具时要进内层循环（而不是回到外层顶部直接调 LLM）？</h3>
+  <p>因为每次调 LLM 都花钱。如果 LLM 返回 end_turn 后直接回到外层顶部，而没有新消息，LLM 又看不到新消息，就会无限空转调用 LLM 烧钱。内层循环用 sleep(1) 代替 API 调用，0 费用。</p>
+
+  <h3>Q6：stop_reason 不同时，代码执行路径是怎样的？</h3>
+  <pre>stop_reason = "tool_use"（LLM 要调用工具）
+  → if stop_reason != "tool_use": False
+  → 跳过 if 块（跳过内层循环）
+  → 直接执行工具 → 回到外层顶部
+
+stop_reason = "end_turn"（LLM 说完了）
+  → if stop_reason != "tool_use": True
+  → 进入内层循环等待
+  → 等到有新消息或 shutdown
+  → break 出内层 → 空工具执行段 → 回到外层顶部</pre>
+
+  <h3>Q7：初始任务不在 inbox 里，那第一次外层循环的读 inbox 不是空的？</h3>
+  <p>是的，第一次确实是空的。但整个代码没有做"首次特殊处理"，设计上认为这点开销可以忽略。从第二次开始，每次读 inbox 都可能拿到新的消息。</p>
+
+  <h3>Q8：metadata 参数的 approve 字段默认值为什么是 False？</h3>
+  <p><code>approve = meta.get("approve", False)</code> 中默认 False 是"default deny"安全原则——如果元数据里没有 approve 字段，默认是拒绝，而不是批准。</p>
+
+  <h3>Q9：plan_approval_response 和 shutdown_request 在处理上有什么根本不同？</h3>
+  <table>
+    <tr><th></th><th>shutdown_request</th><th>plan_approval_response</th></tr>
+    <tr><td>handle_inbox_message 返回</td><td>True</td><td>False</td></tr>
+    <tr><td>是否触发 break for</td><td>是</td><td>否</td></tr>
+    <tr><td>是否触发 break 内层</td><td>是（两层 break）</td><td>否（继续轮询）</td></tr>
+    <tr><td>后续行为</td><td>退出发 summary</td><td>继续等，下次调 LLM 才看到结果</td></tr>
+  </table>
+
+  <h3>Q10：那 Lead 一直不发普通消息，Teammate 就卡住了？之前的 plan 也一直不执行？</h3>
+  <p><strong>对，这就是 bug 1（plan_approval_response 不触发 break）导致的后果。</strong></p>
+  <p><code>[Plan approved]</code> 已经躺在 messages 里了，但因为没有任何东西触发 break 出内层循环，LLM 永远不会被再次调用，方案永远不会被执行。</p>
+
+  <h3>Q11：tool_use 时怎么执行的工具？代码哪里体现了？</h3>
+  <p>关键在 <code>if response.stop_reason != "tool_use":</code> 这个条件判断——当 stop_reason 是 "tool_use" 时，条件为 False，整个内层循环块被跳过，执行流直接落到"执行工具"段：</p>
+  <pre>results = []
+for block in response.content:        <span class="cm"># 遍历 LLM 回复中的每个块</span>
+    if block.type == "tool_use":       <span class="cm"># 找到工具调用块</span>
+        handler = sub_handlers.get(block.name)  <span class="cm"># 查表找处理函数</span>
+        output = handler(**block.input)         <span class="cm"># 解包参数并执行</span>
+        results.append({...})
+messages.append({"role": "user", "content": results})  <span class="cm"># 结果送回 LLM</span></pre>
+  <p>没有显式的 else——用的是"条件不成立就跳过"的方式。</p>
+</div>
+
+<!-- ==================== 14 ==================== -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> Python 语法小抄</h2>
+  <table>
+    <tr><th>语法</th><th>含义</th></tr>
+    <tr><td><code>@dataclass</code></td><td>自动生成 <code>__init__</code>、<code>__repr__</code>、<code>__eq__</code></td></tr>
+    <tr><td><code>field(default_factory=time.time)</code></td><td>字段默认值由工厂函数每次调用产生（而不是实例间共享）</td></tr>
+    <tr><td><code>dict.get(key, default)</code></td><td>安全取值，key 不存在返回默认值而非抛 KeyError</td></tr>
+    <tr><td><code>f"...{expr:06d}..."</code></td><td>f-string 格式化：至少 6 位、补零</td></tr>
+    <tr><td><code>\033[31m...\033[0m</code></td><td>ANSI 终端颜色：31=红, 32=绿, 33=黄, 35=洋红, 36=青</td></tr>
+    <tr><td><code>"alpha" if cond else "beta"</code></td><td>三元表达式</td></tr>
+    <tr><td><code>msg_type.endswith("_response")</code></td><td>字符串是否以指定后缀结尾</td></tr>
+    <tr><td><code>lambda to, content: (expr1, expr2)[1]</code></td><td>Lambda + 元组技巧：先执行 expr1，再返回 expr2</td></tr>
+    <tr><td><code>handler(**block.input)</code></td><td>字典解包为关键字参数</td></tr>
+    <tr><td><code>for...else...</code></td><td>如果 for 循环没 break 则执行 else 块</td></tr>
+    <tr><td><code>reversed(iterable)</code></td><td>反向迭代器</td></tr>
+    <tr><td><code>isinstance(x, list)</code></td><td>类型检查</td></tr>
+    <tr><td><code>getattr(obj, "attr", default)</code></td><td>安全获取属性，不存在返回默认值</td></tr>
+    <tr><td><code>msg.get("type") in ("a", "b")</code></td><td>元组成员检查</td></tr>
+    <tr><td><code>threading.Thread(target=fn, daemon=True).start()</code></td><td>启动后台守护线程</td></tr>
+    <tr><td><code>dict.pop(key, None)</code></td><td>删除 key 并返回 value，key 不存在不抛异常</td></tr>
+    <tr><td><code>inbox.unlink()</code></td><td>删除文件（不可恢复）</td></tr>
+    <tr><td><code>json.loads(line)</code></td><td>一行 JSON 字符串 → Python 字典</td></tr>
+    <tr><td><code>json.dumps(obj)</code></td><td>Python 对象 → JSON 字符串</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
