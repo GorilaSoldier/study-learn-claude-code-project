@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s17 Autonomous Agents - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #0d9488 0%, #059669 50%, #047857 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  .callout.teal { background: #ccfbf1; border-color: #0d9488; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s17 · Autonomous Agents（自治智能体）复习笔记</h1>
+  <p class="subtitle">自己看板，自己认领 — 空闲时轮询，有活就干</p>
+  <span class="badge">基于问答整理 · ~648 LOC · 15 个工具 · idle_poll · 自动认领</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">idle_poll 空闲轮询</a></li>
+    <li><a href="#s4">scan_unclaimed_tasks 扫描任务看板</a></li>
+    <li><a href="#s5">claim_task owner 检查</a></li>
+    <li><a href="#s6">spawn_teammate_thread 架构概览</a></li>
+    <li><a href="#s7">handle_inbox_message 协议分发</a></li>
+    <li><a href="#s8">WORK → IDLE → SHUTDOWN 生命周期</a></li>
+    <li><a href="#s9">身份重注入机制</a></li>
+    <li><a href="#s10">consume_lead_inbox 统一收件入口</a></li>
+    <li><a href="#s11">run_review_plan 计划审批</a></li>
+    <li><a href="#s12">Lead inbox 注入机制</a></li>
+    <li><a href="#s13">s16 vs s17 对比</a></li>
+    <li><a href="#s14">常见困惑与 FAQ</a></li>
+    <li><a href="#s15">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1 ==================== -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>把任务分配的决策权从 Lead 转移到 Teammate，让队友变成"自治智能体"而不是"被动执行者"。
+  </div>
+  <p><strong>解决了什么问题：</strong>s16 的队友能通信、能握手关机。但每个队友等 Lead 分配任务——如果任务看板上有 10 个未认领任务，Lead 得手动 assign 10 次。这不能扩展。</p>
+  <p><strong>解决方案：</strong>队友应该自己看任务看板，发现没人做的任务就认领，做完再找下一个。</p>
+  
+  <div class="callout teal">
+    <strong>课程原话：</strong>"自己看板，自己认领" — 空闲时轮询，有活就干。
+  </div>
+
+  <h3>核心转变</h3>
+  <div class="diagram">s16: Lead → 手动分配 → Teammate 执行
+s17: Lead → 创建任务看板 → Teammate 自己扫描 → 自己认领 → 执行</div>
+
+  <h3>三阶段生命周期</h3>
+  <table>
+    <tr><th>阶段</th><th>行为</th><th>退出条件</th></tr>
+    <tr><td><strong>WORK</strong></td><td>inbox → LLM → 工具循环</td><td><code>stop_reason != "tool_use"</code></td></tr>
+    <tr><td><strong>IDLE</strong></td><td>每 5s 轮询 inbox + 任务板</td><td>60s 超时 或 收到 shutdown</td></tr>
+    <tr><td><strong>SHUTDOWN</strong></td><td>发 summary，退出</td><td>—</td></tr>
+  </table>
+  <div class="callout orange">
+    <strong>心智模型：</strong>队友不是"做完就跑"，而是"做完等一会儿，看看还有没有活"。
+  </div>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+  <p>自治的核心是<strong>"空闲后主动找活"</strong>，而不是被动等待分配。</p>
+
+  <div class="diagram">┌─────────────────────────────────────────────────────┐
+│  Teammate 线程                                       │
+│                                                      │
+│  while True:                                         │
+│      # WORK 阶段                                     │
+│      for _ in range(10):                             │
+│          检查 inbox → LLM 推理 → 执行工具            │
+│          if stop_reason != "tool_use": break         │
+│                                                      │
+│      # IDLE 阶段                                     │
+│      idle_result = idle_poll(...)                    │
+│      if idle_result == "shutdown": break             │
+│      if idle_result == "timeout": break              │
+│      # "work" → 回到 WORK 阶段继续                   │
+│                                                      │
+│  # SHUTDOWN                                          │
+│  BUS.send(name, "lead", summary, "result")           │
+└─────────────────────────────────────────────────────┘</div>
+
+  <h3>idle_poll 三种返回值</h3>
+  <table>
+    <tr><th>返回值</th><th>含义</th><th>行为</th></tr>
+    <tr><td><code>"work"</code></td><td>收到消息或自动认领了任务</td><td>不 break，回到 WORK 阶段</td></tr>
+    <tr><td><code>"shutdown"</code></td><td>收到关机命令</td><td>break 退出 while 循环</td></tr>
+    <tr><td><code>"timeout"</code></td><td>60 秒无人问津</td><td>break 退出 while 循环</td></tr>
+  </table>
+
+  <h3>关键设计</h3>
+  <ul>
+    <li><strong>外层 while True</strong>：WORK 和 IDLE 交替进行，直到超时或收到关机请求</li>
+    <li><strong>内层 for 10</strong>：WORK 阶段最多 10 轮 LLM 调用（防止无限循环）</li>
+    <li><strong>IDLE 超时 60 秒</strong>：12 次轮询 × 5 秒 = 60 秒</li>
+    <li><strong>shutdown_request 两阶段都能响应</strong>：WORK 阶段通过 handle_inbox_message 分发；IDLE 阶段 idle_poll 直接检查并回复</li>
+  </ul>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> idle_poll 空闲轮询</h2>
+  <p><strong>职责：</strong>队友完成当前任务后不退出，进入 IDLE 阶段——每 5 秒检查一次有没有新工作。</p>
+
+  <pre><span class="cm"># 常量定义</span>
+IDLE_POLL_INTERVAL = <span class="num">5</span>   <span class="cm"># seconds</span>
+IDLE_TIMEOUT = <span class="num">60</span>        <span class="cm"># seconds</span>
+
+<span class="kw">def</span> <span class="fn">idle_poll</span>(agent_name: <span class="tp">str</span>, messages: <span class="tp">list</span>,
+              name: <span class="tp">str</span>, role: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    <span class="cm">"""Poll for 60s. Return 'work', 'shutdown', or 'timeout'."""</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(IDLE_TIMEOUT // IDLE_POLL_INTERVAL):
+        <span class="fn">time.sleep</span>(IDLE_POLL_INTERVAL)
+
+        <span class="cm"># ① 检查收件箱（优先）</span>
+        inbox = BUS.read_inbox(agent_name)
+        <span class="kw">if</span> inbox:
+            <span class="cm"># shutdown_request 立即处理</span>
+            <span class="kw">for</span> msg <span class="kw">in</span> inbox:
+                <span class="kw">if</span> msg.get(<span class="s">"type"</span>) == <span class="s">"shutdown_request"</span>:
+                    req_id = msg.get(<span class="s">"metadata"</span>, {}).get(<span class="s">"request_id"</span>, <span class="s">""</span>)
+                    BUS.send(name, <span class="s">"lead"</span>, <span class="s">"Shutting down gracefully."</span>,
+                             <span class="s">"shutdown_response"</span>,
+                             {<span class="s">"request_id"</span>: req_id, <span class="s">"approve"</span>: <span class="hl">True</span>})
+                    <span class="kw">return</span> <span class="s">"shutdown"</span>
+            <span class="cm"># 普通消息注入上下文，回到 WORK</span>
+            messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                <span class="s">"content"</span>: <span class="s">"&lt;inbox&gt;"</span> + <span class="fn">json.dumps</span>(inbox) + <span class="s">"&lt;/inbox&gt;"</span>})
+            <span class="kw">return</span> <span class="s">"work"</span>
+
+        <span class="cm"># ② 扫描任务看板</span>
+        unclaimed = <span class="fn">scan_unclaimed_tasks</span>()
+        <span class="kw">if</span> unclaimed:
+            task = unclaimed[<span class="num">0</span>]
+            result = <span class="fn">claim_task</span>(task[<span class="s">"id"</span>], agent_name)
+            <span class="kw">if</span> <span class="s">"Claimed"</span> <span class="kw">in</span> result:
+                messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                    <span class="s">"content"</span>: f<span class="s">"&lt;auto-claimed&gt;Task {task['id']}: "
+                               f"{task['subject']}&lt;/auto-claimed&gt;"</span>})
+                <span class="kw">return</span> <span class="s">"work"</span>
+
+    <span class="kw">return</span> <span class="s">"timeout"</span></pre>
+
+  <h3>关键细节</h3>
+  <table>
+    <tr><th>片段</th><th>解释</th></tr>
+    <tr><td><code>for _ in range(12)</code></td><td>60 / 5 = 12 次轮询</td></tr>
+    <tr><td><code>time.sleep(5)</code></td><td>每次等待 5 秒</td></tr>
+    <tr><td>inbox 优先检查</td><td>协议消息（shutdown_request）优先处理，不等到下一轮</td></tr>
+    <tr><td>任务板其次</td><td>没有 inbox 消息才扫描任务看板</td></tr>
+    <tr><td><code>"Claimed" in result</code></td><td>检查认领结果，失败不注入</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么 inbox 优先？</strong>因为 shutdown_request 等协议消息需要立即响应，不能等到下一轮轮询。
+  </div>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> scan_unclaimed_tasks 扫描任务看板</h2>
+  <p><strong>职责：</strong>找 pending 状态、无 owner、所有依赖已完成（can_start）的任务。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">scan_unclaimed_tasks</span>() -> <span class="tp">list[dict]</span>:
+    <span class="cm">"""Find pending, unowned tasks with all dependencies completed."""</span>
+    unclaimed = []
+    <span class="kw">for</span> f <span class="kw">in</span> <span class="fn">sorted</span>(TASKS_DIR.glob(<span class="s">"task_*.json"</span>)):
+        task = <span class="fn">json.loads</span>(f.read_text())
+        <span class="kw">if</span> (task.get(<span class="s">"status"</span>) == <span class="s">"pending"</span>
+                <span class="kw">and not</span> task.get(<span class="s">"owner"</span>)
+                <span class="kw">and</span> <span class="fn">can_start</span>(task[<span class="s">"id"</span>])):
+            unclaimed.append(task)
+    <span class="kw">return</span> unclaimed</pre>
+
+  <h3>三个条件</h3>
+  <table>
+    <tr><th>条件</th><th>解释</th></tr>
+    <tr><td><code>task.get("status") == "pending"</code></td><td>必须是待处理状态</td></tr>
+    <tr><td><code>not task.get("owner")</code></td><td>没有 owner（没人认领）</td></tr>
+    <tr><td><code>can_start(task["id"])</code></td><td>所有 blockedBy 依赖已完成</td></tr>
+  </table>
+
+  <h3>can_start 依赖检查</h3>
+  <pre><span class="kw">def</span> <span class="fn">can_start</span>(task_id: <span class="tp">str</span>) -> <span class="tp">bool</span>:
+    task = <span class="fn">load_task</span>(task_id)
+    <span class="kw">for</span> dep_id <span class="kw">in</span> task.blockedBy:
+        <span class="kw">if not</span> <span class="fn">_task_path</span>(dep_id).exists():
+            <span class="kw">return</span> <span class="hl">False</span>
+        <span class="kw">if</span> <span class="fn">load_task</span>(dep_id).status != <span class="s">"completed"</span>:
+            <span class="kw">return</span> <span class="hl">False</span>
+    <span class="kw">return</span> <span class="hl">True</span></pre>
+
+  <div class="callout orange">
+    <strong>注意：</strong>有依赖不代表不能做，只有被未完成的任务阻塞才不能做。教学版按文件名排序取第一个；CC 用文件锁防止多个队友同时认领同一个任务。
+  </div>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> claim_task owner 检查</h2>
+  <p><strong>s17 新增：</strong>认领前检查 task.owner，防止多个队友抢同一个任务。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">claim_task</span>(task_id: <span class="tp">str</span>, owner: <span class="tp">str</span> = <span class="s">"agent"</span>) -> <span class="tp">str</span>:
+    task = <span class="fn">load_task</span>(task_id)
+    <span class="kw">if</span> task.status != <span class="s">"pending"</span>:
+        <span class="kw">return</span> f<span class="s">"Task {task_id} is {task.status}, cannot claim"</span>
+    <span class="kw">if</span> task.owner:                              <span class="cm"># ← s17 新增</span>
+        <span class="kw">return</span> f<span class="s">"Task {task_id} already owned by {task.owner}"</span>
+    <span class="kw">if not</span> <span class="fn">can_start</span>(task_id):
+        deps = [d <span class="kw">for</span> d <span class="kw">in</span> task.blockedBy
+                <span class="kw">if</span> <span class="fn">_task_path</span>(d).exists() <span class="kw">and</span> <span class="fn">load_task</span>(d).status != <span class="s">"completed"</span>]
+        missing = [d <span class="kw">for</span> d <span class="kw">in</span> task.blockedBy <span class="kw">if not</span> <span class="fn">_task_path</span>(d).exists()]
+        parts = []
+        <span class="kw">if</span> deps: parts.append(f<span class="s">"blocked by: {deps}"</span>)
+        <span class="kw">if</span> missing: parts.append(f<span class="s">"missing deps: {missing}"</span>)
+        <span class="kw">return</span> <span class="s">"Cannot start — "</span> + <span class="s">", "</span>.join(parts)
+    task.owner = owner
+    task.status = <span class="s">"in_progress"</span>
+    <span class="fn">save_task</span>(task)
+    <span class="kw">return</span> f<span class="s">"Claimed {task.id} ({task.subject})"</span></pre>
+
+  <h3>s16 vs s17 对比</h3>
+  <table>
+    <tr><th>版本</th><th>claim_task 检查项</th></tr>
+    <tr><td>s16</td><td>status 检查 + can_start 依赖检查</td></tr>
+    <tr><td>s17</td><td>status 检查 + <strong>owner 检查</strong> + can_start 依赖检查</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>教学版没有文件锁</strong>，并发认领可能出现竞争。但至少 task.owner 检查避免了最明显的"后写覆盖"问题。CC 用 proper-lockfile 保护任务文件。
+  </div>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> spawn_teammate_thread 架构概览</h2>
+  <p>这是 s17 最复杂的部分——在后台线程中运行一个"自治智能体"。</p>
+
+  <div class="diagram">┌────────────────────────────────────────────────────┐
+│               Main Thread (Lead)                    │
+│  agent_loop (LLM + tools)                           │
+│  consume_lead_inbox() → 注入 history                │
+│  TOOLS: 15 个（含 spawn_teammate 等）               │
+└──────────┬─────────────────────────────────────────┘
+           │ BUS.send / BUS.read_inbox (文件 .jsonl)
+┌──────────▼─────────────────────────────────────────┐
+│       Background Thread (Teammate)                 │
+│  spawn_teammate_thread → run()                     │
+│  LLM 循环 + 8 个工具 + 收件箱监听                   │
+│  外层循环: while True (WORK → IDLE 循环)           │
+│  内层循环: for 10 (WORK 阶段最多 10 轮)            │
+└────────────────────────────────────────────────────┘</div>
+
+  <h3>函数签名</h3>
+  <pre><span class="kw">def</span> <span class="fn">spawn_teammate_thread</span>(name: <span class="tp">str</span>, role: <span class="tp">str</span>, prompt: <span class="tp">str</span>) -> <span class="tp">str</span>:
+    <span class="kw">if</span> name <span class="kw">in</span> active_teammates:          <span class="cm"># 防重复创建</span>
+        <span class="kw">return</span> f<span class="s">"Teammate '{name}' already exists"</span>
+
+    system = (f<span class="s">"You are '{name}', a {role}. "</span>
+              f<span class="s">"Use tools to complete tasks. "</span>
+              f<span class="s">"You can list and claim tasks from the board. "</span>
+              f<span class="s">"Check inbox for protocol messages."</span>)  <span class="cm"># 系统提示词</span>
+
+    <span class="kw">def</span> <span class="fn">handle_inbox_message</span>(name, msg, messages):  <span class="cm"># 内部函数</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">run</span>():                                 <span class="cm"># 闭包——后台线程入口</span>
+        ...
+
+    active_teammates[name] = <span class="hl">True</span>
+    <span class="fn">threading.Thread</span>(target=run, daemon=<span class="hl">True</span>).start()  <span class="cm"># 启动线程</span>
+    <span class="kw">return</span> f<span class="s">"Teammate '{name}' spawned as {role} (autonomous)"</span></pre>
+
+  <h3>Teammate 工具列表（8 个）</h3>
+  <table>
+    <tr><th>工具</th><th>说明</th><th>新增</th></tr>
+    <tr><td>bash</td><td>运行 shell 命令</td><td>—</td></tr>
+    <tr><td>read_file</td><td>读取文件</td><td>—</td></tr>
+    <tr><td>write_file</td><td>写入文件</td><td>—</td></tr>
+    <tr><td>send_message</td><td>发送消息给其他 agent</td><td>—</td></tr>
+    <tr><td>submit_plan</td><td>提交计划请求审批</td><td>—</td></tr>
+    <tr><td><strong>list_tasks</strong></td><td>列出任务看板</td><td>✅ s17</td></tr>
+    <tr><td><strong>claim_task</strong></td><td>认领任务</td><td>✅ s17</td></tr>
+    <tr><td><strong>complete_task</strong></td><td>完成任务</td><td>✅ s17</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> handle_inbox_message 协议分发</h2>
+  <p><strong>职责：</strong>处理一条收到的协议消息，返回 True 表示需要关机，False 表示不需要。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">handle_inbox_message</span>(name: <span class="tp">str</span>, msg: <span class="tp">dict</span>, messages: <span class="tp">list</span>):
+    <span class="cm">"""Dispatch incoming protocol messages by type."""</span>
+    msg_type = msg.get(<span class="s">"type"</span>, <span class="s">"message"</span>)
+    meta = msg.get(<span class="s">"metadata"</span>, {})
+    req_id = meta.get(<span class="s">"request_id"</span>, <span class="s">""</span>)
+
+    <span class="kw">if</span> msg_type == <span class="s">"shutdown_request"</span>:
+        BUS.send(name, <span class="s">"lead"</span>, <span class="s">"Shutting down gracefully."</span>,
+                 <span class="s">"shutdown_response"</span>,
+                 {<span class="s">"request_id"</span>: req_id, <span class="s">"approve"</span>: <span class="hl">True</span>})
+        <span class="kw">return</span> <span class="hl">True</span>  <span class="cm"># 需要关机</span>
+
+    <span class="kw">if</span> msg_type == <span class="s">"plan_approval_response"</span>:
+        approve = meta.get(<span class="s">"approve"</span>, <span class="hl">False</span>)
+        <span class="kw">if</span> approve:
+            messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                <span class="s">"content"</span>: <span class="s">"[Plan approved] Proceed with the task."</span>})
+        <span class="kw">else</span>:
+            messages.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                <span class="s">"content"</span>: f<span class="s">"[Plan rejected] Feedback: {msg['content']}"</span>})
+    <span class="kw">return</span> <span class="hl">False</span></pre>
+
+  <h3>两种协议消息处理</h3>
+  <table>
+    <tr><th>消息类型</th><th>处理方式</th><th>返回值</th></tr>
+    <tr><td>shutdown_request</td><td>回复 shutdown_response，approve=True</td><td>True（关机）</td></tr>
+    <tr><td>plan_approval_response</td><td>注入审批结果到 messages</td><td>False（继续）</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>设计模式：</strong>调用者遍历 inbox 列表，对每条消息调用一次这个函数。函数只知道自己该处理一条消息，职责单一，可复用。
+  </div>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> WORK → IDLE → SHUTDOWN 生命周期</h2>
+  <p>s17 的核心：队友做完任务不退出，而是进入 IDLE 阶段继续找活。</p>
+
+  <pre><span class="cm"># Outer loop: WORK → IDLE cycle</span>
+<span class="kw">while</span> <span class="hl">True</span>:
+    <span class="cm"># Identity re-injection (s17)</span>
+    <span class="kw">if</span> <span class="fn">len</span>(messages) <= <span class="num">3</span>:
+        messages.insert(<span class="num">0</span>, {<span class="s">"role"</span>: <span class="s">"user"</span>,
+            <span class="s">"content"</span>: f<span class="s">"&lt;identity&gt;You are '{name}', role: {role}. "
+                       f<span class="s">"Continue your work.&lt;/identity&gt;"</span>})
+
+    <span class="cm"># WORK phase</span>
+    should_shutdown = <span class="hl">False</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+        inbox = BUS.read_inbox(name)
+        <span class="kw">for</span> msg <span class="kw">in</span> inbox:
+            stopped = <span class="fn">handle_inbox_message</span>(name, msg, messages)
+            <span class="kw">if</span> stopped:
+                should_shutdown = <span class="hl">True</span>
+                <span class="kw">break</span>
+        <span class="kw">if</span> should_shutdown:
+            <span class="kw">break</span>
+        <span class="cm"># ... LLM 调用 + 工具执行 ...</span>
+        <span class="kw">if</span> response.stop_reason != <span class="s">"tool_use"</span>:
+            <span class="kw">break</span>
+
+    <span class="kw">if</span> should_shutdown:
+        <span class="kw">break</span>
+
+    <span class="cm"># IDLE phase (s17 new)</span>
+    idle_result = <span class="fn">idle_poll</span>(name, messages, name, role)
+    <span class="kw">if</span> idle_result == <span class="s">"shutdown"</span>:
+        <span class="kw">break</span>
+    <span class="kw">if</span> idle_result == <span class="s">"timeout"</span>:
+        <span class="kw">break</span>
+
+<span class="cm"># Summary</span>
+BUS.send(name, <span class="s">"lead"</span>, summary, <span class="s">"result"</span>)
+active_teammates.pop(name, <span class="hl">None</span>)</pre>
+
+  <h3>流程图</h3>
+  <div class="diagram">spawn_teammate_thread()
+  ├── 创建线程，立即返回（不阻塞）
+  └── run() 在新线程中执行:
+        ├── [身份重注入]
+        ├── WORK 阶段 (最多10轮)
+        │     └── 检查邮箱 → LLM推理 → 执行工具 → 循环
+        ├── IDLE 阶段 (60秒轮询)
+        │     ├── 有消息？ → 回到 WORK
+        │     ├── 有任务？ → 自动认领 → 回到 WORK
+        │     ├── 关机命令？ → 退出
+        │     └── 超时？ → 退出
+        └── 发送总结报告 → 从活跃列表移除</div>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 身份重注入机制</h2>
+  <p><strong>问题：</strong>messages[-20:] 截断历史后，队友可能忘记自己是谁。</p>
+  <p><strong>解决：</strong>每次进入 WORK 阶段时，如果 messages 很短（说明被压缩了），重新注入身份。</p>
+
+  <pre><span class="kw">if</span> <span class="fn">len</span>(messages) <= <span class="num">3</span>:
+    messages.insert(<span class="num">0</span>, {<span class="s">"role"</span>: <span class="s">"user"</span>,
+        <span class="s">"content"</span>: f<span class="s">"&lt;identity&gt;You are '{name}', role: {role}. "
+                   f<span class="s">"Continue your work.&lt;/identity&gt;"</span>})</pre>
+
+  <table>
+    <tr><th>片段</th><th>解释</th></tr>
+    <tr><td><code>len(messages) <= 3</code></td><td>多数情况是 True——新鲜线程只有初始 prompt。超过 3 条说明上下文被压缩过</td></tr>
+    <tr><td><code>messages.insert(0, ...)</code></td><td>在列表头部插入，LLM 一开始就看到身份提示</td></tr>
+    <tr><td><code>&lt;identity&gt;...&lt;/identity&gt;</code></td><td>自定义 XML 标签，让 LLM 识别这是身份重申指令</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>真实 CC 中</strong>，context compaction 会保留 system prompt。教学版的简化实现需要手动处理。
+  </div>
+</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> consume_lead_inbox 统一收件入口</h2>
+  <p><strong>职责：</strong>读取 Lead 的邮箱，自动路由协议响应，返回所有消息。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">consume_lead_inbox</span>(route_protocol: <span class="tp">bool</span> = <span class="hl">True</span>) -> <span class="tp">list[dict]</span>:
+    msgs = BUS.read_inbox(<span class="s">"lead"</span>)
+    <span class="kw">if not</span> msgs:
+        <span class="kw">return</span> []
+    <span class="kw">if</span> route_protocol:
+        <span class="kw">for</span> msg <span class="kw">in</span> msgs:
+            meta = msg.get(<span class="s">"metadata"</span>, {})
+            req_id = meta.get(<span class="s">"request_id"</span>, <span class="s">""</span>)
+            msg_type = msg.get(<span class="s">"type"</span>, <span class="s">""</span>)
+            <span class="kw">if</span> req_id <span class="kw">and</span> msg_type.endswith(<span class="s">"_response"</span>):
+                approve = meta.get(<span class="s">"approve"</span>, <span class="hl">False</span>)
+                <span class="fn">match_response</span>(msg_type, req_id, approve)
+    <span class="kw">return</span> msgs</pre>
+
+  <h3>协议响应自动路由</h3>
+  <table>
+    <tr><th>消息类型</th><th>以 _response 结尾？</th><th>触发 match_response？</th></tr>
+    <tr><td>shutdown_response</td><td>✅</td><td>✅</td></tr>
+    <tr><td>plan_approval_response</td><td>✅</td><td>✅</td></tr>
+    <tr><td>message</td><td>❌</td><td>❌</td></tr>
+    <tr><td>result</td><td>❌</td><td>❌</td></tr>
+  </table>
+
+  <h3>被谁调用</h3>
+  <ul>
+    <li><strong>run_check_inbox 工具</strong>——Lead LLM 主动调用 check_inbox</li>
+    <li><strong>主循环末尾</strong>——每次用户输入一轮对话后，自动检查 inbox 并注入</li>
+  </ul>
+
+  <div class="callout green">
+    <strong>关键：</strong>无论是哪种调用路径，协议响应都会被正确路由到 match_response，更新 pending_requests 状态。
+  </div>
+</div>
+
+<!-- ==================== 11 ==================== -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> run_review_plan 计划审批</h2>
+  <p><strong>职责：</strong>Lead 审批 Teammate 提交的计划。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">run_review_plan</span>(request_id: <span class="tp">str</span>, approve: <span class="tp">bool</span>,
+                    feedback: <span class="tp">str</span> = <span class="s">""</span>) -> <span class="tp">str</span>:
+    state = pending_requests.get(request_id)
+    <span class="kw">if not</span> state:
+        <span class="kw">return</span> f<span class="s">"Request {request_id} not found"</span>
+    <span class="kw">if</span> state.status != <span class="s">"pending"</span>:
+        <span class="kw">return</span> f<span class="s">"Request {request_id} already {state.status}"</span>
+
+    state.status = <span class="s">"approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"rejected"</span>
+    BUS.send(<span class="s">"lead"</span>, state.sender,
+             feedback <span class="kw">or</span> (<span class="s">"Approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"Rejected"</span>),
+             <span class="s">"plan_approval_response"</span>,
+             {<span class="s">"request_id"</span>: request_id, <span class="s">"approve"</span>: approve})
+    <span class="kw">return</span> f<span class="s">"Plan {'approved' if approve else 'rejected'} ({request_id})"</span></pre>
+
+  <h3>核心代码拆解</h3>
+  <pre>feedback <span class="kw">or</span> (<span class="s">"Approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"Rejected"</span>)</pre>
+
+  <table>
+    <tr><th>approve</th><th>feedback</th><th>最终 content 值</th></tr>
+    <tr><td>True</td><td>"" (空)</td><td>"Approved"</td></tr>
+    <tr><td>True</td><td>"Good job!"</td><td>"Good job!"</td></tr>
+    <tr><td>False</td><td>"" (空)</td><td>"Rejected"</td></tr>
+    <tr><td>False</td><td>"Missing tests"</td><td>"Missing tests"</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>短路求值 + 三元表达式：</strong>如果 Lead 提供了反馈文本，就用反馈；否则用默认的 "Approved" 或 "Rejected"。
+  </div>
+
+  <h3>approve 参数来源</h3>
+  <p><strong>是的，Lead LLM 自动决定调用，参数也是它自己填的。</strong></p>
+  <div class="diagram">1. Teammate submit_plan() → 发送 plan_approval_request
+2. Lead inbox 收到 → 注入 history
+3. Lead LLM 推理 → 决定 approve=True/False
+4. Lead LLM 生成 tool_use: review_plan(request_id, approve, feedback)
+5. 代码执行 run_review_plan(...)</pre></div>
+</div>
+
+<!-- ==================== 12 ==================== -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> Lead inbox 注入机制</h2>
+  <p><strong>问题：</strong>s16 的 Lead inbox 只打印在终端，LLM 看不到，无法做出决策。</p>
+  <p><strong>解决：</strong>s17 把 inbox 内容注入到 Lead 的 history，LLM 能看到并调用相应工具。</p>
+
+  <pre><span class="cm"># 主循环末尾</span>
+inbox = <span class="fn">consume_lead_inbox</span>(route_protocol=<span class="hl">True</span>)
+<span class="kw">if</span> inbox:
+    inbox_text = <span class="s">"\n"</span>.join(
+        f<span class="s">"From {m['from']} [{m.get('type', 'message')}]: "
+        f<span class="s">"{m['content'][:200]}"</span> <span class="kw">for</span> m <span class="kw">in</span> inbox)
+    history.append({<span class="s">"role"</span>: <span class="s">"user"</span>,
+                    <span class="s">"content"</span>: f<span class="s">"[Inbox]\n{inbox_text}"</span>})</pre>
+
+  <h3>关键细节</h3>
+  <table>
+    <tr><th>片段</th><th>解释</th></tr>
+    <tr><td><code>m['content'][:200]</code></td><td>截取前 200 字符，防止消息太长撑爆上下文</td></tr>
+    <tr><td><code>"role": "user"</code></td><td>伪装成用户消息，LLM 会把它当作输入处理</td></tr>
+    <tr><td><code>[Inbox]</code></td><td>标签包裹，让 LLM 知道"这是你的收件箱内容"</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>一句话：</strong>把"被动收到的消息"变成"LLM 能看到的对话输入"，让 Lead LLM 能根据这些消息做出决策。
+  </div>
+</div>
+
+<!-- ==================== 13 ==================== -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> s16 vs s17 对比</h2>
+
+  <h3>新增内容</h3>
+  <table>
+    <tr><th>新增项</th><th>位置</th><th>作用</th></tr>
+    <tr><td>IDLE_POLL_INTERVAL / IDLE_TIMEOUT</td><td>L219-220</td><td>空闲轮询参数</td></tr>
+    <tr><td>scan_unclaimed_tasks()</td><td>L223-231</td><td>扫描可认领的任务</td></tr>
+    <tr><td>idle_poll()</td><td>L232-270</td><td>空闲轮询函数</td></tr>
+    <tr><td>claim_task owner 检查</td><td>L76-92</td><td>防止重复认领</td></tr>
+    <tr><td>身份重注入</td><td>L366-370</td><td>保持上下文连贯</td></tr>
+    <tr><td>consume_lead_inbox()</td><td>L496-505</td><td>统一 Lead inbox 消费</td></tr>
+    <tr><td>队友工具 +3</td><td>L305-324</td><td>list_tasks, claim_task, complete_task</td></tr>
+    <tr><td>WORK → IDLE → SHUTDOWN 循环</td><td>L364-430</td><td>三阶段生命周期</td></tr>
+  </table>
+
+  <h3>删除内容</h3>
+  <table>
+    <tr><th>删除项</th><th>原因</th></tr>
+    <tr><td>Background Tasks 相关代码</td><td>教学简化，聚焦自治机制</td></tr>
+    <tr><td>队友做完任务就退出</td><td>改成 IDLE 阶段继续找活</td></tr>
+  </table>
+
+  <h3>修改内容</h3>
+  <table>
+    <tr><th>修改项</th><th>s16</th><th>s17</th><th>原因</th></tr>
+    <tr><td>claim_task</td><td>无 owner 检查</td><td>检查 task.owner</td><td>防止竞争</td></tr>
+    <tr><td>队友退出条件</td><td>做完就退出</td><td>60s 无新任务才退出</td><td>延长生命周期</td></tr>
+    <tr><td>Lead inbox</td><td>只打印终端</td><td>注入 history</td><td>LLM 能看到</td></tr>
+    <tr><td>shutdown 处理</td><td>只在 WORK 阶段</td><td>WORK + IDLE 都能响应</td><td>IDLE 阶段也能关机</td></tr>
+  </table>
+
+  <h3>核心对比图</h3>
+  <div class="diagram">s16: Lead → 手动分配 → Teammate 执行
+     问题：Lead 必须手动分配每个任务
+
+s17: Lead → 创建任务看板 → Teammate 自己扫描 → 自己认领
+     优势：Lead 只创建任务，队友自组织</div>
+
+  <h3>一句话总结</h3>
+  <table>
+    <tr><th>版本</th><th>核心心智</th><th>Lead 负担</th></tr>
+    <tr><td>s16</td><td>"Lead 分配，队友执行"</td><td>高：每个任务都要手动分配</td></tr>
+    <tr><td>s17</td><td>"自己看板，自己认领"</td><td>低：只创建任务，队友自组织</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 14 ==================== -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 常见困惑与 FAQ</h2>
+
+  <h3>Q1: {task['subject']} 为什么不是 task[subject]？</h3>
+  <div class="callout purple">
+    <strong>答案：</strong>字典键名要用引号括起来变成字符串字面量，否则 Python 会把它当成变量名去查找。
+  </div>
+  <pre>task[<span class="s">'subject'</span>]   <span class="cm"># ✅ 正确：用字符串 "subject" 做键名</span>
+task[subject]     <span class="cm"># ❌ 错误：用变量 subject 的值做键名</span></pre>
+
+  <h3>Q2: read_inbox 是一次性取所有 inbox 吗？</h3>
+  <div class="callout">
+    <strong>答案：</strong>是的，一次性全取出来，读完就删除文件（inbox.unlink()）。语义是"把积压的所有消息一次性拿走，然后清空邮箱"。
+  </div>
+
+  <h3>Q3: handle_inbox_message 只处理一条消息？</h3>
+  <div class="callout">
+    <strong>答案：</strong>是的，函数签名是单条消息 msg: dict。调用方负责遍历 inbox 列表，对每条消息调用一次这个函数。
+  </div>
+
+  <h3>Q4: approve 参数在哪里赋值的？</h3>
+  <div class="callout green">
+    <strong>答案：</strong>approve 字段是在发消息的一方设置的。Lead 审批时调用 run_review_plan，传入 approve=True/False，然后 BUS.send 时写入 metadata。
+  </div>
+
+  <h3>Q5: inbox 里除了 "message" 还有什么类型？</h3>
+  <table>
+    <tr><th>类型</th><th>用途</th></tr>
+    <tr><td>message</td><td>普通对话消息</td></tr>
+    <tr><td>shutdown_request</td><td>关机请求</td></tr>
+    <tr><td>shutdown_response</td><td>关机确认</td></tr>
+    <tr><td>plan_approval_request</td><td>计划审批请求</td></tr>
+    <tr><td>plan_approval_response</td><td>计划审批回复</td></tr>
+    <tr><td>result</td><td>Teammate 结束时的总结报告</td></tr>
+  </table>
+
+  <h3>Q6: "result" 是队友返回结果的标志吗？</h3>
+  <div class="callout">
+    <strong>答案：</strong>是的，msg_type="result" 表示"这是 Teammate 结束工作后的总结报告"，和普通 "message" 的区别在于语义——"result" 是"人已经走了，这是留的便条"。
+  </div>
+
+  <h3>Q7: run_review_plan 是 Lead LLM 自动调用的吗？</h3>
+  <div class="callout green">
+    <strong>答案：</strong>是的。LLM 根据对话上下文推理，决定调用 review_plan 工具，自己填写 request_id、approve、feedback 参数。代码只提供工具定义和处理函数，LLM 负责决策。
+  </div>
+</div>
+
+<!-- ==================== 15 ==================== -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> Python 语法小抄</h2>
+
+  <h3>本章涉及的语法</h3>
+  <table>
+    <tr><th>语法</th><th>含义</th><th>示例</th></tr>
+    <tr><td><code>threading.Thread(target=run, daemon=True).start()</code></td><td>创建并启动守护线程</td><td>L428</td></tr>
+    <tr><td><code>handler(**block.input)</code></td><td>** 字典解包为关键字参数</td><td>L396</td></tr>
+    <tr><td><code>for...else: continue / break</code></td><td>Python 特有的 for-else 语法</td><td>L421-L425</td></tr>
+    <tr><td><code>getattr(obj, "attr", default)</code></td><td>安全访问属性</td><td>L422</td></tr>
+    <tr><td><code>isinstance(x, list)</code></td><td>类型检查</td><td>L420</td></tr>
+    <tr><td><code>json.dumps(list)</code></td><td>把 Python 列表转成 JSON 字符串</td><td>L387</td></tr>
+    <tr><td><code>x if cond else y</code></td><td>三元表达式</td><td>L466</td></tr>
+    <tr><td><code>a or b</code></td><td>短路求值</td><td>L469</td></tr>
+    <tr><td><code>msg.get("type", "message")</code></td><td>安全取字典值，默认值</td><td>L280</td></tr>
+    <tr><td><code>msg_type.endswith("_response")</code></td><td>判断字符串结尾</td><td>L501</td></tr>
+    <tr><td><code>messages[-20:]</code></td><td>切片：取最后 20 条</td><td>L389</td></tr>
+    <tr><td><code>messages.insert(0, ...)</code></td><td>在列表头部插入</td><td>L367</td></tr>
+    <tr><td><code>reversed(messages)</code></td><td>倒序遍历</td><td>L419</td></tr>
+    <tr><td><code>active_teammates.pop(name, None)</code></td><td>从字典移除，不存在返回 None</td><td>L425</td></tr>
+  </table>
+
+  <h3>三元表达式详解</h3>
+  <pre><span class="cm"># 基本形式</span>
+值1 <span class="kw">if</span> 条件 <span class="kw">else</span> 值2
+
+<span class="cm"># 示例</span>
+<span class="s">"approved"</span> <span class="kw">if</span> approve <span class="kw">else</span> <span class="s">"rejected"</span>
+
+<span class="cm"># 等价于</span>
+<span class="kw">if</span> approve:
+    state.status = <span class="s">"approved"</span>
+<span class="kw">else</span>:
+    state.status = <span class="s">"rejected"</span></pre>
+
+  <h3>短路求值详解</h3>
+  <pre><span class="cm"># a or b</span>
+<span class="cm"># 如果 a 是 truthy（非空、非零、非 None），返回 a</span>
+<span class="cm"># 如果 a 是 falsy，返回 b</span>
+
+feedback <span class="kw">or</span> <span class="s">"Approved"</span>
+<span class="cm"># feedback="Good job!" → 返回 "Good job!"</span>
+<span class="cm"># feedback="" → 返回 "Approved"</span></pre>
+
+  <h3>for-else 语法</h3>
+  <pre><span class="kw">for</span> item <span class="kw">in</span> items:
+    <span class="kw">if</span> condition:
+        <span class="kw">break</span>
+<span class="kw">else</span>:
+    <span class="cm"># 如果 for 循环没有 break，执行这里</span>
+    <span class="fn">print</span>(<span class="s">"没有找到"</span>)</pre>
+
+  <h3>字典解包 **</h3>
+  <pre><span class="cm"># **dict 把字典展开成关键字参数</span>
+block.input = {<span class="s">"command"</span>: <span class="s">"ls"</span>}
+<span class="fn">handler</span>(**block.input)  <span class="cm"># 等价于 handler(command="ls")</span></pre>
+
+  <h3>ANSI 颜色码</h3>
+  <table>
+    <tr><th>代码</th><th>颜色</th><th>用途</th></tr>
+    <tr><td>\033[31m</td><td>红色</td><td>错误</td></tr>
+    <tr><td>\033[32m</td><td>绿色</td><td>成功</td></tr>
+    <tr><td>\033[33m</td><td>黄色</td><td>警告</td></tr>
+    <tr><td>\033[35m</td><td>紫色</td><td>协议</td></tr>
+    <tr><td>\033[36m</td><td>青色</td><td>信息</td></tr>
+    <tr><td>\033[0m</td><td>重置</td><td>结束颜色</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
