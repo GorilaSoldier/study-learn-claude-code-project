@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s18 Worktree Isolation - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #0d9488 0%, #059669 50%, #047857 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  .callout.teal { background: #ccfbf1; border-color: #0d9488; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s18 · Worktree Isolation（工作区隔离）复习笔记</h1>
+  <p class="subtitle">各干各的目录，互不干扰 — 任务管目标，worktree 管目录</p>
+  <span class="badge">基于问答整理 · ~979 LOC · 17 个工具 · git worktree · cwd 自动切换</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">s17 的痛点：为什么需要隔离</a></li>
+    <li><a href="#s4">Git Worktree 是什么</a></li>
+    <li><a href="#s5">Worktree 目录结构详解</a></li>
+    <li><a href="#s6">完整协作流程</a></li>
+    <li><a href="#s7">核心函数逐段详解</a></li>
+    <li><a href="#s8">Teammate cwd 自动切换机制</a></li>
+    <li><a href="#s9">s17 vs s18 对比</a></li>
+    <li><a href="#s10">常见困惑与 FAQ</a></li>
+    <li><a href="#s11">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1 ==================== -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>多个 Agent 同时在项目上干活时，用 <code>git worktree</code> 给每人一个<strong>独立目录 + 独立分支</strong>，文件不打架，git 不混乱。
+  </div>
+  <p><strong>解决了什么问题：</strong>s15-s17 解决了"谁干什么"（任务系统）和"怎么通信"（消息总线），但没解决 <strong>"在哪干"</strong>。Alice 和 Bob 都在同一个目录下工作——写同一个文件，互相覆盖；git log 里分不清谁的提交是谁的。</p>
+  <p><strong>解决方案：</strong>每个任务绑定一个独立的 git worktree（独立目录 + 独立分支），队友认领任务后自动切到对应目录工作。完成后安全回收。</p>
+
+  <div class="callout teal">
+    <strong>课程原话：</strong>"各干各的目录, 互不干扰" — 任务管目标, worktree 管目录, 按 ID 绑定。
+  </div>
+
+  <h3>核心转变</h3>
+  <div class="diagram">s17: Alice & Bob 都在项目根目录干活 → write_file 互相覆盖
+s18: Alice → .worktrees/auth/ (分支 wt/auth)
+      Bob   → .worktrees/ui/   (分支 wt/ui)
+      → 互不影响，各提各的分支</div>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+  <p>整个 s18 的核心就是 <strong>worktree 生命周期管理</strong>：创建 → 绑定 → 工作 → 回收。</p>
+
+  <div class="diagram">┌─────────────────────────────────────────────────────┐
+│  Worktree 生命周期                                    │
+│                                                      │
+│  1. Lead: create_worktree("auth", task_id="t1")      │
+│     → 创建 .worktrees/auth/ + 分支 wt/auth           │
+│     → 绑定到任务 t1                                   │
+│                                                      │
+│  2. Lead: spawn_teammate("Alice", ..., task="t1")    │
+│                                                      │
+│  3. Alice: claim_task("t1")                          │
+│     → 自动切换 cwd 到 .worktrees/auth/               │
+│     → bash/read/write 都在 auth/ 下执行              │
+│     → git add + git commit → 提交到 wt/auth 分支     │
+│                                                      │
+│  4. Alice: complete_task("t1")                       │
+│     → cwd 恢复默认                                    │
+│                                                      │
+│  5. Lead: 审查代码 → git merge wt/auth → 合并到 main │
+│                                                      │
+│  6. Lead: remove_worktree("auth")                    │
+│     → 安全检查 → 删除目录 + 分支                      │
+└─────────────────────────────────────────────────────┘</div>
+
+  <h3>3 个核心函数 = Worktree 生命周期</h3>
+  <table>
+    <tr><th>函数</th><th>做的事</th><th>什么时候用</th></tr>
+    <tr><td><code>create_worktree</code></td><td>创建独立目录 + 独立分支，可选绑定任务</td><td>分配任务时</td></tr>
+    <tr><td><code>remove_worktree</code></td><td>安全检查后删除目录 + 分支</td><td>任务合并完成后</td></tr>
+    <tr><td><code>keep_worktree</code></td><td>保留不删，只记录日志</td><td>需要人工审查时</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> s17 的痛点：为什么需要隔离</h2>
+
+  <div class="callout red">
+    <strong>核心问题：</strong>多个 Agent 在同一个目录下干活，文件相互覆盖，git 历史混乱。
+  </div>
+
+  <p>看这个场景：</p>
+
+  <pre><span class="cm"># s17 中，两个 Teammate 共享项目根目录</span>
+
+<span class="cm"># Alice 的任务：重构认证模块</span>
+write_file(<span class="s">"src/config.py"</span>, <span class="s">"AUTH_KEY = 'new_key'"</span>)
+
+<span class="cm"># Bob 的任务：重构 UI 登录页</span>
+write_file(<span class="s">"src/config.py"</span>, <span class="s">"UI_THEME = 'dark'"</span>)
+
+<span class="cm"># 结果：Alice 的改动被 Bob 覆盖了！</span>
+<span class="cm"># 而且 git log 分不清谁的提交是谁的</span></pre>
+
+  <table>
+    <tr><th>痛点</th><th>具体表现</th></tr>
+    <tr><td><strong>文件冲突</strong></td><td>两人改同一个文件，后写的覆盖先写的</td></tr>
+    <tr><td><strong>git 混乱</strong></td><td>提交混在同一个分支，分不清谁是谁</td></tr>
+    <tr><td><strong>一损俱损</strong></td><td>一个人的代码写崩了回滚，另一个人也被拖累</td></tr>
+    <tr><td><strong>无法并行</strong></td><td>一个人 git commit 后，另一个人必须 git pull 才能继续</td></tr>
+  </table>
+
+  <p><strong>s18 的解法</strong>：给每个人一个独立的"工位"——每个 Teammate 拥有自己的目录和分支，各改各的。</p>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> Git Worktree 是什么</h2>
+
+  <div class="callout purple">
+    <strong>一句话：</strong>Git Worktree 是 Git 自带的"多工作区"功能（v2.5+, 2015年），让你能在同一仓库里同时签出多个分支到不同目录。
+  </div>
+
+  <h3>没有 worktree 时</h3>
+  <p>你只有一个工作目录，每次 <code>git checkout</code> 切换分支，目录里的所有文件会被替换。</p>
+
+  <pre><span class="cm"># 只有一个"工作台"</span>
+cd /project
+git checkout main
+<span class="cm"># ...改改改...</span>
+git checkout -b hotfix        <span class="cm"># 切分支！目录内容全变了</span>
+<span class="cm"># 之前 main 的上下文丢了</span></pre>
+
+  <h3>有 worktree 时</h3>
+  <p>每个目录"锁定"一个分支——进去就在那个分支上，不需要切换。</p>
+
+  <pre><span class="cm"># 多个"工作台"，各管各的</span>
+cd /project                   <span class="cm"># 这是 main 分支</span>
+git worktree add ../hotfix -b hotfix/v2 HEAD  <span class="cm"># 创建新工作台</span>
+cd ../hotfix                  <span class="cm"># 这是 hotfix/v2 分支</span>
+<span class="cm"># ...改改改...</span>
+cd /project                   <span class="cm"># 切回来，main 还是 main</span>
+<span class="cm"># 两个目录互不干扰</span></pre>
+
+  <h3>Worktree vs Clone 对比</h3>
+  <table>
+    <tr><th>方面</th><th><code>git worktree add</code></th><th><code>git clone</code></th></tr>
+    <tr><td>创建时间</td><td>~10ms</td><td>~10秒（大项目）</td></tr>
+    <tr><td>磁盘占用</td><td>项目大小 + 工作文件</td><td>项目大小 × 2（两份完整 .git）</td></tr>
+    <tr><td>提交关系</td><td>共享 .git，互相可见</td><td>完全独立，需手动 push/fetch</td></tr>
+    <tr><td>适用场景</td><td>短生命周期任务</td><td>长期独立开发</td></tr>
+  </table>
+
+  <h3><code>git worktree add</code> 命令拆解</h3>
+  <pre>git worktree add <span class="hl">.worktrees/auth</span> -b <span class="hl">wt/auth</span> <span class="hl">HEAD</span></pre>
+  <table>
+    <tr><th>部分</th><th>说明</th></tr>
+    <tr><td><code>worktree add</code></td><td>创建新工作目录</td></tr>
+    <tr><td><code>.worktrees/auth</code></td><td>新目录路径</td></tr>
+    <tr><td><code>-b wt/auth</code></td><td>同时创建 <code>wt/auth</code> 分支并签出</td></tr>
+    <tr><td><code>HEAD</code></td><td>基于当前提交创建</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>注意：</strong><code>git worktree add</code> 是 Git 原生命令，不是第三方工具。你可以直接在终端敲 <code>git worktree --help</code> 查看帮助。
+  </div>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> Worktree 目录结构详解</h2>
+
+  <h3>完整目录树</h3>
+  <pre>/home/user/my-project/              <span class="cm">← 项目根目录（main 分支的工作区）</span>
+  ├── src/
+  │   ├── main.py
+  │   └── utils.py
+  ├── .git/                          <span class="cm">← 唯一的 .git 对象存储（所有分支共享）</span>
+  ├── .tasks/                        <span class="cm">← 任务系统</span>
+  │   ├── task_xxx.json
+  │   └── task_yyy.json
+  └── .worktrees/                    <span class="cm">← 所有 worktree 集中管理</span>
+       ├── auth/                     <span class="cm">← wt/auth 分支的工作区</span>
+       │   ├── src/
+       │   │   ├── main.py           <span class="cm">← 和根目录的 main.py 可以不同！</span>
+       │   │   └── auth.py
+       │   └── .git                  <span class="cm">← 指向主仓库的指针文件</span>
+       └── ui/                       <span class="cm">← wt/ui 分支的工作区</span>
+           ├── src/
+           │   ├── main.py
+           │   └── ui.py
+           └── .git                  <span class="cm">← 也是指针文件</span></pre>
+
+  <h3>关键理解</h3>
+  <table>
+    <tr><th>概念</th><th>解释</th></tr>
+    <tr><td><code>.worktrees/auth/</code> 在根目录里吗？</td><td><strong>物理上在</strong>（<code>project/.worktrees/auth/</code>），但 Git 把它当作一个独立工作区</td></tr>
+    <tr><td>它和 <code>src/</code> 是嵌套关系吗？</td><td><strong>不是</strong>。<code>.worktrees/auth/src/</code> 和 <code>project/src/</code> 是不同分支的内容，互不相关</td></tr>
+    <tr><td>里面的 <code>.git</code> 是啥？</td><td>是一个文件（不是文件夹），内容类似 <code>gitdir: /project/.git/worktrees/auth</code>，指向主仓库</td></tr>
+    <tr><td>共享 .git 的好处？</td><td><strong>省空间</strong>（不重复存历史）、<strong>创建快</strong>（毫秒级）、<strong>对象互通</strong>（所有分支的 commit 互相可见）</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>比喻理解：</strong>就像你家院子里有个独立小房子——虽然在你的院子里，但它是另一个独立空间。Worktree 也是——虽然文件夹在项目根目录里，但它是一个独立的 git 工作区，有自己的固定分支。
+  </div>
+
+  <h3>代码中的定义</h3>
+  <pre>WORKTREES_DIR = WORKDIR / <span class="s">".worktrees"</span>   <span class="cm"># project/.worktrees/</span>
+WORKTREES_DIR.mkdir(exist_ok=True)        <span class="cm"># 相当于 mkdir -p</span></pre>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> 完整协作流程</h2>
+
+  <div class="diagram">时间线 →
+───────
+
+[创建阶段]
+你输入: "实现登录功能和注册功能"
+Lead: create_task("实现登录功能")            → task_1
+Lead: create_task("实现注册功能")            → task_2
+Lead: create_worktree("auth", task_id="task_1") → .worktrees/auth/ + wt/auth
+Lead: create_worktree("ui", task_id="task_2")   → .worktrees/ui/ + wt/ui
+Lead: spawn_teammate("Alice", "coder", ...)
+Lead: spawn_teammate("Bob", "coder", ...)
+
+[工作阶段]
+Alice: claim_task → cwd 自动切换到 .worktrees/auth/
+Alice: write_file("src/auth.py", ...)   → 在 auth/ 目录写
+Alice: bash("git add . && git commit")  → 提交到 wt/auth 分支
+Alice: complete_task → cwd 恢复
+
+Bob: claim_task → cwd 自动切换到 .worktrees/ui/
+Bob: write_file("src/ui.py", ...)       → 在 ui/ 目录写
+Bob: bash("git add . && git commit")    → 提交到 wt/ui 分支
+Bob: complete_task → cwd 恢复
+
+[审查&合并阶段]  ← 这段代码没实现，靠人工
+Lead: git diff main..wt/auth   → 看 Alice 改了啥
+Lead: git checkout main
+Lead: git merge wt/auth        → 合并到主分支
+Lead: git merge wt/ui
+
+[清理阶段]
+Lead: remove_worktree("auth")  → 安全检查 → 删除 .worktrees/auth/ + 分支 wt/auth
+Lead: remove_worktree("ui")    → 安全检查 → 删除 .worktrees/ui/ + 分支 wt/ui</div>
+
+  <div class="callout">
+    <strong>注意：</strong>代码只实现了创建、绑定工作和安全回收。中间的审查、合并、推送是 Lead（人类或 AI）手动操作的。自动合并代码太危险了，边界设定合理。
+  </div>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> 核心函数逐段详解</h2>
+
+  <!-- 7.1 validate_worktree_name -->
+  <h3>7.1 validate_worktree_name — 名称校验</h3>
+  <pre><span class="kw">def</span> <span class="fn">validate_worktree_name</span>(name: str) -> str | <span class="hl">None</span>:
+    <span class="kw">if not</span> name:
+        <span class="kw">return</span> <span class="s">"Worktree name cannot be empty"</span>
+    <span class="kw">if</span> name == <span class="s">"."</span> <span class="op">or</span> name == <span class="s">".."</span>:
+        <span class="kw">return</span> f<span class="s">"'{name}' is not a valid worktree name"</span>
+    <span class="kw">if not</span> VALID_WT_NAME.match(name):
+        <span class="kw">return</span> <span class="s">"Invalid worktree name ..."</span>
+    <span class="kw">return</span> <span class="hl">None</span>  <span class="cm"># None = 校验通过</span></pre>
+
+  <table>
+    <tr><th>校验项</th><th>目的</th></tr>
+    <tr><td><code>not name</code></td><td>空字符串 → 拒绝</td></tr>
+    <tr><td><code>"." / ".."</code></td><td>防范路径遍历攻击，防止 <code>name="."</code> 导致误删父目录</td></tr>
+    <tr><td><code>VALID_WT_NAME</code> 正则</td><td>只允许字母、数字、点、下划线、短横线，1-64字符</td></tr>
+  </table>
+
+  <p><strong>返回风格</strong>：返回 <code>str | None</code>——不返回布尔值，而是直接返回错误信息（有错）或 <code>None</code>（通过）。调用方直接用 <code>if err: return f"Error: {err}"</code>。</p>
+
+  <!-- 7.2 run_git -->
+  <h3>7.2 run_git — Git 命令执行器</h3>
+  <pre><span class="kw">def</span> <span class="fn">run_git</span>(args: list[str]) -> <span class="tp">tuple[bool, str]</span>:
+    <span class="kw">try</span>:
+        r = subprocess.run([<span class="s">"git"</span>] + args, cwd=WORKDIR,
+                           capture_output=True, text=True, timeout=<span class="num">30</span>)
+        out = (r.stdout + r.stderr).strip()
+        out = out[:<span class="num">5000</span>] <span class="kw">if</span> out <span class="kw">else</span> <span class="s">"(no output)"</span>
+        <span class="kw">return</span> r.returncode == <span class="num">0</span>, out
+    <span class="kw">except</span> subprocess.TimeoutExpired:
+        <span class="kw">return</span> <span class="hl">False</span>, <span class="s">"Error: git timeout"</span></pre>
+
+  <table>
+    <tr><th>参数/片段</th><th>解释</th></tr>
+    <tr><td><code>["git"] + args</code></td><td>拼接命令，如 <code>run_git(["worktree", "add", ...])</code> → <code>["git", "worktree", "add", ...]</code></td></tr>
+    <tr><td><code>capture_output=True</code></td><td>捕获 stdout 和 stderr，不打印到屏幕</td></tr>
+    <tr><td><code>text=True</code></td><td>输出为字符串（而非 bytes）</td></tr>
+    <tr><td><code>timeout=30</code></td><td>30 秒超时，防止 git 卡死</td></tr>
+    <tr><td><code>r.stdout + r.stderr</code></td><td>git 有些信息走 stderr（如进度），两个都拿更保险</td></tr>
+    <tr><td><code>out[:5000]</code></td><td>输出截断到 5000 字符，防止撑爆内存</td></tr>
+    <tr><td><code>r.returncode == 0</code></td><td>返回码为 0 → True（成功），否则 False</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>关于 subprocess.run：</strong>这是 Python 标准库（不需要 pip 安装），用于执行外部命令。返回一个 <code>CompletedProcess</code> 对象，主要属性：<code>returncode</code>（退出码，0=成功）、<code>stdout</code>（标准输出）、<code>stderr</code>（标准错误）。
+  </div>
+
+  <!-- 7.3 log_event -->
+  <h3>7.3 log_event — 事件日志</h3>
+  <pre><span class="kw">def</span> <span class="fn">log_event</span>(event_type: str, worktree_name: str, task_id: str = <span class="s">""</span>):
+    event = {<span class="s">"type"</span>: event_type, <span class="s">"worktree"</span>: worktree_name,
+             <span class="s">"task_id"</span>: task_id, <span class="s">"ts"</span>: time.time()}
+    <span class="kw">with</span> <span class="fn">open</span>(WORKTREES_DIR / <span class="s">"events.jsonl"</span>, <span class="s">"a"</span>) <span class="kw">as</span> f:
+        f.write(json.dumps(event) + <span class="s">"\n"</span>)</pre>
+
+  <p><strong>JSONL 格式</strong>（JSON Lines）：每一行一个 JSON 对象，用换行分隔。优势是 append-only 追加写入（<code>open("a")</code>），不用读整个文件。</p>
+  <p><strong>事件类型</strong>：<code>create</code>（创建）、<code>remove</code>（删除）、<code>keep</code>（保留）。</p>
+
+  <!-- 7.4 create_worktree + bind_task_to_worktree -->
+  <h3>7.4 create_worktree — 创建 Worktree（核心）</h3>
+  <pre><span class="kw">def</span> <span class="fn">create_worktree</span>(name: str, task_id: str = <span class="s">""</span>) -> str:
+    err = validate_worktree_name(name)       <span class="cm"># 1. 校验名称</span>
+    <span class="kw">if</span> err:
+        <span class="kw">return</span> f<span class="s">"Error: {err}"</span>
+    path = WORKTREES_DIR / name              <span class="cm"># 2. 计算路径</span>
+    <span class="kw">if</span> path.exists():                        <span class="cm"># 3. 防重复创建</span>
+        <span class="kw">return</span> f<span class="s">"Worktree '{name}' already exists"</span>
+    ok, result = run_git([                   <span class="cm"># 4. 执行 git worktree add</span>
+        <span class="s">"worktree"</span>, <span class="s">"add"</span>, str(path), <span class="s">"-b"</span>, f<span class="s">"wt/{name}"</span>, <span class="s">"HEAD"</span>
+    ])
+    <span class="kw">if not</span> ok:
+        <span class="kw">return</span> f<span class="s">"Git error: {result}"</span>
+    <span class="kw">if</span> task_id:                              <span class="cm"># 5. 可选绑定到 task</span>
+        bind_task_to_worktree(task_id, name)
+    log_event(<span class="s">"create"</span>, name, task_id)       <span class="cm"># 6. 记录事件</span>
+    <span class="kw">return</span> f<span class="s">"Worktree '{name}' created at {path}"</span></pre>
+
+  <p><strong>关于 <code>if task_id:</code></strong>：<code>task_id</code> 的默认值是空字符串 <code>""</code>。在 Python 中，空字符串被视为 <code>False</code>，非空字符串为 <code>True</code>。所以不传 <code>task_id</code> 就只建目录，不绑定任务。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">bind_task_to_worktree</span>(task_id: str, worktree_name: str):
+    task = load_task(task_id)
+    task.worktree = worktree_name    <span class="cm"># 给 task 设置 worktree 字段</span>
+    save_task(task)                  <span class="cm"># 持久化到 .tasks/task_xxx.json</span></pre>
+
+  <p><strong>绑定不改任务状态</strong>——任务仍是 <code>pending</code>，等队友认领才推进到 <code>in_progress</code>。这样 Lead 可以提前建好 worktree，队友 idle 时自然认领。</p>
+
+  <!-- 7.5 _count_worktree_changes -->
+  <h3>7.5 _count_worktree_changes — 变更检测</h3>
+  <pre><span class="kw">def</span> <span class="fn">_count_worktree_changes</span>(path: Path) -> <span class="tp">tuple[int, int]</span>:
+    <span class="kw">try</span>:
+        r1 = subprocess.run([<span class="s">"git"</span>, <span class="s">"status"</span>, <span class="s">"--porcelain"</span>],
+                            cwd=path, capture_output=True, text=True, timeout=<span class="num">10</span>)
+        files = <span class="fn">len</span>([l <span class="kw">for</span> l <span class="kw">in</span> r1.stdout.strip().splitlines() <span class="kw">if</span> l.strip()])
+
+        r2 = subprocess.run([<span class="s">"git"</span>, <span class="s">"log"</span>, <span class="s">"@{push}..HEAD"</span>, <span class="s">"--oneline"</span>],
+                            cwd=path, capture_output=True, text=True, timeout=<span class="num">10</span>)
+        commits = <span class="fn">len</span>([l <span class="kw">for</span> l <span class="kw">in</span> r2.stdout.strip().splitlines() <span class="kw">if</span> l.strip()])
+        <span class="kw">return</span> files, commits
+    <span class="kw">except</span> Exception:
+        <span class="kw">return</span> -<span class="num">1</span>, -<span class="num">1</span></pre>
+
+  <div class="callout orange">
+    <strong>这是最让初学者困惑的函数——逐行拆解：</strong>
+  </div>
+
+  <p><strong><code>r1</code> 和 <code>files</code></strong>（检查"改了没存"）：</p>
+  <pre><span class="cm"># git status --porcelain 输出示例：</span>
+<span class="cm"># " M app.py"    → 已修改，未暂存（没 git add）</span>
+<span class="cm"># " D old.py"    → 已删除，未暂存</span>
+<span class="cm"># "?? new.py"    → 新文件，未跟踪（git 不认识它）</span>
+
+<span class="cm"># r1.stdout.strip().splitlines() 把输出按行拆成列表</span>
+<span class="cm"># [l for l in ... if l.strip()] 过滤空行</span>
+<span class="cm"># len(...) 数行数 → files = 有几行就有几个变更文件</span></pre>
+
+  <p><strong><code>r2</code> 和 <code>commits</code></strong>（检查"存了没推"）：</p>
+  <pre><span class="cm"># git log @{push}..HEAD --oneline</span>
+<span class="cm"># @{push} = 上次推送到远程的位置</span>
+<span class="cm"># @{push}..HEAD = 从上次推送到现在之间的所有 commit</span>
+<span class="cm"># --oneline = 每个 commit 只显示一行</span>
+<span class="cm"># len(...) = 有几行就有几个未推送的 commit</span></pre>
+
+  <table>
+    <tr><th>变量</th><th>执行命令</th><th>计的是什么</th></tr>
+    <tr><td><code>r1</code> → <code>files</code></td><td><code>git status --porcelain</code></td><td>未暂存/未跟踪的<strong>文件数</strong></td></tr>
+    <tr><td><code>r2</code> → <code>commits</code></td><td><code>git log @{push}..HEAD --oneline</code></td><td>未推送的<strong>提交数</strong></td></tr>
+  </table>
+
+  <p><strong>Git 文件状态速查：</strong></p>
+  <table>
+    <tr><th>状态</th><th>含义</th><th>是否被 <code>--porcelain</code> 统计</th></tr>
+    <tr><td>未跟踪（untracked）</td><td>新建文件，git 从没见过</td><td>✅ <code>?? filename</code></td></tr>
+    <tr><td>已修改未暂存（modified）</td><td>改过但没 <code>git add</code></td><td>✅ <code> M filename</code></td></tr>
+    <tr><td>已暂存（staged）</td><td><code>git add</code> 了但没 commit</td><td>✅ <code>M  filename</code></td></tr>
+    <tr><td>已提交（committed）</td><td><code>git commit</code> 过了</td><td>❌ 不算"变更"</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>关于 <code>@{push}</code>：</strong>是 Git 的引用语法，表示"上游分支最后一次成功推送的位置"。<code>@{push}..HEAD</code> 就是"已提交但尚未推送到远程的所有 commits"。
+  </div>
+
+  <!-- 7.6 remove_worktree -->
+  <h3>7.6 remove_worktree — 安全回收</h3>
+  <pre><span class="kw">def</span> <span class="fn">remove_worktree</span>(name: str, discard_changes: <span class="tp">bool</span> = <span class="hl">False</span>) -> str:
+    err = validate_worktree_name(name)
+    <span class="kw">if</span> err:
+        <span class="kw">return</span> err
+    path = WORKTREES_DIR / name
+    <span class="kw">if not</span> path.exists():
+        <span class="kw">return</span> f<span class="s">"Worktree '{name}' not found"</span>
+
+    <span class="kw">if not</span> discard_changes:               <span class="cm"># 安全检查（默认开启）</span>
+        files, commits = _count_worktree_changes(path)
+        <span class="kw">if</span> files < <span class="num">0</span>:                      <span class="cm"># 检查本身失败（如 git 超时）</span>
+            <span class="kw">return</span> <span class="s">"Cannot verify ... force removal."</span>
+        <span class="kw">if</span> files > <span class="num">0</span> <span class="op">or</span> commits > <span class="num">0</span>:        <span class="cm"># 有未提交 或 未推送 → 拒绝</span>
+            <span class="kw">return</span> <span class="s">"has X files and Y commits ... discard or keep."</span>
+
+    <span class="cm"># 安全检查通过后，执行删除</span>
+    ok1, _ = run_git([<span class="s">"worktree"</span>, <span class="s">"remove"</span>, str(path), <span class="s">"--force"</span>])
+    run_git([<span class="s">"branch"</span>, <span class="s">"-D"</span>, f<span class="s">"wt/{name}"</span>])   <span class="cm"># 删分支</span>
+    log_event(<span class="s">"remove"</span>, name)                    <span class="cm"># 记录日志</span>
+    <span class="kw">return</span> f<span class="s">"Worktree '{name}' removed"</span></pre>
+
+  <p><strong>安全策略决策树：</strong></p>
+  <pre>remove_worktree(name, discard_changes=False)
+    │
+    ├── discard_changes=True  → 跳过检查，直接删除
+    │
+    └── discard_changes=False → 执行检查
+         ├── 检查失败（files < 0）  → "无法验证，加 force 吧"
+         ├── 有变更（files>0 或 commits>0） → "有改动，加 force 或 keep"
+         └── 无变更（files=0 且 commits=0） → ✅ 允许删除</pre>
+
+  <!-- 7.7 keep_worktree -->
+  <h3>7.7 keep_worktree — 保留审查</h3>
+  <pre><span class="kw">def</span> <span class="fn">keep_worktree</span>(name: str) -> str:
+    err = validate_worktree_name(name)
+    <span class="kw">if</span> err:
+        <span class="kw">return</span> err
+    log_event(<span class="s">"keep"</span>, name)        <span class="cm"># 只记录日志，不动文件</span>
+    <span class="kw">return</span> f<span class="s">"Worktree '{name}' kept for review"</span></pre>
+
+  <p><strong>什么都不做</strong>——只是记录一个 <code>keep</code> 事件到日志。语义是："这个 worktree 我不自动清理了，留给人工审查。"</p>
+
+  <h3>所有函数调用关系图</h3>
+  <div class="diagram">create_worktree()
+  ├── validate_worktree_name()     — 校验名称
+  ├── run_git()                    — 执行 git worktree add
+  └── bind_task_to_worktree()      — 可选绑定 task
+       ├── load_task()
+       └── save_task()
+  └── log_event()                  — 记录事件
+
+remove_worktree()
+  ├── validate_worktree_name()
+  ├── _count_worktree_changes()    — 检查是否有变更
+  │    └── run_git() (x2)
+  ├── run_git()                    — git worktree remove --force
+  ├── run_git()                    — git branch -D wt/&lt;name&gt;
+  └── log_event()
+
+keep_worktree()
+  ├── validate_worktree_name()
+  └── log_event()</div>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> Teammate cwd 自动切换机制</h2>
+
+  <p>队友认领带 worktree 的任务时，<code>bash</code>、<code>read_file</code>、<code>write_file</code> 自动在 worktree 目录下执行。</p>
+
+  <h3>核心代码</h3>
+  <pre><span class="cm"># 每个队友线程维护一个 wt_ctx 字典</span>
+wt_ctx = {<span class="s">"path"</span>: <span class="hl">None</span>}
+
+<span class="kw">def</span> <span class="fn">_wt_cwd</span>() -> Path | <span class="hl">None</span>:
+    p = wt_ctx[<span class="s">"path"</span>]
+    <span class="kw">return</span> Path(p) <span class="kw">if</span> p <span class="kw">else</span> <span class="hl">None</span>
+
+<span class="kw">def</span> <span class="fn">_run_bash</span>(command: str) -> str:
+    <span class="kw">return</span> run_bash(command, cwd=<span class="fn">_wt_cwd</span>())  <span class="cm"># 在 worktree 目录执行</span>
+
+<span class="kw">def</span> <span class="fn">_run_read</span>(path: str) -> str:
+    <span class="kw">return</span> run_read(path, cwd=<span class="fn">_wt_cwd</span>())     <span class="cm"># 在 worktree 目录读</span>
+
+<span class="kw">def</span> <span class="fn">_run_write</span>(path: str, content: str) -> str:
+    <span class="kw">return</span> run_write(path, content, cwd=<span class="fn">_wt_cwd</span>())  <span class="cm"># 在 worktree 目录写</span></pre>
+
+  <h3>切换时机</h3>
+  <pre><span class="cm"># 认领任务时检查是否有 worktree 绑定</span>
+<span class="kw">def</span> <span class="fn">_run_claim_task</span>(task_id: str):
+    result = claim_task(task_id, owner=name)
+    <span class="kw">if</span> <span class="s">"Claimed"</span> <span class="kw">in</span> result:
+        task = load_task(task_id)
+        <span class="kw">if</span> task.worktree:                                   <span class="cm"># 有绑定？</span>
+            wt_ctx[<span class="s">"path"</span>] = str(WORKTREES_DIR / task.worktree)   <span class="cm"># → 切过去</span>
+        <span class="kw">else</span>:
+            wt_ctx[<span class="s">"path"</span>] = <span class="hl">None</span>                                <span class="cm"># → 用默认</span>
+    <span class="kw">return</span> result
+
+<span class="cm"># 完成任务时恢复 cwd</span>
+<span class="kw">def</span> <span class="fn">_run_complete_task</span>(task_id: str):
+    result = complete_task(task_id)
+    wt_ctx[<span class="s">"path"</span>] = <span class="hl">None</span>                                   <span class="cm"># 恢复默认</span>
+    <span class="kw">return</span> result</pre>
+
+  <div class="diagram">认领前: wt_ctx["path"] = None       → bash/read/write 在项目根目录执行
+认领后: wt_ctx["path"] = ".worktrees/auth/"  → bash/read/write 在 auth/ 下执行
+完成后: wt_ctx["path"] = None       → 恢复默认</div>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> s17 vs s18 对比</h2>
+
+  <h3>新增了什么</h3>
+  <table>
+    <tr><th>类别</th><th>新增内容</th><th>为什么加</th></tr>
+    <tr><td><strong>校验</strong></td><td><code>validate_worktree_name()</code></td><td>防止路径穿越攻击和非法字符</td></tr>
+    <tr><td><strong>Git 执行器</strong></td><td><code>run_git()</code></td><td>统一封装 git 命令，带超时和输出截断</td></tr>
+    <tr><td><strong>Worktree 创建</strong></td><td><code>create_worktree()</code></td><td>核心——创建隔离目录 + 分支</td></tr>
+    <tr><td><strong>任务绑定</strong></td><td><code>bind_task_to_worktree()</code></td><td>告诉任务"你的工作区在哪"，不改状态</td></tr>
+    <tr><td><strong>变更检测</strong></td><td><code>_count_worktree_changes()</code></td><td>检查 worktree 里有没有未提交/未推送的改动</td></tr>
+    <tr><td><strong>安全删除</strong></td><td><code>remove_worktree()</code></td><td>有变更时默认拒绝删除，防误删</td></tr>
+    <tr><td><strong>保留审查</strong></td><td><code>keep_worktree()</code></td><td>留给人审的"软删除"</td></tr>
+    <tr><td><strong>事件日志</strong></td><td><code>log_event()</code> + <code>events.jsonl</code></td><td>所有操作可追溯</td></tr>
+    <tr><td><strong>Task 字段</strong></td><td><code>worktree: str | None</code></td><td>让任务能绑定到 worktree</td></tr>
+    <tr><td><strong>队友 cwd 切换</strong></td><td><code>wt_ctx</code> + <code>_wt_cwd()</code></td><td>认领任务后自动切到 worktree 目录</td></tr>
+  </table>
+
+  <h3>删除了什么</h3>
+  <table>
+    <tr><th>组件</th><th>说明</th></tr>
+    <tr><td><code>schedule_cron</code></td><td>s17 的定时任务系统被移除，s18 聚焦 worktree 隔离</td></tr>
+    <tr><td><code>list_crons</code></td><td rowspan="2">同上，cron 功能整组移除</td></tr>
+    <tr><td><code>cancel_cron</code></td><td></td></tr>
+  </table>
+
+  <h3>修改了什么</h3>
+  <table>
+    <tr><th>组件</th><th>s17</th><th>s18</th></tr>
+    <tr><td>Task 数据类</td><td>5 个字段</td><td><strong>+ worktree 字段</strong></td></tr>
+    <tr><td>队友 bash/read/write</td><td>始终在项目根目录</td><td><strong>认领后自动切到 worktree 目录</strong></td></tr>
+    <tr><td>队友 claim_task 时</td><td>只标记任务</td><td><strong>额外检查并设置 <code>wt_ctx["path"]</code></strong></td></tr>
+    <tr><td>队友 complete_task 时</td><td>只完成标记</td><td><strong>额外清空 <code>wt_ctx["path"]</code></strong></td></tr>
+    <tr><td>Lead 工具数量</td><td>14 个</td><td><strong>17 个</strong>（+3 worktree 工具）</td></tr>
+    <tr><td>提示词工具列表</td><td>含 <code>schedule_cron</code></td><td><strong>不含 cron，含 worktree 工具</strong></td></tr>
+  </table>
+</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> 常见困惑与 FAQ</h2>
+
+  <div class="callout">
+    <strong>Q：这不就是创了个文件夹吗？跟分支有什么关系？</strong>
+  </div>
+  <p><strong>A：既是文件夹也是分支。</strong> <code>git worktree add</code> 同时做了两件事：创建文件夹 <code>.worktrees/auth/</code> + 创建分支 <code>wt/auth</code>，并在这个文件夹里签出该分支。文件夹是工作区，里面签出的是独立分支。两者缺一不可。</p>
+
+  <div class="callout">
+    <strong>Q：每个 Agent 单独创一个分支？</strong>
+  </div>
+  <p><strong>A：对。</strong> 分支以 <code>wt/</code> 为命名空间前缀（如 <code>wt/auth</code>、<code>wt/ui</code>），所有操作都在 worktree 目录里，对应 <code>wt/</code> 分支。Lead 审查后合并到 <code>main</code>，然后删除 worktree 和分支。</p>
+
+  <div class="callout">
+    <strong>Q："多个工作台，不需要切换分支"是什么意思？</strong>
+  </div>
+  <p><strong>A：</strong>普通 git 你只有一个工作目录，<code>git checkout</code> 会替换所有文件。有 worktree 后，每个目录"锁定"一个分支——进 <code>auth/</code> 就是 <code>wt/auth</code>，进根目录就是 <code>main</code>，不需要 <code>git checkout</code> 切来切去。</p>
+
+  <div class="callout">
+    <strong>Q：<code>.worktrees/auth/</code> 在项目根目录里吗？它和 <code>src/</code> 是什么关系？</strong>
+  </div>
+  <p><strong>A：</strong>物理上 <code>.worktrees/auth/</code> 在项目根目录里面（<code>project/.worktrees/auth/</code>），但它是独立的工作区。<code>project/src/</code> 是 <code>main</code> 分支的内容，<code>.worktrees/auth/src/</code> 是 <code>wt/auth</code> 分支的内容，两者可以完全不同，互不干扰。</p>
+
+  <div class="callout">
+    <strong>Q：合并后 worktree 文件夹直接删了就行？代码会丢吗？</strong>
+  </div>
+  <p><strong>A：不会丢。</strong> 代码实际上存在 <code>.git/objects/</code> 里（commit 对象）。worktree 里的文件只是工作区副本。一旦 <code>git merge</code> 把 commit 合进了 <code>main</code>，内容就在 git 历史里了。删掉 worktree 文件夹不影响任何已提交的代码。</p>
+
+  <div class="callout">
+    <strong>Q：<code>stdout</code> 和 <code>stderr</code> 有什么区别？</strong>
+  </div>
+  <p><strong>A：</strong>这是 Linux 进程的两个输出通道。<code>stdout</code>（文件描述符 1）走正常输出，<code>stderr</code>（文件描述符 2）走错误/诊断信息。git 有些信息走 <code>stderr</code>（如 <code>git push</code> 的 "Everything up-to-date"），所以代码里 <code>r.stdout + r.stderr</code> 两个都拿。</p>
+
+  <div class="callout">
+    <strong>Q：<code>task_id</code> 还有不存在的情况吗？</strong>
+  </div>
+  <p><strong>A：有。</strong> 函数签名 <code>def create_worktree(name: str, task_id: str = "") -> str:</code> 中 <code>task_id</code> 默认是空字符串。不传就不绑定，只建 worktree 做实验用。传了就同时绑定到任务。</p>
+
+  <div class="callout">
+    <strong>Q：merge 的代码在哪？我没看到啊</strong>
+  </div>
+  <p><strong>A：没有实现。</strong> s18 只实现了 worktree 的创建、工作、安全回收。中间的审查（<code>git diff</code>）、合并（<code>git merge</code>）、推送（<code>git push</code>）需要 Lead 手动操作。这是合理的设计——自动合并代码风险太高。</p>
+
+  <div class="callout">
+    <strong>Q：<code>remove_worktree</code> 里的 <code>name</code> 一般是什么？哪来的？</strong>
+  </div>
+  <p><strong>A：由外部传入的。</strong> 可以是手动指定的字符串（<code>"auth"</code>、<code>"ui"</code>），也可以来自任务的 <code>task.worktree</code> 字段，或者来自事件日志的批量清理。不是代码自动生成的。</p>
+</div>
+
+<!-- ==================== 11 ==================== -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> Python 语法小抄</h2>
+
+  <table>
+    <tr><th>语法/概念</th><th>解释</th><th>位置</th></tr>
+    <tr><td><code>Path / "subdir"</code></td><td><code>pathlib</code> 路径拼接，<code>/</code> 运算符被重载为路径连接</td><td>L145</td></tr>
+    <tr><td><code>re.compile(r'...')</code></td><td>预编译正则表达式，提高多次 match 的性能</td><td>L148</td></tr>
+    <tr><td><code>subprocess.run(...)</code></td><td>执行外部命令，<code>capture_output=True</code> 捕获输出</td><td>L162, L203, L206</td></tr>
+    <tr><td><code>timeout=30</code></td><td>子进程超时保护，防止进程挂起</td><td>L162</td></tr>
+    <tr><td><code>json.dumps(event)</code></td><td>将 Python 字典序列化为 JSON 字符串</td><td>L174</td></tr>
+    <tr><td><code>open(file, "a")</code></td><td>append 模式写入，不会覆盖已有内容</td><td>L173</td></tr>
+    <tr><td><code>"\033[33m...\033[0m"</code></td><td>ANSI 转义码——<code>33</code> 黄色，<code>36</code> 青色，<code>0</code> 重置颜色</td><td>L189, L197, L237</td></tr>
+    <tr><td><code>@{push}</code></td><td>Git 引用：上游分支最近一次 push 的位置</td><td>L208</td></tr>
+    <tr><td><code>--porcelain</code></td><td>Git 的机器可读输出格式（稳定、可解析）</td><td>L203</td></tr>
+    <tr><td><code>splitlines()</code></td><td>按行分割，返回行列表，自动处理各种换行符</td><td>L204, L208</td></tr>
+    <tr><td><code>str | None</code></td><td>类型注解——返回值可以是字符串或 None</td><td>L150</td></tr>
+    <tr><td><code>tuple[bool, str]</code></td><td>类型注解——返回 (布尔值, 字符串) 元组</td><td>L160</td></tr>
+    <tr><td><code>list comprehension</code></td><td>列表推导式：<code>[expr for x in iterable if cond]</code></td><td>L204, L208</td></tr>
+    <tr><td><code>mkdir(exist_ok=True)</code></td><td>创建目录，已存在也不报错（类似 <code>mkdir -p</code>）</td><td>L146</td></tr>
+  </table>
+
+  <h3>常见代码 Bug（值得注意）</h3>
+  <table>
+    <tr><th>问题</th><th>说明</th></tr>
+    <tr><td><code>VALID_WT_NAME = re.compile(r'^[aA-Za-z0-9._-]{1, 64}$')</code></td><td>正则中 <code>[aA-Za-z]</code> 的 <code>a</code> 是冗余的（<code>A-Z</code> 已覆盖小写），但不影响功能</td></tr>
+    <tr><td><code>fiels</code> 拼写错误</td><td>变量名应是 <code>files</code>，代码中有一处写成了 <code>fiels</code>（已修复版本改为 <code>files</code>）</td></tr>
+    <tr><td><code>"is not avalid"</code> 缺空格</td><td>错误消息应写作 <code>"is not a valid"</code></td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
