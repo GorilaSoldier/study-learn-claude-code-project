@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s19 MCP Tools - 复习笔记</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #7c3aed 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  .callout.teal { background: #ccfbf1; border-color: #0d9488; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s19 · MCP Tools（外接工具，标准协议）</h1>
+  <p class="subtitle">外部服务通过标准协议变成 Agent 的工具 — 发现、组装、调用，Agent 不需要知道工具是谁写的</p>
+  <span class="badge">基于问答整理 · ~835 LOC · 23 个工具（18 内置 + 5 MCP） · MCPClient · assemble_tool_pool</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">章节主旨</a></li>
+    <li><a href="#s2">最小心智模型</a></li>
+    <li><a href="#s3">MCP 是什么：外部服务，标准协议</a></li>
+    <li><a href="#s4">MCPClient 类详解</a></li>
+    <li><a href="#s5">Mock 服务器工厂</a></li>
+    <li><a href="#s6">connect_mcp — 连接与发现</a></li>
+    <li><a href="#s7">assemble_tool_pool — 动态工具池组装</a></li>
+    <li><a href="#s8">闭包陷阱深度解析</a></li>
+    <li><a href="#s9">lambda 语法拆解</a></li>
+    <li><a href="#s10">动态工具池 vs 固定工具池</a></li>
+    <li><a href="#s11">s18 vs s19 对比</a></li>
+    <li><a href="#s12">常见困惑与 FAQ</a></li>
+    <li><a href="#s13">Python 语法小抄</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1 ==================== -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 章节主旨</h2>
+  <div class="callout green">
+    <strong>核心一句话：</strong>通过 MCP 标准协议，让 Agent 能<strong>动态发现和调用外部服务</strong>提供的工具，而不需要自己手写每个工具的实现。
+  </div>
+  <p><strong>解决了什么问题：</strong>s01 到 s18，Agent 的所有工具都是手写的——bash、read_file、write_file、create_task、spawn_teammate、create_worktree……每个工具的定义和执行逻辑都是硬编码在代码里的。但真实世界中有大量外部服务（Jira API、GitHub API、部署系统、Notion 知识库），不可能为每个都手写工具代码。</p>
+  <p><strong>解决方案：</strong>MCP（Model Context Protocol）——一个标准化协议，外部服务只要实现它，Agent 就能通过 <code>connect_mcp</code> 发现工具，通过 <code>assemble_tool_pool</code> 把 MCP 工具和内置工具混在一起用。</p>
+
+  <div class="callout teal">
+    <strong>课程原话：</strong>"外接工具, 标准协议" — 发现、组装、调用，Agent 不需要知道工具是谁写的。
+  </div>
+
+  <h3>核心思想转变</h3>
+  <div class="diagram">s01-s18: 内置工具全部手写，工具池固定不变
+s19:     内置工具 + MCP 工具动态组装，工具池可以扩展
+         
+         connect_mcp("docs")   → MCPClient 发现 2 个工具
+         connect_mcp("deploy") → MCPClient 发现 2 个工具
+         assemble_tool_pool()  → [bash, read_file, ..., 
+                                   mcp__docs__search, 
+                                   mcp__docs__get_version,
+                                   mcp__deploy__trigger,
+                                   mcp__deploy__status]</div>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 最小心智模型</h2>
+
+  <div class="diagram">┌─────────────────────────────────────────────────────────┐
+│  MCP 插件系统数据流                                       │
+│                                                          │
+│  阶段 1: 程序启动                                         │
+│  MOCK_SERVERS = {"docs": _mock_server_docs,               │
+│                  "deploy": _mock_server_deploy}           │
+│  mcp_clients = {}  (空字典，还没有连接任何服务器)          │
+│                                                          │
+│  阶段 2: connect_mcp("docs")                              │
+│    → 调用 _mock_server_docs() 工厂函数                    │
+│    → 创建 MCPClient("docs") 实例                          │
+│    → 注册 2 个工具: search, get_version                   │
+│    → 存入 mcp_clients["docs"]                             │
+│                                                          │
+│  阶段 3: assemble_tool_pool()                             │
+│    → 遍历 mcp_clients                                     │
+│    → 为每个 MCP 工具创建 lambda 桥接函数                  │
+│    → 返回 (tools, handlers)                               │
+│    → tools: [bash, ..., mcp__docs__search, ...]           │
+│                                                          │
+│  阶段 4: LLM 调用 mcp__docs__search(query="python")       │
+│    → handler = handlers["mcp__docs__search"]              │
+│    → handler(**{"query": "python"})                       │
+│    → docs_client.call_tool("search", {"query": "python"}) │
+│    → 返回 "[docs] Found 3 results for 'python'"          │
+└─────────────────────────────────────────────────────────┘</div>
+
+  <h3>3 个核心概念</h3>
+  <table>
+    <tr><th>概念</th><th>作用</th><th>代码对应</th></tr>
+    <tr><td><strong>MCPClient</strong></td><td>Agent 端的客户端，连接 server、发现工具、调用工具</td><td>L542-559</td></tr>
+    <tr><td><strong>connect_mcp</strong></td><td>连接外部 MCP 服务器，发现其提供的工具列表</td><td>L614-635</td></tr>
+    <tr><td><strong>assemble_tool_pool</strong></td><td>把内置工具 + 所有已连接的 MCP 工具组装成一个工具池</td><td>L637-657</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> MCP 是什么：外部服务，标准协议</h2>
+
+  <div class="callout purple">
+    <strong>一句话：</strong>MCP（Model Context Protocol）是一个标准化协议，让不同的外部服务把自己的能力以"工具"的形式暴露给 LLM 调用。
+  </div>
+
+  <h3>内置工具 vs MCP 工具</h3>
+  <table>
+    <tr><th>维度</th><th>内置工具</th><th>MCP 工具</th></tr>
+    <tr><td><strong>谁写的</strong></td><td>Agent 开发者手写</td><td>外部服务提供者实现</td></tr>
+    <tr><td><strong>例子</strong></td><td>bash、read_file、write_file</td><td>GitHub 的 create_pr、数据库的 query</td></tr>
+    <tr><td><strong>存在形式</strong></td><td>硬编码在代码里</td><td>通过 MCP 协议动态发现</td></tr>
+    <tr><td><strong>工具池</strong></td><td>固定不变</td><td>可扩展——连上新服务器就加新工具</td></tr>
+  </table>
+
+  <div class="diagram">┌─────────────────────────────────────────────┐
+│              LLM Agent (s19)                  │
+│                                               │
+│  内置工具: bash, read_file, write_file...     │
+│           ← Agent 自己写的                    │
+│                                               │
+│  MCP 工具:                                    │
+│    mcp__docs__search    ─────────────────┐    │
+│    mcp__deploy__trigger ─────────────────┤    │
+│    mcp__deploy__status  ─────────────────┤    │
+│           ← 外部服务通过 MCP 协议暴露的   │    │
+└───────────────────────────────────────────┼────┘
+                                            │
+                  通过 MCP 协议连接          │
+                                            │
+              ┌──────────────┐  ┌──────────────┐
+              │ docs 服务器   │  │ deploy 服务器 │
+              │ (文档服务)    │  │ (部署服务)    │
+              │ search        │  │ trigger      │
+              │ get_version   │  │ status       │
+              └──────────────┘  └──────────────┘</div>
+
+  <h3>真实世界中 MCP 服务器的例子</h3>
+  <ul>
+    <li><strong>GitHub MCP</strong> → <code>create_pr</code>、<code>list_issues</code>、<code>review_code</code></li>
+    <li><strong>数据库 MCP</strong> → <code>query</code>、<code>run_migration</code>、<code>list_tables</code></li>
+    <li><strong>Slack MCP</strong> → <code>send_message</code>、<code>list_channels</code>、<code>create_channel</code></li>
+    <li><strong>Jira MCP</strong> → <code>create_issue</code>、<code>search_issues</code></li>
+  </ul>
+
+  <div class="callout">
+    <strong>教学版 vs 真实版：</strong>教学版用 Python 函数 mock 了 MCP 服务器的行为（没有网络通信）。真实 MCP 通过 stdio 子进程或 HTTP 与远程服务器通信，用 JSON-RPC 格式收发请求。Mock 的好处是不依赖外部服务就能跑通流程。
+  </div>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> MCPClient 类详解</h2>
+
+  <pre><span class="kw">class</span> <span class="fn">MCPClient</span>:
+    <span class="s">"""Discovers and calls tools on an MCP server (mock for teaching)."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="hl">self</span>, name: str):
+        self.name = name
+        self.tools: <span class="tp">list[dict]</span> = []
+        self._handlers: <span class="tp">dict[str, callable]</span> = {}
+
+    <span class="kw">def</span> <span class="fn">register</span>(self, tool_defs: <span class="tp">list[dict]</span>,
+                  handlers: <span class="tp">dict[str, callable]</span>):
+        self.tools = tool_defs        <span class="cm"># 工具定义（给 LLM 看的 schema）</span>
+        self._handlers = handlers     <span class="cm"># 处理函数（给代码执行的逻辑）</span>
+
+    <span class="kw">def</span> <span class="fn">call_tool</span>(self, tool_name: str, args: dict) -> str:
+        handler = self._handlers.get(tool_name)
+        <span class="kw">if not</span> handler:
+            <span class="kw">return</span> <span class="s">f"MCP error: unknown tool '{tool_name}'"</span>
+        <span class="kw">try</span>:
+            <span class="kw">return</span> handler(<span class="hl">**args</span>)       <span class="cm"># 字典解包成关键字参数</span>
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> e:
+            <span class="kw">return</span> <span class="s">f"MCP error: {e}"</span></pre>
+
+  <h3>字段说明</h3>
+  <table>
+    <tr><th>字段</th><th>类型</th><th>含义</th></tr>
+    <tr><td><code>self.name</code></td><td><code>str</code></td><td>服务器名字，如 <code>"docs"</code>、<code>"deploy"</code></td></tr>
+    <tr><td><code>self.tools</code></td><td><code>list[dict]</code></td><td>工具定义列表，格式和 Anthropic API 的 <code>tools</code> 参数一致</td></tr>
+    <tr><td><code>self._handlers</code></td><td><code>dict[str, callable]</code></td><td>工具名 → 处理函数，收到 LLM 调用请求时查这个字典来执行</td></tr>
+  </table>
+
+  <h3><code>callable</code> 类型注解</h3>
+  <p><code>dict[str, callable]</code> 的意思是：字典的键是字符串，值是"任意可调用对象"（函数、lambda、实现了 <code>__call__</code> 的类实例等）。它只是一个类型注解（文档作用），不影响运行。</p>
+
+  <h3><code>handler(**args)</code> 拆解</h3>
+  <table>
+    <tr><th>步骤</th><th>表达式</th><th>结果</th></tr>
+    <tr><td>1</td><td>假设 <code>args = {"query": "python"}</code></td><td>—</td></tr>
+    <tr><td>2</td><td><code>handler(**args)</code></td><td>等价于 <code>handler(query="python")</code></td></tr>
+    <tr><td>3</td><td>实际 handler 是 <code>lambda query: ...</code></td><td>参数 <code>query</code> 拿到 <code>"python"</code></td></tr>
+  </table>
+
+  <h3>register() 是一次性注册</h3>
+  <p><code>self.tools = tool_defs</code> 是<strong>直接替换</strong>，不是 <code>extend</code> 追加。重复调用 <code>register</code> 会覆盖之前的全部工具。</p>
+
+  <h3>call_tool 的三层保护</h3>
+  <ol>
+    <li><strong>工具不存在</strong> → <code>dict.get()</code> 返回 <code>None</code> → 友好错误信息</li>
+    <li><strong>参数正确</strong> → <code>handler(**args)</code> 正常执行</li>
+    <li><strong>执行异常</strong> → <code>try/except</code> 兜底，返回错误字符串，不崩溃</li>
+  </ol>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> Mock 服务器工厂</h2>
+
+  <h3>全局变量与辅助函数</h3>
+  <pre>mcp_clients: <span class="tp">dict[str, MCPClient]</span> = {}   <span class="cm"># 已连接的 MCP 服务器缓存</span>
+_DISALLOWED_CHARS = re.<span class="fn">compile</span>(r<span class="s">'[^a-zA-Z0-9_-]'</span>)
+
+<span class="kw">def</span> <span class="fn">normalize_mcp_name</span>(name: str) -> str:
+    <span class="s">"""Replace non [a-zA-Z0-9_-] with underscore."""</span>
+    <span class="kw">return</span> _DISALLOWED_CHARS.sub(<span class="s">'_'</span>, name)</pre>
+
+  <table>
+    <tr><th>代码</th><th>解释</th></tr>
+    <tr><td><code>mcp_clients</code></td><td>全局字典，缓存已连接的 MCP 客户端。键是服务器名，值是 <code>MCPClient</code> 实例。既防重复连接，又给 <code>assemble_tool_pool</code> 提供数据源</td></tr>
+    <tr><td><code>normalize_mcp_name</code></td><td>把所有非 <code>a-zA-Z0-9_-</code> 的字符替换成下划线。如 <code>"my-server@v2"</code> → <code>"my-server_v2"</code>，防止工具名中包含特殊字符导致 API 报错</td></tr>
+  </table>
+
+  <h3>_mock_server_docs — 文档服务器</h3>
+  <pre><span class="kw">def</span> <span class="fn">_mock_server_docs</span>():
+    client = MCPClient(<span class="s">"docs"</span>)
+    client.<span class="fn">register</span>(
+        tool_defs=[
+            {<span class="s">"name"</span>: <span class="s">"search"</span>, <span class="s">"description"</span>: <span class="s">"Search documentation. (readOnly)"</span>,
+             <span class="s">"inputSchema"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>,
+                             <span class="s">"properties"</span>: {<span class="s">"query"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+                             <span class="s">"required"</span>: [<span class="s">"query"</span>]}},
+            {<span class="s">"name"</span>: <span class="s">"get_version"</span>, <span class="s">"description"</span>: <span class="s">"Get API version. (readOnly)"</span>,
+             <span class="s">"inputSchema"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>, <span class="s">"properties"</span>: {},
+                             <span class="s">"required"</span>: []}},
+        ],
+        handlers={
+            <span class="s">"search"</span>: <span class="kw">lambda</span> query: <span class="s">f"[docs] Found 3 results for '{query}'"</span>,
+            <span class="s">"get_version"</span>: <span class="kw">lambda</span>: <span class="s">"[docs] API v2.1.0"</span>,
+        })
+    <span class="kw">return</span> client</pre>
+
+  <table>
+    <tr><th>工具名</th><th>功能</th><th>参数</th><th>标注</th></tr>
+    <tr><td><code>search</code></td><td>搜文档</td><td><code>query: string</code></td><td><code>(readOnly)</code></td></tr>
+    <tr><td><code>get_version</code></td><td>获取 API 版本</td><td>无参数</td><td><code>(readOnly)</code></td></tr>
+  </table>
+
+  <h3>_mock_server_deploy — 部署服务器</h3>
+  <pre><span class="kw">def</span> <span class="fn">_mock_server_deploy</span>():
+    client = MCPClient(<span class="s">"deploy"</span>)
+    client.<span class="fn">register</span>(
+        tool_defs=[
+            {<span class="s">"name"</span>: <span class="s">"trigger"</span>,
+             <span class="s">"description"</span>: <span class="s">"Trigger a deployment. (destructive)"</span>,
+             <span class="s">"inputSchema"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>,
+                             <span class="s">"properties"</span>: {<span class="s">"service"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+                             <span class="s">"required"</span>: [<span class="s">"service"</span>]}},
+            {<span class="s">"name"</span>: <span class="s">"status"</span>, <span class="s">"description"</span>: <span class="s">"Check deployment status. (readOnly)"</span>,
+             <span class="s">"inputSchema"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>,
+                             <span class="s">"properties"</span>: {<span class="s">"service"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+                             <span class="s">"required"</span>: [<span class="s">"service"</span>]}},
+        ],
+        handlers={
+            <span class="s">"trigger"</span>: <span class="kw">lambda</span> service: <span class="s">f"[deploy] Triggered: {service}"</span>,
+            <span class="s">"status"</span>: <span class="kw">lambda</span> service: <span class="s">f"[deploy] {service}: running (v1.4.2)"</span>,
+        })
+    <span class="kw">return</span> client</pre>
+
+  <table>
+    <tr><th>工具名</th><th>功能</th><th>参数</th><th>标注</th></tr>
+    <tr><td><code>trigger</code></td><td>触发部署</td><td><code>service: string</code></td><td><code>(destructive)</code> 破坏性</td></tr>
+    <tr><td><code>status</code></td><td>检查部署状态</td><td><code>service: string</code></td><td><code>(readOnly)</code></td></tr>
+  </table>
+
+  <h3>MOCK_SERVERS 注册表</h3>
+  <pre>MOCK_SERVERS = {
+    <span class="s">"docs"</span>: _mock_server_docs,      <span class="cm"># 存的是函数本身，不是调用结果</span>
+    <span class="s">"deploy"</span>: _mock_server_deploy,
+}</pre>
+  <p>这是一个<strong>工厂字典</strong>——值不是 <code>MCPClient</code> 实例，而是<strong>创建实例的函数</strong>。每次调用工厂函数（如 <code>_mock_server_docs()</code>）都创建一个全新的 <code>MCPClient</code> 实例。想加新服务器只需要往这个字典加一条。</p>
+
+  <div class="callout orange">
+    <strong>教学版的固定返回：</strong>Mock 服务器返回的是假结果，比如 <code>"[docs] Found 3 results for 'python'"</code>。它不会真的查文档——只是模拟"流程能跑通"。就像驾校模拟器，教你流程，不真的上路。
+  </div>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> connect_mcp — 连接与发现</h2>
+
+  <pre><span class="kw">def</span> <span class="fn">connect_mcp</span>(name: str) -> str:
+    <span class="kw">if</span> name <span class="op">in</span> mcp_clients:                        <span class="cm"># ① 防重复连接</span>
+        <span class="kw">return</span> <span class="s">f"MCP server '{name}' already connected"</span>
+    factory = MOCK_SERVERS.get(name)              <span class="cm"># ② 查工厂函数</span>
+    <span class="kw">if not</span> factory:
+        available = <span class="s">", "</span>.join(MOCK_SERVERS.keys())
+        <span class="kw">return</span> <span class="s">f"Unknown server '{name}'. Available: {available}"</span>
+    mcp_client = factory()                        <span class="cm"># ③ 创建客户端（工厂模式）</span>
+    mcp_clients[name] = mcp_client                <span class="cm"># ④ 存入全局缓存</span>
+    tool_names = [t[<span class="s">"name"</span>] <span class="kw">for</span> t <span class="op">in</span> mcp_client.tools]
+    <span class="fn">print</span>(<span class="s">f"  \033[31m[mcp] connected: {name} → {tool_names}\033[0m"</span>)
+    <span class="kw">return</span> (f"Connected to MCP server '{name}'. "
+            f"Discovered {len(mcp_client.tools)} tools: {', '.join(tool_names)}")</pre>
+
+  <div class="diagram">┌─────────────────────────────────────────────┐
+│  connect_mcp 流程图                           │
+│                                               │
+│  输入: name = "docs"                          │
+│                                               │
+│  ┌─ 已连接过？ ──→ "already connected"        │
+│  │                                            │
+│  ├─ 有工厂函数？ ──→ "Unknown server"          │
+│  │                                            │
+│  └─ 创建客户端 → 存入缓存 → 打印日志 → 返回   │
+│                                               │
+│  每个服务器只创建一次 MCPClient 实例           │
+│  mcp_clients 字典做了缓存                      │
+└─────────────────────────────────────────────┘</div>
+
+  <table>
+    <tr><th>步骤</th><th>代码</th><th>作用</th></tr>
+    <tr><td>①</td><td><code>if name in mcp_clients</code></td><td>防重复连接——已存在就直接返回</td></tr>
+    <tr><td>②</td><td><code>MOCK_SERVERS.get(name)</code></td><td>查找工厂函数，找不到给友好提示（列出可用服务器）</td></tr>
+    <tr><td>③</td><td><code>factory()</code></td><td>调用工厂函数，创建新的 MCPClient 实例（此时 register 已完成）</td></tr>
+    <tr><td>④</td><td><code>mcp_clients[name] = mcp_client</code></td><td>存入全局缓存，供后续 assemble_tool_pool 遍历</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么需要工厂函数？</strong>封装和隔离。如果不使用工厂函数，<code>connect_mcp</code> 里就要写 <code>if name == "docs": client = MCPClient(...); client.register(...)</code>，每加一个服务器就多一段 elif，函数会变得臃肿。工厂函数把"每个服务器怎么建"的逻辑拆分到各自的函数里。
+  </div>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> assemble_tool_pool — 动态工具池组装</h2>
+
+  <p><strong>这是整个 MCP 系统的核心函数。</strong>它把"内置工具"和"所有已连接的 MCP 工具"合并成一个统一的工具池，返回 <code>(tools列表, handlers字典)</code>。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">assemble_tool_pool</span>() -> <span class="tp">tuple[list[dict], dict]</span>:
+    <span class="s">"""Assemble builtin tools + all MCP tools into one pool."""</span>
+    tools = <span class="fn">list</span>(BUILTIN_TOOLS)                  <span class="cm"># ① 复制内置工具</span>
+    handlers = <span class="fn">dict</span>(BUILTIN_HANDLERS)            <span class="cm"># ② 复制内置处理器</span>
+
+    <span class="kw">for</span> server_name, mcp_client <span class="op">in</span> mcp_clients.items():
+        safe_server = <span class="fn">normalize_mcp_name</span>(server_name)  <span class="cm"># ③ 规范化服务器名</span>
+        <span class="kw">for</span> tool_def <span class="op">in</span> mcp_client.tools:
+            safe_tool = <span class="fn">normalize_mcp_name</span>(tool_def[<span class="s">"name"</span>])  <span class="cm"># ④ 规范化工具名</span>
+            prefixed = <span class="s">f"mcp__{safe_server}__{safe_tool}"</span>     <span class="cm"># ⑤ 加前缀</span>
+
+            tools.append({
+                <span class="s">"name"</span>: prefixed,
+                <span class="s">"description"</span>: tool_def.get(<span class="s">"description"</span>, <span class="s">""</span>),
+                <span class="s">"input_schema"</span>: tool_def.get(<span class="s">"inputSchema"</span>, {}),
+            })
+
+            handlers[prefixed] = (                    <span class="cm"># ⑥ 注册桥接 lambda</span>
+                <span class="kw">lambda</span> *, c=mcp_client, t=tool_def[<span class="s">"name"</span>], **kw:
+                c.<span class="fn">call_tool</span>(t, kw))
+
+    <span class="kw">return</span> tools, handlers</pre>
+
+  <h3>逐行拆解</h3>
+  <table>
+    <tr><th>行号</th><th>代码</th><th>作用</th></tr>
+    <tr><td>①</td><td><code>list(BUILTIN_TOOLS)</code></td><td>复制内置工具列表，防止后续 <code>.append()</code> 污染原始数据</td></tr>
+    <tr><td>②</td><td><code>dict(BUILTIN_HANDLERS)</code></td><td>复制内置处理器字典，同上</td></tr>
+    <tr><td>③</td><td><code>normalize_mcp_name(server_name)</code></td><td>规范化服务器名，如 <code>"my-server"</code> → <code>"my-server"</code>（不变）</td></tr>
+    <tr><td>④</td><td><code>normalize_mcp_name(tool_def["name"])</code></td><td>规范化工具名，如 <code>"search"</code> → <code>"search"</code></td></tr>
+    <tr><td>⑤</td><td><code>f"mcp__{safe_server}__{safe_tool}"</code></td><td>拼出带命名空间前缀的工具名，避免不同服务器的同名工具冲突</td></tr>
+    <tr><td>⑥</td><td><code>lambda *, c=..., t=..., **kw: c.call_tool(t, kw)</code></td><td>创建桥接 lambda——用默认参数快照当前值，解决闭包陷阱</td></tr>
+  </table>
+
+  <h3>为什么加 <code>mcp__</code> 前缀？</h3>
+  <ul>
+    <li><strong>防命名冲突</strong>：不同服务器的工具可能同名（比如 docs 和 deploy 都有 <code>status</code>），前缀让名字唯一</li>
+    <li><strong>可溯源</strong>：LLM 看到 <code>mcp__docs__search</code> 就知道这个工具来自 docs 服务器</li>
+  </ul>
+
+  <h3>键名映射问题</h3>
+  <p>MCP 工具定义用 <code>inputSchema</code>（驼峰），而 Anthropic API 用 <code>input_schema</code>（蛇形）。这里直接照搬 MCP 的键名到 <code>input_schema</code> 字段上——相当于做了重命名。</p>
+
+  <div class="callout green">
+    <strong>一句话总结 assemble_tool_pool：</strong>每次调用都重新读 <code>mcp_clients</code> 字典，把内置工具 + 当前所有已连接的 MCP 工具合并成一个新列表返回。不缓存，所以每次都是最新的。
+  </div>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> 闭包陷阱深度解析</h2>
+
+  <p><strong>问题：</strong>在循环中创建 lambda，lambda 里引用了循环变量，导致所有 lambda 都拿到循环结束后的最后一个值。</p>
+
+  <h3>错误示例</h3>
+  <pre><span class="cm"># ❌ 闭包陷阱 —— 所有 lambda 都返回 "deploy/status"</span>
+items = [(<span class="s">"docs"</span>, <span class="s">"search"</span>), (<span class="s">"deploy"</span>, <span class="s">"trigger"</span>)]
+handlers = {}
+
+<span class="kw">for</span> server, tool <span class="op">in</span> items:
+    handlers[f<span class="s">"tool_{tool}"</span>] = <span class="kw">lambda</span> **kw: <span class="s">f"{server}/{tool}"</span>
+
+<span class="fn">print</span>(handlers[<span class="s">"tool_search"</span>]())      <span class="cm"># ❌ "deploy/trigger" 而不是 "docs/search"</span>
+<span class="fn">print</span>(handlers[<span class="s">"tool_trigger"</span>]())    <span class="cm"># ❌ "deploy/trigger"</span></pre>
+
+  <h3>为什么？</h3>
+  <p>Python 闭包中的自由变量（没有默认值的变量引用）是<strong>延迟绑定</strong>的——lambda 里引用的不是"变量的值"，而是"变量名本身"。调用时才会去查这个变量名当前指向什么值。</p>
+
+  <div class="diagram">循环第1次: server = "docs", tool = "search"
+           创建 lambda，lambda 记录了"去查 server 和 tool 这两个变量名"
+           
+循环第2次: server = "deploy", tool = "trigger"
+           server 和 tool 的指向变了！
+           但之前创建的 lambda 仍然引用"server 和 tool 这两个变量名"
+           
+循环结束:  server → "deploy" (最后一个值)
+           tool → "trigger"  (最后一个值)
+
+调用任意 lambda:  去查 server → "deploy"
+                 去查 tool   → "trigger"</div>
+
+  <h3>正确写法：默认参数快照</h3>
+  <pre><span class="cm"># ✅ 正确：用默认参数把当前值"快照"进 lambda</span>
+<span class="kw">for</span> server, tool <span class="op">in</span> items:
+    handlers[f<span class="s">"tool_{tool}"</span>] = <span class="kw">lambda</span> *, s=server, t=tool: <span class="s">f"{s}/{t}"</span>
+    <span class="cm">#                ↑ 默认参数 s=server 在定义时求值，固定了当前值</span>
+
+<span class="fn">print</span>(handlers[<span class="s">"tool_search"</span>]())      <span class="cm"># ✅ "docs/search"</span>
+<span class="fn">print</span>(handlers[<span class="s">"tool_trigger"</span>]())    <span class="cm"># ✅ "deploy/trigger"</span></pre>
+
+  <h3>为什么默认参数能解决？</h3>
+  <p>Python 的默认参数在<strong>函数定义时</strong>求值（不是调用时）。所以 <code>s=server</code> 在循环的每次迭代的<strong>那一瞬间</strong>就把 <code>server</code> 的当前值复制到 <code>s</code> 里了，之后 <code>server</code> 怎么变都不影响 <code>s</code>。</p>
+
+  <table>
+    <tr><th>写法</th><th>server 是？</th><th>取值时机</th><th>结果</th></tr>
+    <tr><td><code>lambda: server</code></td><td>自由变量</td><td><strong>调用时</strong>查当前值</td><td>全部拿到最后一个</td></tr>
+    <tr><td><code>lambda s=server: s</code></td><td>默认参数</td><td><strong>定义时</strong>固定值</td><td>各自拿到自己的</td></tr>
+  </table>
+
+  <h3>代码中的实际应用</h3>
+  <pre>handlers[prefixed] = (
+    <span class="kw">lambda</span> *, c=mcp_client, t=tool_def[<span class="s">"name"</span>], **kw: c.call_tool(t, kw))
+<span class="cm">#            ↑ 默认参数          ↑ 默认参数        ↑ 收集剩余参数</span>
+<span class="cm">#     固定当前 mcp_client   固定当前工具名    透传给 call_tool</span></pre>
+
+  <div class="callout">
+    <strong>那为什么 Python 不修复这个行为？</strong>因为这不是 bug，是 feature。Python 的设计哲学是"一致性"——函数里的变量永远是调用时求值，不管是不是闭包。如果自动"快照"了，会破坏这种一致性，还会导致性能损失和向后兼容问题。绕过去的方法很简单（默认参数），所以 Python 选择不修复。
+  </div>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> lambda 语法拆解</h2>
+
+  <p>最核心也最令人困惑的一行：</p>
+
+  <pre>handlers[prefixed] = (
+    <span class="kw">lambda</span> *, c=mcp_client, t=tool_def[<span class="s">"name"</span>], **kw: c.call_tool(t, kw))</pre>
+
+  <h3>展开成 def</h3>
+  <pre><span class="cm"># 等价于：</span>
+<span class="kw">def</span> <span class="fn">_anonymous_handler</span>(*, c=mcp_client, t=tool_def[<span class="s">"name"</span>], **kw):
+    <span class="kw">return</span> c.call_tool(t, kw)</pre>
+
+  <h3>逐部分拆解</h3>
+  <table>
+    <tr><th>部分</th><th>含义</th></tr>
+    <tr><td><code>lambda</code></td><td>定义匿名函数的关键字</td></tr>
+    <tr><td><code>*</code></td><td>分隔符——后面的参数<strong>必须用关键字传入</strong>，不能用位置传入。如 <code>f(c=obj, t="search")</code> 而不是 <code>f(obj, "search")</code></td></tr>
+    <tr><td><code>c=mcp_client</code></td><td>默认参数——在 lambda 定义时把 <code>mcp_client</code> 的当前值固定下来（闭包快照）</td></tr>
+    <tr><td><code>t=tool_def["name"]</code></td><td>默认参数——在 lambda 定义时把工具名固定下来</td></tr>
+    <tr><td><code>**kw</code></td><td>收集所有剩余的关键字参数到一个字典里（如 <code>{"query": "python"}</code>）</td></tr>
+    <tr><td><code>c.call_tool(t, kw)</code></td><td>函数体——调用 <code>call_tool(tool_name, args_dict)</code></td></tr>
+  </table>
+
+  <h3>什么是"关键字传入"？没有 <code>*</code> 就不用关键字？</h3>
+  <pre><span class="cm"># 位置传入：按顺序填</span>
+f(<span class="num">1</span>, <span class="num">2</span>)            <span class="cm"># a=1, b=2</span>
+
+<span class="cm"># 关键字传入：指名道姓</span>
+f(a=<span class="num">1</span>, b=<span class="num">2</span>)        <span class="cm"># a=1, b=2</span>
+
+<span class="cm"># 有 *，位置传不行：</span>
+<span class="kw">def</span> <span class="fn">f</span>(*, a, b): ...
+f(<span class="num">1</span>, <span class="num">2</span>)             <span class="cm"># ❌ TypeError</span>
+f(a=<span class="num">1</span>, b=<span class="num">2</span>)         <span class="cm"># ✅ 正确</span></pre>
+
+  <p>代码中 <code>*</code> 的意思是：<code>c</code> 和 <code>t</code> 不能用位置传，必须用 <code>c=...</code>、<code>t=...</code> 这种方式。但实际调用中，调用方（Agent）只传 <code>handler(**{"query": "python"})</code>，<code>c</code> 和 <code>t</code> 用默认值，<code>query="python"</code> 被 <code>**kw</code> 吃掉。</p>
+
+  <p>加 <code>*</code> 是一种<strong>编码规范</strong>——告诉读代码的人："<code>c</code> 和 <code>t</code> 不是给外部调用者用的，是我内部固定的"。去掉 <code>*</code> 也能工作。</p>
+
+  <h3>完整的 <code>**dict</code> 解包和 <code>**kw</code> 打包往返</h3>
+  <pre><span class="cm"># 调用方（Agent）：</span>
+handler(<span class="hl">**</span>{<span class="s">"query"</span>: <span class="s">"python"</span>})
+<span class="cm"># 等价于 handler(query="python")</span>
+
+<span class="cm"># 进入 lambda：</span>
+<span class="kw">lambda</span> *, c=docs_client, t=<span class="s">"search"</span>, <span class="hl">**kw</span>: c.call_tool(t, kw)
+<span class="cm"># kw = {"query": "python"}  ← **kw 把 query="python" 重新打包成字典</span>
+
+<span class="cm"># 执行函数体：</span>
+c.call_tool(t, kw)
+<span class="cm"># → docs_client.call_tool("search", {"query": "python"})</span></pre>
+
+  <p>这一趟 <code>**dict</code> 解包 → 参数传递 → <code>**kw</code> 打包 看似多此一举，但好处是：<strong>这个 lambda 不关心参数具体叫什么名字、有多少个</strong>，任何参数都能原封不动地透传给 <code>call_tool</code>。它是个"万能适配器"。</p>
+</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> 动态工具池 vs 固定工具池</h2>
+
+  <p>s19 最大的架构变化：工具从固定不变的常量（<code>TOOLS</code>），变成了可以动态扩展的变量（<code>tools</code>）。</p>
+
+  <h3>s18 固定工具池</h3>
+  <pre><span class="cm"># 代码里写死的，永远不会变</span>
+TOOLS = [{<span class="s">"name"</span>: <span class="s">"bash"</span>, ...}, {<span class="s">"name"</span>: <span class="s">"read_file"</span>, ...}, ...]
+TOOL_HANDLERS = {<span class="s">"bash"</span>: run_bash, <span class="s">"read_file"</span>: run_read, ...}
+
+<span class="cm"># agent_loop 里直接引用常量</span>
+response = client.messages.create(tools=<span class="hl">TOOLS</span>)
+handler = <span class="hl">TOOL_HANDLERS</span>.get(block.name)</pre>
+
+  <h3>s19 动态工具池</h3>
+  <pre><span class="cm"># 每次调用 assemble_tool_pool() 都重新组装</span>
+tools, handlers = <span class="fn">assemble_tool_pool</span>()
+<span class="cm"># tools 可能包含: [bash, read_file, ..., mcp__docs__search, ...]</span>
+
+<span class="cm"># agent_loop 里引用局部变量</span>
+response = client.messages.create(tools=<span class="hl">tools</span>)
+handler = <span class="hl">handlers</span>.get(block.name)
+
+<span class="cm"># 在 connect_mcp 之后重新组装</span>
+<span class="kw">if</span> <span class="hl">connect_mcp</span> 被调用:
+    tools, handlers = <span class="fn">assemble_tool_pool</span>()  <span class="cm"># ← 新 MCP 工具加入</span>
+    system = <span class="fn">assemble_system_prompt</span>(context)  <span class="cm"># ← 通知 LLM 有新工具</span></pre>
+
+  <h3>为什么去掉了 prompt 缓存？</h3>
+  <p>s10-s18 用 prompt 缓存（<code>_last_context_key</code> / <code>_last_prompt</code>）避免重复序列化 system prompt。s19 去掉了，原因是：<code>connect_mcp</code> 之后工具池变化了，缓存中的上下文是旧的，继续用会导致 LLM 不知道新工具有哪些。</p>
+
+  <table>
+    <tr><th>方面</th><th>s18（固定）</th><th>s19（动态）</th></tr>
+    <tr><td>工具来源</td><td>全部手写 builtin</td><td>手写 + MCP 外部工具动态发现</td></tr>
+    <tr><td>工具池</td><td>固定 <code>TOOLS</code> 常量</td><td><code>assemble_tool_pool()</code> 动态组装</td></tr>
+    <tr><td>prompt 缓存</td><td>有（get_system_prompt 缓存）</td><td>无（每次重新生成）</td></tr>
+    <tr><td>agent_loop 刷新</td><td>不需要</td><td>connect_mcp 后重新组装 + 重新生成 prompt</td></tr>
+    <tr><td>命名空间</td><td>无</td><td><code>mcp__server__tool</code> 避免冲突</td></tr>
+  </table>
+</div>
+
+<!-- ==================== 11 ==================== -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> s18 vs s19 对比</h2>
+
+  <h3>新增内容</h3>
+  <table>
+    <tr><th>新增</th><th>位置</th><th>为什么加</th></tr>
+    <tr><td><code>MCPClient</code> 类</td><td>L542-559</td><td>模拟 MCP 客户端，封装工具发现和调用</td></tr>
+    <tr><td><code>normalize_mcp_name()</code></td><td>L561-562</td><td>规范化工具/服务器名，确保命名安全</td></tr>
+    <tr><td><code>_mock_server_docs() / _mock_server_deploy()</code></td><td>L567-607</td><td>两个模拟 MCP 服务器工厂，提供假工具用于教学</td></tr>
+    <tr><td><code>MOCK_SERVERS</code> 字典</td><td>L609-612</td><td>服务器名到工厂函数的映射表，可扩展</td></tr>
+    <tr><td><code>connect_mcp()</code></td><td>L614-635</td><td>连接服务器、发现工具、加入缓存</td></tr>
+    <tr><td><code>assemble_tool_pool()</code></td><td>L637-657</td><td><strong>核心函数：</strong>动态组装内置工具 + MCP 工具</td></tr>
+    <tr><td><code>BUILTIN_TOOLS / BUILTIN_HANDLERS</code></td><td>L681-789</td><td>原来叫 <code>TOOLS</code> / <code>TOOL_HANDLERS</code>，改名以区分"这是内置的"</td></tr>
+    <tr><td><code>connect_mcp</code> 工具定义 + handler</td><td>L765, L785</td><td>让 LLM 也能调用 connect_mcp</td></tr>
+  </table>
+
+  <h3>删除内容</h3>
+  <table>
+    <tr><th>删除</th><th>原位置 (s18)</th><th>为什么删</th></tr>
+    <tr><td><code>get_system_prompt()</code> 的 prompt 缓存</td><td>L277-285</td><td>connect_mcp 后工具池变化，缓存内容是旧的</td></tr>
+    <tr><td><code>run_bash</code> 的危险命令拦截</td><td>s18 L287-291</td><td>s19 没有保留，改为 safe_path 做路径安全</td></tr>
+  </table>
+
+  <h3>修改内容</h3>
+  <table>
+    <tr><th>组件</th><th>s18</th><th>s19</th><th>为什么改</th></tr>
+    <tr><td>工具来源</td><td>全部写死在 TOOLS</td><td>BUILTIN + MCP 动态发现</td><td>支持外部动态工具</td></tr>
+    <tr><td>agent_loop 工具</td><td>硬编码 <code>tools=TOOLS</code></td><td><code>assemble_tool_pool()</code> 动态获取</td><td>工具集会变，不能硬编码</td></tr>
+    <tr><td>agent_loop prompt</td><td>只开头生成一次</td><td>connect_mcp 后重新生成</td><td>MCP 连接后告知 LLM 新工具</td></tr>
+    <tr><td>Teammate 工具集</td><td>7 个（缺 complete_task）</td><td>8 个（+complete_task）</td><td>修复遗漏</td></tr>
+    <tr><td>Teammate cwd</td><td>无 worktree 支持</td><td>_wt_cwd() 自动切换</td><td>让 teammate 在 worktree 隔离环境工作</td></tr>
+    <tr><td>PROMPT_SECTIONS</td><td>不包含 MCP</td><td>包含 MCP 命名规则和已连接服务器</td><td>告知 LLM 新工具的命名方式</td></tr>
+  </table>
+
+  <h3>核心架构变化</h3>
+  <div class="diagram">s18 agent_loop:
+  get_system_prompt(context)     ← 有缓存
+  tools = TOOLS (固定常量)
+  handler = TOOL_HANDLERS.get()   ← 固定
+  ── 永远不会变 ──
+
+s19 agent_loop:
+  tools, handlers = assemble_tool_pool()  ← 动态组装！
+  system = assemble_system_prompt(context) ← 无缓存
+  if connect_mcp 被调用:
+    tools, handlers = assemble_tool_pool()  ← 重新组装！
+    system = assemble_system_prompt(context) ← 重新生成！
+  ── 每次 connect_mcp 都可能变 ──</div>
+</div>
+
+<!-- ==================== 12 ==================== -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> 常见困惑与 FAQ</h2>
+
+  <div class="callout">
+    <strong>Q：MCP 是"外部提供的"还是"Agent 自己写的"？</strong>
+  </div>
+  <p><strong>A：外部提供的。</strong> MCP 是一个标准化协议，让不同的外部服务（GitHub、数据库、Slack 等）把自己的能力以"工具"形式暴露给 LLM。Agent 不需要自己写这些工具，只需要连上对应的 MCP 服务器就能发现并使用。</p>
+
+  <div class="callout">
+    <strong>Q：mock 服务器返回固定字符串（如 <code>"[docs] Found 3 results for 'python'"</code>）是啥意思？</strong>
+  </div>
+  <p><strong>A：因为是 Mock（模拟），不做真正的事。</strong> 就像驾校模拟器——踩油门不会真的上路，只是显示速度变了。教学版只关心"流程能不能跑通"，不关心实际搜索结果。真实的 MCP 服务器会做真正的操作（查数据库、调 API 等）。</p>
+
+  <div class="callout">
+    <strong>Q：为什么只有 <code>docs</code> 和 <code>deploy</code> 两个 MCP 服务器？</strong>
+  </div>
+  <p><strong>A：这是教学 demo，不是完整产品。</strong> <code>MOCK_SERVERS</code> 字典就是一个注册表，想加多少就加多少。比如加一个数据库服务器：<code>"database": _mock_server_database</code>，然后定义 <code>_mock_server_database()</code> 工厂函数即可。扩展性就是这个系统的设计目标。</p>
+
+  <div class="callout">
+    <strong>Q：实际 MCP 也是把所有工具放在一个 list 里传给 LLM，不区分哪个是谁的吗？</strong>
+  </div>
+  <p><strong>A：对，一样。</strong> LLM 不关心工具"来自哪里"，它只看工具的 name + description 来决定用哪个。不同来源通过命名空间前缀 <code>mcp__{server}__{tool}</code> 区分。当 LLM 返回 <code>tool_use.name = "mcp__docs__search"</code> 时，代码通过前缀路由到对应的 MCPClient。</p>
+
+  <div class="callout">
+    <strong>Q：lambda 是只在 for 循环结束后才执行的吗？就只有 lambda 有这个特性？</strong>
+  </div>
+  <p><strong>A：对，函数体只在调用时才执行。</strong> for 循环里 <code>handlers.append(lambda: server)</code> 只是在"造函数、存起来"，不执行函数体。等 <code>handlers[0]()</code> 调用时才真正去查 <code>server</code> 的值。而且这不是 lambda 独有的，<code>def</code> 定义的函数也一样——所有函数都是定义时记录逻辑，调用时才执行。</p>
+
+  <div class="callout">
+    <strong>Q：<code>**{"query": "python"}</code> 解包变成 <code>query="python"</code>，然后 <code>**kw</code> 又变回 <code>{"query": "python"}</code>，多此一举？</strong>
+  </div>
+  <p><strong>A：不是多此一举。</strong> 这一层让 lambda 成为"万能适配器"——它不关心参数具体叫什么、有多少个，任何参数都能原封不动透传给 <code>call_tool</code>。如果 LLM 调用 <code>search(query="python", limit=10)</code>，<code>kw</code> 自动变成 <code>{"query": "python", "limit": 10}</code>，全部传下去。不需要为每个工具写不同的 lambda。</p>
+
+  <div class="callout">
+    <strong>Q：<code>mcp_clients</code> 是个全局字典，会不会不安全？</strong>
+  </div>
+  <p><strong>A：教学简化。</strong> 真实产品中 MCP 连接状态会有更好的管理方式（依赖注入、连接池等）。这里用全局字典是最简单的教学演示——<code>assemble_tool_pool</code> 需要遍历它，<code>connect_mcp</code> 需要写入它，全局字典让这两者共享数据最方便。</p>
+
+  <div class="callout">
+    <strong>Q：<code>connect_mcp</code> 也是工具，那 LLM 怎么知道有这个工具？</strong>
+  </div>
+  <p><strong>A：<code>connect_mcp</code> 在 <code>BUILTIN_TOOLS</code> 里定义了。</strong> 它和其他内置工具（bash、read_file 等）一样，一开始就在工具列表里。所以 LLM 一开始就知道可以用 <code>connect_mcp("docs")</code> 来连接 MCP 服务器。连接成功后，<code>assemble_tool_pool</code> 重新组装，新工具就加入了。</p>
+
+  <div class="callout">
+    <strong>Q：<code>callable</code> 在类型注解里是啥意思？</strong>
+  </div>
+  <p><strong>A：表示"任意可调用对象"。</strong> 也就是任何能写成 <code>xxx()</code> 形式的对象——普通函数、lambda、实现了 <code>__call__</code> 的类实例等。<code>dict[str, callable]</code> 意思是"键是字符串，值是函数/lambda 等可调用对象"。它只是个类型注解，不影响运行。</p>
+</div>
+
+<!-- ==================== 13 ==================== -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> Python 语法小抄</h2>
+
+  <table>
+    <tr><th>语法/概念</th><th>解释</th><th>位置</th></tr>
+    <tr><td><code>lambda *, c=x, **kw: ...</code></td><td><code>*</code> 强制后面的参数用关键字传入，<code>c=x</code> 是默认参数（定义时求值），<code>**kw</code> 收集剩余关键字参数</td><td>L632</td></tr>
+    <tr><td><code>handler(**args)</code></td><td><code>**dict</code> 解包——把字典拆成关键字参数。如 <code>{"query": "py"}</code> → <code>handler(query="py")</code></td><td>L554</td></tr>
+    <tr><td><code>re.compile(r'[^a-zA-Z0-9_-]')</code></td><td>编译正则，<code>[^...]</code> 表示"匹配不在这个集合中的字符"</td><td>L561</td></tr>
+    <tr><td><code>_DISALLOWED_CHARS.sub('_', name)</code></td><td>把所有匹配到的字符替换成下划线</td><td>L562</td></tr>
+    <tr><td><code>dict[str, callable]</code></td><td>类型注解——值是可调用对象（函数、lambda 等）</td><td>L546</td></tr>
+    <tr><td><code>f"mcp__{safe}__{tool}"</code></td><td>f-string 字符串插值，Python 3.6+</td><td>L645</td></tr>
+    <tr><td><code>list(...)</code> / <code>dict(...)</code></td><td>创建副本，避免修改原始数据（防御性拷贝）</td><td>L629-630</td></tr>
+    <tr><td><code>dict.get(key, default)</code></td><td>安全取值——key 不存在时返回 default 而不是抛 KeyError</td><td>L552, L646-647</td></tr>
+    <tr><td><code>\033[31m...\033[0m</code></td><td>ANSI 终端颜色——31 红色，32 绿色，33 黄色，36 青色，0 重置</td><td>L625</td></tr>
+    <tr><td><code>any(b.name == "x" for b in list)</code></td><td>生成器表达式 + any()——检查列表中是否有符合条件的元素</td><td>L822</td></tr>
+    <tr><td><code>try/except Exception as e</code></td><td>异常捕获，防止整个 agent_loop 崩溃</td><td>L800</td></tr>
+    <tr><td><code>tuple[list[dict], dict]</code></td><td>类型注解——返回(工具列表, 处理器字典)的元组</td><td>L638</td></tr>
+    <tr><td><code>str | None</code></td><td>类型注解——返回值可以是字符串或 None（Python 3.10+）</td><td>L560</td></tr>
+  </table>
+
+  <h3>常见代码 Bug（值得注意）</h3>
+  <table>
+    <tr><th>问题</th><th>说明</th></tr>
+    <tr><td><code>inputSchema</code> vs <code>input_schema</code></td><td>MCP 工具定义用驼峰 <code>inputSchema</code>，Anthropic API 用蛇形 <code>input_schema</code>。assemble_tool_pool 直接照搬 MCP 的键名到 API 的字段上——功能上没问题，但键名不一致可能造成困惑</td></tr>
+    <tr><td>lambda 闭包陷阱</td><td>循环中创建 lambda 引用循环变量，不加默认参数快照会导致所有 lambda 共享最后一个值</td></tr>
+    <tr><td><code>BUILTIN_TOOLS</code> 未在本文件定义</td><td>该变量在文件后面才定义（L681），但 <code>assemble_tool_pool</code> 在 L637 就引用了它。Python 允许在函数内引用后面定义的全局变量——只要函数在调用时该变量已定义即可。但如果有人把 <code>assemble_tool_pool</code> 在文件顶部调用就会出问题</td></tr>
+    <tr><td><code>dict[str, callable]</code> 中的 <code>callable</code></td><td><code>callable</code> 在类型注解里是"可调用对象"的意思，不是内置函数 <code>callable()</code>。Python 3.9 之前需要用 <code>Callable</code>（from typing import Callable），3.9+ 之后 <code>callable</code> 作为类型注解在某些上下文中可用</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
