@@ -17,7 +17,7 @@ import yaml
 
 try:
     import readline
-    readline.parse_and_bind('set bind-tty-special-chars off') # parse_and_bin 
+    readline.parse_and_bind('set bind-tty-special-chars off') # parse_and_bind是什么用法？
     READLINE_AVAILABLE = True
 except ImportError:
     READLINE_AVAILABLE = False
@@ -78,15 +78,15 @@ CURRENT_TODOS: list[dict] = []
 @dataclass
 class Task:
     id: str
-    subject: str  # 
+    subject: str  # subject是什么？在哪里使用？有什么用？
     description: str
     status: str
     owner: str | None
     blockedBy: list[str]
-    worktree: str | None
+    worktree: str | None = None
 
 def _task_path(task_id: str) -> Path:
-    return TASKS_DIR / f"{task_id}.json" # .json
+    return TASKS_DIR / f"{task_id}.json" # 为什么用json格式存路径？
 
 def create_task(subject: str, description: str = "",
                 blockedBy: list[str] | None = None) -> Task:
@@ -103,7 +103,7 @@ def save_task(task: Task):
     _task_path(task.id).write_text(json.dumps(asdict(task), indent=2))
 
 def load_task(task_id: str) -> Task:
-    return Task(**json.loads(_task_path(task_id).read_text())) # 区分解包
+    return Task(**json.loads(_task_path(task_id).read_text())) # 如何区分解包和装包？
 
 def list_tasks() -> list[Task]:
     return [Task(**json.loads(p.read_text()))
@@ -151,6 +151,7 @@ def complete_task(task_id: str) -> str:
     save_task(task)
     unblocked = [t.subject for t in list_tasks()
                 if t.status == "pending" and t.blockedBy and can_start(t.id)]
+    msg = f"Completed {task.id} ({task.subject})"
     print(f"  \033[32m[complete] {task.subject} ✓\033[0m")
     if unblocked:
         msg += f"\nUnblocked: {', '.join(unblocked)}"
@@ -167,7 +168,7 @@ def validate_worktree_name(name: str) -> str | None:
     if not name:
         return "Worktree name cannot be empty"
     if name in (".", ".."):
-        return f"'{name}' is not a valid worktree name" # '{name}' 和 {name}
+        return f"'{name}' is not a valid worktree name" # '{name}' 和 {name}有什么区别？
     if not VALID_WT_NAME.match(name):
         return (f"Invalid worktree name '{name}': "
         "Only letters, numbers, underscores, and hyphens are allowed.")
@@ -184,8 +185,8 @@ def run_git(args: list[str]) -> tuple[bool, str]:
 
 def log_event(event_type: str, worktree_name: str, task_id: str = ""):
     event = {"type": event_type, "worktree": worktree_name,
-             "task": task_id, "ts": time.time()}
-    events_file = WORKTREES_DIR / "events.json"
+             "task_id": task_id, "ts": time.time()}
+    events_file = WORKTREES_DIR / "events.jsonl"
     with open(events_file, "a") as f:
         f.write(json.dumps(event) + "\n")     
 
@@ -269,7 +270,7 @@ def _parse_frontmatter(text: str) -> tuple[dict, str]:
     if len(parts) < 3:
         return {}, text
     try:
-        meta = yaml.safe_load(parts[1]) or {} # yaml
+        meta = yaml.safe_load(parts[1]) or {} # meta是什么？为什么这里用yaml格式保存？
     except yaml.YAMLError:  
         meta = {}
     return meta, parts[2].strip()
@@ -285,7 +286,7 @@ def scan_skills():
         if not manifest.exists():
             continue
         raw = manifest.read_text()
-        meta, _ = _parse_frontmatter(raw) # skill格式
+        meta, _ = _parse_frontmatter(raw) # skill格式是怎样的？
         name = meta.get("name", directory.name)        # directory.name 是固定格式？
         desc = meta.get("description", raw.split("\n")[0].lstrip("#").strip())
         SKILL_REGISTRY[name] = {
@@ -336,6 +337,8 @@ def assemble_system_prompt(context: dict) -> str:
     sections.append(f"Current time: {datetime.now().isoformat(timespec='seconds')}")
     sections.append("Skills catalog:\n" + list_skills() +
                     "\nUse load_skill(name) when a skill is relevant.")
+    if context.get("memories"):
+        sections.append(f"Relevant memories:\n{context['memories']}")
     mcp_names = list(mcp_clients.keys())
     if mcp_names:
         sections.append(f"Connected MCP servers: {', '.join(mcp_names)}")
@@ -348,7 +351,7 @@ def safe_path(p: str, cwd: Path = None) -> Path:
     # powerful on purpose and is controlled by the permission hook instead.
     base = cwd or WORKDIR
     path = (base / p).resolve()
-    if not path.is_relative_to(base): # is_relative_to 用法
+    if not path.is_relative_to(base): # is_relative_to是什么用法？
         raise ValueError(f"Path escapes workspace: {p}")
     return path
 
@@ -366,7 +369,7 @@ def run_read(path: str, limit: int | None = None, offset: int = 0, cwd: Path = N
     try:
         lines = safe_path(path, cwd).read_text().splitlines()
         offset = max(int(offset or 0), 0)
-        limit = int(limit) if limit is not None else None # 为什么两遍int？
+        limit = int(limit) if limit is not None else None # 为什么两遍int？limit传入的不就是int格式吗？
         lines = lines[offset:]
         if limit is not None and limit < len(lines):
             lines = lines[:limit] + [f"... ({len(lines) - limit} more lines)"]
@@ -375,7 +378,7 @@ def run_read(path: str, limit: int | None = None, offset: int = 0, cwd: Path = N
         return f"Error: {e}"
 
 
-def run_write(path: str, content: str, cwd: Path=None) -> str: # cwd 代表
+def run_write(path: str, content: str, cwd: Path=None) -> str: # cwd 代表什么？
     try:
         fp = safe_path(path, cwd)
         fp.parent.mkdir(parents=True, exist_ok=True)
@@ -461,7 +464,7 @@ class MessageBus:
         with open(inbox, "a") as f:
             f.write(json.dumps(msg) + "\n")
         terminal_print(f"  \033[33m[bus] {from_agent} → {to_agent}: "
-                       f"({msg_type}) {content[:50]}\033[0m")      # terminal_print 和 print 区别
+                       f"({msg_type}) {content[:50]}\033[0m")      # terminal_print 和 print 的区别？
     
     def read_inbox(self, agent: str) -> list[dict]:
         inbox = MAILBOX_DIR / f"{agent}.jsonl"
@@ -506,16 +509,12 @@ def consume_lead_inbox(route_protocol=True) -> list[dict]:
     msgs = BUS.read_inbox("lead")
     if route_protocol:
         for msg in msgs:
-            meta = msg.get("metadata", {})           # metadata装什么信息？
+            meta = msg.get("metadata", {})           # meta装什么信息？
             req_id = meta.get("request_id", "")
             msg_type = msg.get("type", "")  
             if req_id and msg_type.endswith("_response"):     # 队友回复以response结尾？
                 match_response(msg_type, req_id, meta.get("approve", False))
     return msgs
-
-BUS = MessageBus()
-active_teammates: dict[str, bool] = {}
-
 
 # ── Autonomous Agent ──
 IDLE_POLL_INTERVAL = 5
@@ -595,7 +594,7 @@ def spawn_teammate_thread(name: str, role: str, prompt: str) -> str:
             # Once a task with a worktree is claimed, all teammate file tools
             # transparently run inside that isolated directory.
             p = wt_ctx["path"]
-            return Path(p) if p else None  #    Path(p) 是什么？
+            return Path(p) if p else None  #    Path(p) 是什么？ Path()是什么用法？
 
         def _run_bash(command: str) -> str:
             return run_bash(command, cwd=_wt_cwd())
@@ -1096,6 +1095,7 @@ def compact_history(messages: list) -> list:
     print(f"  \033[36m[compact] transcript saved: {transcript}\033[0m")
     summary = summarize_history(messages)
     print(f"  \033[36m[compact] summary: {summary}\033[0m")
+    return [{"role": "user", "content": f"[Compact summary]\n\n{summary}"}]
 
 # 和compact_history有什么区别？
 def reactive_compact(messages: list) -> list:
@@ -1178,7 +1178,7 @@ background_lock = threading.Lock()
 
 def is_slow_operation(tool_name: str, tool_input: dict) -> bool:
     if tool_name != "bash":
-        return
+        return False
     command = tool_input.get("command", "").lower()
     slow_keywords = ["install", "build", "test", "deploy", "compile",
                                 "docker build", "pip install", "npm install",
@@ -1203,8 +1203,8 @@ def start_background_task(block, handlers: dict) -> str:
         result = call_tool_handler(handler, block.input, block.name)
         trigger_hooks("PostToolUse", block, result)
         with background_lock:
-            background_results[bg_id]["status"] = "completed"
-            background_results[bg_id]["result"] = str(result)
+            background_tasks[bg_id]["status"] = "completed"
+            background_results[bg_id] = str(result)
         
     with background_lock:
         background_tasks[bg_id] = {
@@ -1372,7 +1372,7 @@ def cancel_job(job_id: str) -> str:
     return f"Cancelld {job_id}"
 
 def cron_scheduler_loop():
-    with True:
+    while True:
         time.sleep(1)
         now = datetime.now()
         marker = now.strftime("%Y-%m-%d %H:%M")
@@ -1808,14 +1808,6 @@ def build_user_content(results: list[dict]) -> list[dict]:
         content.append({"type": "text", "text": note})
     return content
 
-def build_user_content(results: list[dict]) -> list[dict]:
-     # Tool results and completed background notifications are both returned to
-    # the model as user-side content, matching the tool_result feedback loop.
-    content = list(results)
-    for note in collect_background_results():
-        content.append({"type": "text", "text": note})
-    return content
-
 def inject_background_notifications(messages: list):
     notes = collect_background_results()
     if notes:
@@ -1847,44 +1839,42 @@ def agent_loop(messages: list, context: dict):
         # the model, execute tool_use blocks, append tool_results, repeat.
         fired = consume_cron_queue()
         for job in fired:
-            # 这一大段只负责处理一个job?
             messages.append({"role": "user",
                              "content": f"[Scheduled] {job.prompt}"})
             print(f"  \033[35m[cron inject] {job.prompt[:60]}\033[0m")
 
-            inject_background_notifications(messages)
+        inject_background_notifications(messages)
 
-            if rounds_since_todo >= 3:
-                messages.append({"role": "user", "content": "<reminder>Update your todos.</reminder>"})
-                rounds_since_todo = 0
-            
-            prepare_context(messages)
-            context = update_context(context, messages)
-            tools, handlers = assemble_tool_pool()
+        if rounds_since_todo >= 3:
+            messages.append({"role": "user", "content": "<reminder>Update your todos.</reminder>"})
+            rounds_since_todo = 0
+        
+        prepare_context(messages)
+        context = update_context(context, messages)
+        tools, handlers = assemble_tool_pool()
 
-            try:
-                response = call_llm(messages, context, tools, state, max_tokens)
-            except Exception as e:
-                if is_prompt_too_long_error(e) and not state.has_attempted_reactive_compact:
-                    messages[:] = reactive_compact(messages)
-                    state.has_attempted_recovery_compact = True
-                    continue
-                messages.append({"role": "assistant", "content": [
+        try:
+            response = call_llm(messages, context, tools, state, max_tokens)
+        except Exception as e:
+            if is_prompt_too_long_error(e) and not state.has_attempted_recovery_compact:
+                messages[:] = reactive_compact(messages)
+                state.has_attempted_recovery_compact = True
+                continue
+            messages.append({"role": "assistant", "content": [
                 {"type": "text", "text": f"[Error] {type(e).__name__}: {e}"}]})
             return
 
-            if response.stop_reason == "max_tokens":
-                if not state.has_escalated:
-                    max_tokens = ESCALATED_MAX_TOKENS
-                    state.has_escalated = True
-                    print(f"  \033[33m[max_tokens] retry with {max_tokens}\033[0m")
-                    continue
-                messages.append({"role": "assistant", "content": response.content})
-                if state.recovery_count < MAX_RECOVERY_RETRIES:
-                    messages.append({"role": "user", "content": CONTINUATION_PROMPT})
-                state.recovery_count += 1
+        if response.stop_reason == "max_tokens":
+            if not state.has_escalated:
+                max_tokens = ESCALATED_MAX_TOKENS
+                state.has_escalated = True
+                print(f"  \033[33m[max_tokens] retry with {max_tokens}\033[0m")
                 continue
-            return
+            messages.append({"role": "assistant", "content": response.content})
+            if state.recovery_count < MAX_RECOVERY_RETRIES:
+                messages.append({"role": "user", "content": CONTINUATION_PROMPT})
+            state.recovery_count += 1
+            continue
 
         max_tokens = DEFAULT_MAX_TOKENS
         state.has_escalated = False

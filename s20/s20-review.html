@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s20 综合智能体 · 概念复习</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #24292e;
+    --text-muted: #586069;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --green: #2da44e;
+    --yellow: #d4a72c;
+    --red: #cf222e;
+    --purple: #7c3aed;
+    --code-bg: #f6f8fa;
+    --orange: #d96c00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #7c3aed 100%);
+    color: #fff;
+    padding: 48px 24px 36px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; letter-spacing: 1px; }
+  .header .subtitle { opacity: .8; font-size: 1rem; max-width: 640px; margin: 0 auto; }
+  .header .badge {
+    display: inline-block; margin-top: 12px; padding: 4px 16px;
+    border-radius: 20px; background: rgba(255,255,255,.15); font-size: .85rem;
+  }
+  .toc {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 16px;
+  }
+  .toc h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text-muted); }
+  .toc ol {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; padding-left: 20px;
+  }
+  .toc li { font-size: .92rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px 64px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 32px; margin-bottom: 28px;
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-light);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .card h3 { font-size: 1.05rem; margin: 20px 0 10px; color: var(--accent); }
+  .card h4 { font-size: .95rem; margin: 16px 0 8px; color: var(--purple); }
+  .card p, .card li { margin-bottom: 8px; }
+  .card ul, .card ol { padding-left: 20px; margin-bottom: 12px; }
+  code {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+    border-radius: 8px; overflow-x: auto; font-size: .85rem;
+    line-height: 1.55; margin: 12px 0;
+  }
+  pre .cm { color: #94a3b8; font-style: italic; }
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #60a5fa; }
+  pre .s { color: #86efac; }
+  pre .op { color: #fbbf24; }
+  pre .num { color: #f472b6; }
+  pre .tp { color: #67e8f9; }
+  pre .hl { color: #fbbf24; font-weight: bold; }
+  .diagram {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: .85rem; line-height: 1.6; white-space: pre; overflow-x: auto;
+  }
+  .callout {
+    background: #fff8c5; border-left: 4px solid var(--yellow);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: .92rem;
+  }
+  .callout.green { background: #dafbe1; border-color: var(--green); }
+  .callout.red   { background: #ffebe9; border-color: var(--red); }
+  .callout.purple { background: #f3e8ff; border-color: var(--purple); }
+  .callout.orange { background: #fff3e0; border-color: var(--orange); }
+  .callout.teal { background: #ccfbf1; border-color: #0d9488; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 8px 12px; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>s20 · 综合智能体 · 概念复习</h1>
+  <p class="subtitle">S20 将所有教学组件整合到一个循环中：任务、工作树、技能加载、消息总线、压缩、记忆、错误恢复、Cron 调度、MCP &mdash; 以及所有让你困惑的 Python 细节</p>
+  <span class="badge">基于代码阅读与问答整理 · ~2000 LOC · 30+ 内置工具 · MCP · 多系统集成</span>
+</div>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">数据类型：class, object, dataclass, 默认值</a></li>
+    <li><a href="#s2">文件操作：Path, glob, iterdir, is_relative_to</a></li>
+    <li><a href="#s3">JSON/YAML 格式：json.dumps, yaml.safe_load, Frontmatter</a></li>
+    <li><a href="#s4">装包与解包：**dict 详解</a></li>
+    <li><a href="#s5">压缩系统：collect, snip, micro, compact, reactive</a></li>
+    <li><a href="#s6">压缩深度问题：要不要遍历？txt 兼容 json？</a></li>
+    <li><a href="#s7">终端与打印：terminal_print, parse_and_bind, readline</a></li>
+    <li><a href="#s8">Python 语法技巧：lambda, literal_eval, fn(), sub</a></li>
+    <li><a href="#s9">错误处理：429, 529, FALLBACK_MODEL, raise, retry</a></li>
+    <li><a href="#s10">后台任务：block, worker, background_tasks</a></li>
+    <li><a href="#s11">Cron 调度系统：字段匹配、验证、fired 队列</a></li>
+    <li><a href="#s12">MCP 系统：DISALLOWED_CHARS, factory, assemble_tool_pool</a></li>
+    <li><a href="#s13">消息总线与协议 MessageBus</a></li>
+    <li><a href="#s14">技能加载：SKILL.md, Frontmatter, directory.name</a></li>
+    <li><a href="#s15">语法小抄与常见困惑</a></li>
+  </ol>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1 ==================== -->
+<div class="card" id="s1">
+  <h2><span class="num">1</span> 数据类型：class, object, dataclass, 默认值</h2>
+
+  <h3>class 和 object 是一个东西吗？</h3>
+  <p><strong>不是。</strong> class 是<strong>蓝图/模具</strong>，object 是<strong>根据蓝图造出来的具体实例</strong>。</p>
+
+  <table>
+    <tr><th>概念</th><th>比喻</th><th>代码</th></tr>
+    <tr><td><strong>class（类）</strong></td><td>蓝图——定义了"任务"应该长什么样</td><td><code>class Task:</code> — 告诉 Python Task 有 id/subject/status 等字段</td></tr>
+    <tr><td><strong>object（对象）</strong></td><td>根据蓝图造出来的具体实例</td><td><code>Task(id="t1", subject="Fix bug")</code> — 一个具体的任务</td></tr>
+  </ul>
+
+  <p>在 Python 中，<strong>类的每个实例都是一个对象</strong>：</p>
+  <pre><span class="kw">class</span> <span class="fn">Task</span>: ...
+
+task = Task(id=<span class="s">"t1"</span>, subject=<span class="s">"Fix bug"</span>)
+<span class="fn">print</span>(<span class="fn">isinstance</span>(task, Task))    <span class="cm"># ✅ True — 是 Task 的实例</span>
+<span class="fn">print</span>(<span class="fn">isinstance</span>(task, object))  <span class="cm"># ✅ True — Python 中万物皆对象</span>
+<span class="fn">print</span>(<span class="fn">isinstance</span>(Task, object))  <span class="cm"># ✅ True — 类本身也是对象（type 的实例）</span></pre>
+
+  <h3>@dataclass 自动生成什么？</h3>
+  <p><code>@dataclass</code> 自动生成 <code>__init__</code>、<code>__repr__</code>、<code>__eq__</code> 等方法。所以不需要手写 <code>def __init__(self, id, subject, ...)</code>。</p>
+
+  <h3>worktree 字段为什么需要默认值？</h3>
+  <div class="callout red">
+    <strong>致命 bug：</strong><code>worktree: str | None</code> 后面没有 <code>= None</code>。<br>
+    导致 <code>create_task()</code> 中创建 <code>Task(...)</code> 时没有传 <code>worktree</code> 参数，抛出 <code>TypeError</code>。
+  </div>
+  <p>修复：<code>worktree: str | None = None</code> —— Python <code>@dataclass</code> 中，有默认值的字段必须放在没有默认值的字段<strong>之后</strong>。</p>
+
+  <h3>subject 字段是干什么的？</h3>
+  <p>任务是任务的 <strong>简短标题</strong>，类似于 GitHub Issue 的标题。</p>
+  <ul>
+    <li>创建时：<code>create_task("Fix login bug", "The login page crashes when...")</code></li>
+    <li>日志打印：<code>[claim] Fix login bug → in_progress</code></li>
+    <li>解锁通知：<code>unblocked = [t.subject for t in list_tasks() ...]</code> → <code>["Fix login bug", "Add tests"]</code></li>
+  </ul>
+  <p>和 <code>description</code> 的分工：<code>subject</code> 短（标题），<code>description</code> 长（详细信息）。</p>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<div class="card" id="s2">
+  <h2><span class="num">2</span> 文件操作：Path, glob, iterdir, is_relative_to</h2>
+
+  <h3>Path 是 Python 标准库吗？</h3>
+  <p>是的。<code>from pathlib import Path</code> 是 <strong>Python 3.4+ 内置标准库</strong>，不需要额外安装。提供面向对象的文件系统操作。</p>
+
+  <h3>Path.is_relative_to() 是什么用法？</h3>
+  <div class="callout purple">
+    <strong>Python 3.9+ 引入的方法</strong>，检查一个路径是否在另一个路径之下。
+  </div>
+  <pre><span class="kw">def</span> <span class="fn">safe_path</span>(p: str, cwd: Path = <span class="hl">None</span>) -> Path:
+    base = cwd <span class="op">or</span> WORKDIR
+    path = (base / p).<span class="fn">resolve</span>()
+    <span class="kw">if not</span> path.<span class="hl">is_relative_to</span>(base):
+        <span class="kw">raise</span> <span class="tp">ValueError</span>(<span class="s">f"Path escapes workspace: {p}"</span>)
+    <span class="kw">return</span> path</pre>
+
+  <p><strong>安全防护</strong>——防止用户通过 <code>../../etc/passwd</code> 逃离工作目录：</p>
+  <pre>WORKDIR = <span class="s">"/home/user/project"</span>
+safe_path(<span class="s">"../../etc/passwd"</span>)
+<span class="cm"># → Path("/home/user/project").resolve() / "../../etc/passwd"</span>
+<span class="cm"># → Path("/etc/passwd") → is NOT relative to "/home/user/project"</span>
+<span class="cm"># → ValueError: Path escapes workspace</span></pre>
+
+  <h3>cwd 代表什么？</h3>
+  <p><strong>Current Working Directory</strong>（当前工作目录）。让工具能在指定目录下操作，如队友的工作目录。</p>
+
+  <h3>glob 是什么用法？</h3>
+  <pre><span class="kw">import</span> glob <span class="kw">as</span> g
+results = []
+<span class="kw">for</span> match <span class="kw">in</span> g.<span class="fn">glob</span>(pattern, root_dir=base):
+    results.append(match)
+<span class="kw">return</span> <span class="s">"\n"</span>.join(results)</pre>
+
+  <table>
+    <tr><th>表达式</th><th>含义</th></tr>
+    <tr><td><code>import glob as g</code></td><td>标准库别名（<code>as g</code> 简化引用名）</td></tr>
+    <tr><td><code>g.glob("**/*.py")</code></td><td>递归搜索所有 .py 文件</td></tr>
+    <tr><td><code>root_dir=base</code></td><td>指定根目录（Python 3.10+）</td></tr>
+    <tr><td><code>**</code></td><td>递归匹配所有子目录</td></tr>
+  </table>
+
+  <h3>iterdir() 是什么用法？</h3>
+  <pre><span class="kw">for</span> directory <span class="kw">in</span> <span class="hl">sorted</span>(SKILLS_DIR.<span class="hl">iterdir</span>()):
+    <span class="kw">if not</span> directory.<span class="hl">is_dir</span>():
+        <span class="kw">continue</span>           <span class="cm"># 跳过文件，只处理子目录</span>
+    manifest = directory / <span class="s">"SKILL.md"</span>  <span class="cm"># 用 / 拼接路径（Path 重载操作符）</span></pre>
+
+  <p><code>Path.iterdir()</code> 列出当前目录下的<strong>所有文件和子目录</strong>，返回<strong>迭代器</strong>（不一次性全加载到内存）。</p>
+
+  <p><code>directory.name</code> 是 <code>Path</code> 对象的属性，返回<strong>路径的最后一级</strong>：</p>
+  <table>
+    <tr><th>路径</th><th><code>directory.name</code></th></tr>
+    <tr><td><code>/home/user/skills/code-review/</code></td><td><code>"code-review"</code></td></tr>
+    <tr><td><code>/home/user/skills/task-manager/</code></td><td><code>"task-manager"</code></td></tr>
+  </table>
+
+  <h3>为什么 task 路径用 <code>task_id.json</code> 格式？</h3>
+  <p><code>_task_path</code> 返回的是一个 <code>.json</code> <strong>文件路径</strong>（不是存 JSON 数据）。选 <code>.json</code> 是因为这个路径将来要配合 <code>json.dumps()</code> / <code>json.loads()</code> 读写，后缀让人一眼知道文件内容是 JSON 格式。</p>
+
+  <p>每个 task 对应一个文件：</p>
+  <pre>.tasks/
+├── task_1718600000_0123.json    ← 每个任务一个文件
+├── task_1718600001_4567.json
+└── task_1718600002_8901.json</pre>
+
+  <p>为什么不用一个文件？<strong>性能好</strong>——读一个任务不需要加载全部任务；<strong>隔离性好</strong>——删除/修改一个不影响其他。</p>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<div class="card" id="s3">
+  <h2><span class="num">3</span> JSON/YAML 格式：json.dumps, yaml.safe_load, Frontmatter</h2>
+
+  <h3>txt 文件也兼容 json.dumps() 吗？</h3>
+  <p><strong>兼容。</strong> <code>json.dumps()</code> 的输出<strong>本身就是文本字符串</strong>。无论文件后缀是 <code>.json</code>、<code>.txt</code> 还是 <code>.md</code>，写入磁盘的内容完全一样。</p>
+
+  <pre><span class="cm"># 以下两种写法，写入磁盘的内容完全一样</span>
+path1.<span class="fn">write_text</span>(json.<span class="fn">dumps</span>(data, indent=2))  <span class="cm"># .json 后缀</span>
+path2.<span class="fn">write_text</span>(json.<span class="fn">dumps</span>(data, indent=2))  <span class="cm"># .txt 后缀</span></pre>
+
+  <p>后缀只是给人看的。但 <code>.json</code> 后缀有实际好处：编辑器自动 JSON 语法高亮、<code>git diff</code> 显示更清晰、别人看到就知道是 JSON 格式。</p>
+
+  <h3>Frontmatter 格式是什么？为什么用 yaml？</h3>
+  <div class="callout">
+    Frontmatter 是 Markdown 文件开头的元数据区，用三横线 <code>---</code> 包裹，内部用 YAML 格式。
+  </div>
+
+  <pre><span class="cm"># 这是 SKILL.md 文件的格式：</span>
+---
+name: code-review
+description: Reviews code for bugs
+---
+
+<span class="cm"># 实际 Markdown 内容从这里开始</span>
+You are a code reviewer. ...
+
+---
+
+<span class="cm"># 代码解析 frontmatter：</span>
+parts = text.<span class="fn">split</span>(<span class="s">"---"</span>, <span class="num">2</span>)  <span class="cm"># 最多切 2 刀，得 3 块</span>
+<span class="cm"># parts[0] = ""</span>
+<span class="cm"># parts[1] = "\nname: code-review\ndescription: ...\n" (YAML)</span>
+<span class="cm"># parts[2] = "\n# Code Review Skill\n\n..." (Markdown)</span>
+
+meta = <span class="hl">yaml.safe_load</span>(parts[<span class="num">1</span>]) <span class="op">or</span> {}  <span class="cm"># YAML 字符串 → Python 字典</span></pre>
+
+  <table>
+    <tr><th>问题</th><th>回答</th></tr>
+    <tr><td>为什么用 YAML 而不是 JSON？</td><td>Frontmatter 是 Markdown 元数据的约定格式。YAML 更适合人写（不需要引号、更简洁）。最早在 Jekyll/Hugo 等静态网站生成器中流行。</td></tr>
+    <tr><td>为什么可以用 <code>text.startswith("---")</code>？</td><td>Frontmatter 的约定——如果有元数据，文件必须以 <code>---</code> 开头。</td></tr>
+    <tr><td>YAML 属于 text 吗？</td><td>是的。<code>yaml.safe_load(parts[1])</code> 就是解析"一段 YAML 文本"。<code>parts[1]</code> 是字符串，YAML 是这种字符串的格式。</td></tr>
+  </table>
+
+  <h3>meta 存放什么信息？</h3>
+  <p><code>meta</code> 是 Frontmatter 解析后的 Python 字典：<code>{"name": "code-review", "description": "Reviews code for bugs"}</code>。</p>
+  <p>在 <code>scan_skills</code> 中使用：</p>
+  <pre>name = meta.<span class="fn">get</span>(<span class="s">"name"</span>, directory.name)    <span class="cm"># 优先从 meta 取，没有就用目录名</span>
+desc = meta.<span class="fn">get</span>(<span class="s">"description"</span>, ...)        <span class="cm"># 从 meta 取描述</span></pre>
+
+  <h3>Skill 目录结构是固定的吗？</h3>
+  <p>是的，约定结构：</p>
+  <pre>skills/
+  code-review/     ← 目录名 = 技能名（后备）
+    SKILL.md       ← 必须有这个文件（包含 Frontmatter）
+  task-manager/
+    SKILL.md</pre>
+
+  <div class="callout green">
+    <strong>iterdir 遍历流程：</strong>SKILLS_DIR → 每个子目录 → 找 SKILL.md → 读取 → 解析 Frontmatter → 注册到 SKILL_REGISTRY
+  </div>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<div class="card" id="s4">
+  <h2><span class="num">4</span> 装包与解包：**dict 详解</h2>
+
+  <h3>Task(**json.loads(...)) 这一行发生了什么？</h3>
+  <pre>Task(<span class="hl">**</span>json.<span class="fn">loads</span>(_task_path(task_id).<span class="fn">read_text</span>()))</pre>
+
+  <table>
+    <tr><th>步骤</th><th>表达式</th><th>结果（示例）</th></tr>
+    <tr><td>1</td><td><code>.read_text()</code></td><td><code>'{"id": "task_...", "subject": "Fix bug", ...}'</code></td></tr>
+    <tr><td>2</td><td><code>json.loads(...)</code></td><td><code>{"id": "task_...", "subject": "Fix bug", ...}</code>（Python 字典）</td></tr>
+    <tr><td>3</td><td><code>Task(**dict)</code></td><td><code>Task(id="task_...", subject="Fix bug", ...)</code>（字典解包成关键字参数）</td></tr>
+  </table>
+
+  <h3>装包 vs 解包 —— 怎么区分？</h3>
+  <table>
+    <tr><th>场景</th><th>写法</th><th>含义</th></tr>
+    <tr><td><strong>解包</strong>（用在调用时）</td><td><code>Task(**dict)</code></td><td>把字典拆成关键字参数</td></tr>
+    <tr><td><strong>装包</strong>（用在定义时）</td><td><code>def f(**kwargs)</code></td><td>把关键字参数收集成字典</td></tr>
+  </table>
+
+  <div class="diagram"># 解包示例（调用的地方）
+d = {"id": "t1", "subject": "bug"}
+Task(**d)   # 等价于 Task(id="t1", subject="bug")
+
+# 装包示例（函数定义的地方）
+def f(**kwargs):
+    print(kwargs)  # 关键字参数被"装"成一个字典
+f(a=1, b=2)  # → {"a": 1, "b": 2}</div>
+
+  <h3>"{name}" 和 "&rsquo;{name}&rsquo;" 有什么区别？</h3>
+  <table>
+    <tr><th>写法</th><th>输出</th></tr>
+    <tr><td><code>f"&rsquo;{name}&rsquo;"</code></td><td><code>'abc'</code> — 值外面有引号包裹</td></tr>
+    <tr><td><code>f"{name}"</code></td><td><code>abc</code> — 直接输出值，没有引号</td></tr>
+  </table>
+  <p>加上单引号是为了在错误消息中清晰标示"这里是用户传进来的值"，视觉上更容易区分。</p>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<div class="card" id="s5">
+  <h2><span class="num">5</span> 消息压缩系统</h2>
+
+  <p>s20 的压缩系统由多个层次组成，每一层解决不同的问题。</p>
+
+  <h3>collect_tool_results — mi, bi 放到 found 里有什么用？</h3>
+  <pre><span class="kw">def</span> <span class="fn">collect_tool_results</span>(messages: list):
+    found = []
+    <span class="kw">for</span> mi, msg <span class="kw">in</span> <span class="fn">enumerate</span>(messages):          <span class="cm"># mi = message index</span>
+        ...
+        <span class="kw">for</span> bi, block <span class="kw">in</span> <span class="fn">enumerate</span>(content):      <span class="cm"># bi = block index</span>
+            <span class="kw">if</span> ... <span class="op">and</span> block.<span class="fn">get</span>(<span class="s">"type"</span>) == <span class="s">"tool_result"</span>:
+                found.<span class="fn">append</span>((mi, bi, block))     <span class="cm"># 存储位置坐标</span></pre>
+
+  <p><code>mi</code> 和 <code>bi</code> 是<strong>坐标</strong>（第几个消息的第几个块），作用是让后续操作能<strong>精确修改指定位置</strong>的内容。虽然 <code>micro_compact</code> 中直接用 <code>block</code> 引用修改（没用 <code>mi, bi</code>），但输出格式保留了坐标信息供将来使用。</p>
+
+  <h3>tool_result_budget — 为什么算两次 total？</h3>
+  <p>该函数实现了一个<b>逐批裁剪大输出</b>的算法：</p>
+
+  <div class="diagram">1. 第一次 sum: 计算所有 tool_result 总大小
+2. 若超出预算（200KB），从最大的开始裁
+3. 每裁一个，重新计算总大小（第二次 sum）
+4. 直到总大小 ≤ 200KB 时停止</div>
+
+  <p>因为每次把一个大 tool_result 替换成"Full output: /path/to/file.json" 短文本后，总字节数下降了，需要重新算才知道够不够。</p>
+
+  <h3>snip_compact — 裁剪对话中间部分，保留开头和结尾</h3>
+  <div class="callout red">
+    <strong>最复杂也最难懂的一段。</strong>
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">snip_compact</span>(messages: list, max_messages: int = <span class="num">50</span>) -> list:
+    <span class="kw">if</span> <span class="fn">len</span>(messages) <= max_messages:
+        <span class="kw">return</span> messages
+
+    <span class="cm"># Step 1: 确定保留区</span>
+    head_end = <span class="num">3</span>                     <span class="cm"># 保留开头 3 条</span>
+    tail_start = <span class="fn">len</span>(messages) - (max_messages - <span class="num">3</span>)  <span class="cm"># 保留结尾 47 条</span>
+
+    <span class="cm"># Step 2: 处理边界 —— 不能让 tool_use 和 tool_result 被拆开</span>
+    <span class="kw">if</span> head_end > <span class="num">0</span> <span class="op">and</span> message_has_tool_use(messages[head_end - <span class="num">1</span>]):
+        <span class="kw">while</span> head_end &lt; <span class="fn">len</span>(messages) <span class="op">and</span> is_tool_result_message(messages[head_end]):
+            head_end += <span class="num">1</span>
+
+    <span class="cm"># Step 3: 裁剪，中间用占位替换</span>
+    snipped = tail_start - head_end
+    <span class="kw">return</span> (messages[:head_end]
+            + [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">f"[snipped {snipped} messages]"</span>}]
+            + messages[tail_start:])</pre>
+
+  <div class="diagram">对话历史（共200条）
+┌─┬─┬─┬─┬─┬─┬─┬───┬─┬─┬─┬─┬─┬─┬─┬──┬──┬──┐
+│1│2│3│4│...│...│...│...│...│...│...│198│199│200│
+└─┴─┴─┴─┴─┴─┴─┴───┴─┴─┴─┴─┴─┴─┴─┴──┴──┴──┘
+ ↑_______↑ 保留头部3条        ↑__________________↑ 保留尾部47条
+ head_end=3                    tail_start=153
+
+         中间150条被裁剪
+         → [snipped 150 messages] ← 占位</div>
+
+  <p><strong>为什么要保留 tool_use/tool_result 配对？</strong> 如果大模型的 <code>tool_use</code> 被删了但对应的 <code>tool_result</code> 还在，API 会报错（不匹配）。</p>
+
+  <h3>micro_compact — 微小压缩</h3>
+  <p><code>micro</code> = <strong>微小的</strong>。不删除消息，只把消息内部的 <code>tool_result</code> 内容替换成更短的占位文本。</p>
+
+  <pre><span class="kw">def</span> <span class="fn">micro_compact</span>(messages: list) -> list:
+    tool_results = <span class="fn">collect_tool_results</span>(messages)
+    <span class="kw">if</span> <span class="fn">len</span>(tool_results) <= KEEP_RECENT_TOOL_RESULTS:  <span class="cm"># KEEP = 3</span>
+        <span class="kw">return</span> messages
+    <span class="kw">for</span> _, _, block <span class="kw">in</span> tool_results[:<span class="hl">-KEEP_RECENT_TOOL_RESULTS</span>]:
+        block[<span class="s">"content"</span>] = <span class="s">"[Earlier tool result compacted. Re-run if needed]"</span>
+    <span class="kw">return</span> messages</pre>
+
+  <p>逻辑：保留最近的 3 个 tool_result 完整，把更早的替换成占位文本。好处是<strong>改动最小，省空间最多</strong>——tool_result 是对话中最大的内容来源。</p>
+
+  <div class="callout">
+    <strong>类比：</strong>micro_compact 不扔家具（不删消息），只是把大纸箱压扁（缩短 tool_result 内容）。
+  </div>
+
+  <h3>compact_history vs reactive_compact — 主动压缩 vs 被动压缩</h3>
+  <table>
+    <tr><th>维度</th><th>compact_history（主动）</th><th>reactive_compact（被动）</th></tr>
+    <tr><td>触发者</td><td>Agent 主动调用</td><td>API 报错时自动触发</td></tr>
+    <tr><td>触发时机</td><td>对话变长但还没报错</td><td>已经收到 prompt-too-long 错误</td></tr>
+    <tr><td>保留量</td><td>存完整 transcript + 生成摘要</td><td>只保留最近 5 条 + 摘要，更激进</td></tr>
+    <tr><td>类比</td><td>"吃药预防生病"</td><td>"病倒了才去急救"</td></tr>
+  </table>
+
+  <div class="callout green">
+    <strong>一句话区别：</strong>主动压缩是"预防性"的，被动压缩是"急救性"的——情况紧急所以保留更少的内容。
+  </div>
+
+  <h3>为什么叫 "fired"？</h3>
+  <p><code>fired</code> 来自术语 <strong>"cron job fired"</strong>（定时任务被触发了），就像闹钟"响了"。</p>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<div class="card" id="s6">
+  <h2><span class="num">6</span> 压缩深度问题</h2>
+
+  <h3>压缩历史对话的同时要记录之前所有对话内容吗？</h3>
+  <p><strong>是的。</strong> 在 <code>compact_history</code> 中，每次压缩前会调用 <code>write_transcript(messages)</code> 把完整的对话历史写入 <code>.transcripts/</code> 目录，确保不丢失原始数据：</p>
+
+  <pre><span class="kw">def</span> <span class="fn">compact_history</span>(messages: list) -> list:
+    transcript = <span class="fn">write_transcript</span>(messages)  <span class="cm"># 先存档</span>
+    summary = <span class="fn">summarize_history</span>(messages)    <span class="cm"># 再用大模型生成摘要</span>
+    <span class="kw">return</span> [{<span class="s">"role"</span>: <span class="s">"user"</span>,
+             <span class="s">"content"</span>: <span class="s">f"[Compact summary]\n\n{summary}"</span>}]</pre>
+
+  <h3>现在的压缩是不是简单提取前多少内容？没让大模型遍历判断重要性？</h3>
+  <p><strong>不是简单提取。</strong> <code>summarize_history</code> 把<strong>所有</strong>对话传给大模型，让大模型一次性生成摘要：</p>
+
+  <pre><span class="kw">def</span> <span class="fn">summarize_history</span>(messages: list) -> str:
+    conversation = json.<span class="fn">dumps</span>(messages, default=str)[:<span class="num">80000</span>]
+    prompt = (<span class="s">"Summarize this coding-agent conversation so work can continue. "</span>
+              <span class="s">"Preserve current goal, key findings, changed files, remaining work, "</span>
+              <span class="s">"and user constraints.\n\n"</span> + conversation)
+    response = client.messages.<span class="fn">create</span>(...)
+    <span class="kw">return</span> <span class="fn">extract_text</span>(response.content)</pre>
+
+  <div class="callout orange">
+    <strong>你的想法是对的：</strong>理想的方式应该是让大模型先遍历一遍，判断"什么重要、什么可以丢"。但这里有矛盾——如果对话已经长到需要压缩了，再传给大模型做摘要，本身就占用了很多 token。
+  </div>
+
+  <p>工程上更优的方案是<strong>分层摘要</strong>：</p>
+  <div class="diagram">Layer 1: 每 N 条消息做一个小摘要
+Layer 2: 每 M 个小摘要合并为一个中摘要
+Layer 3: ...</div>
+
+  <p>但 s20 是教学代码，选择最简单的做法——一次传进去让大模型摘要。缺点是如果对话非常长（超过 80000 字符限制），后面的内容就丢了。</p>
+
+  <h3>transcripts 目录是干什么的？</h3>
+  <p><code>TRANSCRIPT_DIR = WORKDIR / ".transcripts"</code></p>
+  <p><code>transcript</code> 英文原意是"抄本/记录"，这里指 Agent 和大模型之间<strong>完整的对话历史</strong>。每次压缩前，完整对话被写入 <code>.transcripts/transcript_{timestamp}.json</code> 文件，然后再做摘要。</p>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<div class="card" id="s7">
+  <h2><span class="num">7</span> 终端与打印</h2>
+
+  <h3>terminal_print 和 print 的区别？</h3>
+  <div class="callout">
+    <strong>核心问题：</strong>print 在后台线程直接输出会破坏用户正在输入的内容。<br>
+    terminal_print 的解决方案：先保存用户输入 → 清当前行 → 打印消息 → 恢复用户输入行。
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">terminal_print</span>(text: str):
+    <span class="kw">if</span> threading.current_thread() <span class="op">is</span> threading.main_thread() <span class="op">or not</span> CLI_ACTIVE:
+        <span class="fn">print</span>(text)                           <span class="cm"># 主线程 → 直接打印</span>
+        <span class="kw">return</span>
+    line = readline.<span class="fn">get_line_buffer</span>()              <span class="cm"># 获取用户正在输入的内容</span>
+    <span class="fn">print</span>(<span class="s">f"\r\033[K{text}"</span>)                   <span class="cm"># \r 回车 + \033[K 清行</span>
+    <span class="fn">print</span>(PROMPT + line, end=<span class="s">""</span>, flush=<span class="hl">True</span>)  <span class="cm"># 恢复用户的输入行</span></pre>
+
+  <h3>parse_and_bind 是什么用法？</h3>
+  <pre>readline.<span class="hl">parse_and_bind</span>(<span class="s">'set bind-tty-special-chars off'</span>)</pre>
+
+  <table>
+    <tr><th>部分</th><th>含义</th></tr>
+    <tr><td><code>parse_and_bind</code></td><td>readline 库的方法，用来修改终端的行为设置</td></tr>
+    <tr><td><code>set bind-tty-special-chars off</code></td><td>告诉 readline 不要把 Ctrl+C、Ctrl+D 等终端特殊字符交给 readline 处理，而是让终端驱动程序直接处理</td></tr>
+  </table>
+
+  <p>不设置这个的话，在某些终端中 readline 会拦截 Ctrl+C（中断信号），导致用户无法正常中断程序。加上这行，Ctrl+C 行为恢复正常。</p>
+
+  <p>打个比方：readline 像一个"抢键盘的插件"。<code>bind-tty-special-chars off</code> 就是告诉它："Ctrl+C 和 Ctrl+D 这些快捷键你别管，让系统原样处理"。</p>
+
+  <h3>PROMPT = "\033[36ms20 >> \033[0m" 是什么？</h3>
+  <p>这是终端提示符（显示的输入前缀）。<code>\033[36m</code> 是 ANSI 转义码，将文本设为青色。所以用户看到的是蓝色的 <code>s20 &gt;&gt;</code> 前缀。<code>\033[0m</code> 重置颜色。</p>
+
+  <h3>inbox_label 为什么判断 req_id 是否存在？</h3>
+  <pre><span class="kw">def</span> <span class="fn">inbox_label</span>(msg):
+    req_id = msg.<span class="fn">get</span>(<span class="s">"metadata"</span>, {}).<span class="fn">get</span>(<span class="s">"request_id"</span>, <span class="s">""</span>)
+    suffix = <span class="s">f" req:{req_id}"</span> <span class="kw">if</span> req_id <span class="kw">else</span> <span class="s">""</span>
+    <span class="kw">return</span> <span class="s">f"{msg.get('type', 'message')}{suffix}"</span></pre>
+
+  <p>两种情况的输出对比：</p>
+
+  <table>
+    <tr><th>场景</th><th>输出</th></tr>
+    <tr><td>有 req_id</td><td><code>shutdown_response req:042817</code></td></tr>
+    <tr><td>无 req_id</td><td><code>message</code>（干净利落，不显示空字段）</td></tr>
+  </table>
+
+  <p>无 req_id 时不显示后缀，是为了避免在大多数普通通知消息上显示空尾巴（如 <code>message req_id:</code>）。</p>
+
+  <h3><code>request_id</code> 是干什么的？</h3>
+  <p><code>request_id</code> 类似于<strong>快递单号</strong>——它是一个 6 位随机数，用来匹配<strong>请求和响应</strong>：</p>
+
+  <pre>Agent A 发请求:  {<span class="s">"type"</span>: <span class="s">"shutdown_request"</span>,  <span class="s">"request_id"</span>: <span class="s">"req_042817"</span>}
+Agent B 回响应:  {<span class="s">"type"</span>: <span class="s">"shutdown_response"</span>, <span class="s">"request_id"</span>: <span class="s">"req_042817"</span>}</pre>
+
+  <p>通过 <code>request_id</code>，协议系统能找到哪个待处理的请求被响应了：</p>
+  <pre>state = pending_requests.<span class="fn">get</span>(request_id)  <span class="cm"># 用 request_id 查表</span></pre>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<div class="card" id="s8">
+  <h2><span class="num">8</span> Python 语法技巧</h2>
+
+  <h3>ast.literal_eval 是什么用法？</h3>
+  <pre>todos = <span class="hl">ast.literal_eval</span>(todos)  <span class="cm"># 安全版 eval</span></pre>
+
+  <table>
+    <tr><th>函数</th><th>行为</th><th>安全性</th></tr>
+    <tr><td><code>eval()</code></td><td>执行任意 Python 表达式</td><td>❌ 危险！可执行 <code>os.system("rm -rf /")</code></td></tr>
+    <tr><td><code>ast.literal_eval()</code></td><td>只计算字面量（字符串、数字、列表、字典等）</td><td>✅ 安全</td></tr>
+  </table>
+
+  <p>这里先用 <code>json.loads</code> 解析（JSON 是严格格式），失败再用 <code>ast.literal_eval</code>（兼容 Python 格式），双重保险。</p>
+
+  <h3>fn() 函数参数是什么用法？</h3>
+  <div class="callout purple">
+    <strong>函数式编程的常见模式</strong>——把"要执行的操作"和"重试逻辑"分离开。
+  </div>
+
+  <pre><span class="kw">def</span> <span class="fn">with_retry</span>(<span class="hl">fn</span>, state: RecoveryState):
+    <span class="kw">for</span> attempt <span class="kw">in</span> <span class="fn">range</span>(MAX_RETRIES):
+        <span class="kw">try</span>:
+            result = <span class="hl">fn()</span>   <span class="cm"># 调用传入的函数</span>
+            ...
+        <span class="kw">except</span> <span class="tp">Exception</span> <span class="kw">as</span> e:
+            ...
+    <span class="kw">raise</span> <span class="tp">RuntimeError</span>(<span class="s">"Max retries exceeded"</span>)
+
+<span class="cm"># 使用：传入函数本身（不加 ()）</span>
+result = <span class="hl">with_retry(call_api, state)</span></pre>
+
+  <p><code>fn</code> 是一个<strong>函数参数</strong>（Functional Argument）。<code>fn()</code> = "执行你传进来的那个函数"。Python 中函数是一等公民，可以当作变量传来传去。</p>
+
+  <h3>re.sub() 是什么用法？</h3>
+  <pre>_DISALLOWED_CHARS = re.<span class="fn">compile</span>(r<span class="s">'[^a-zA-Z0-9_-]'</span>)
+normalized = _DISALLOWED_CHARS.<span class="hl">sub</span>(<span class="s">'_'</span>, name)
+
+<span class="cm"># 等价于：</span>
+normalized = re.<span class="hl">sub</span>(_DISALLOWED_CHARS, <span class="s">'_'</span>, name)</pre>
+
+  <table>
+    <tr><th>部分</th><th>含义</th></tr>
+    <tr><td><code>[^a-zA-Z0-9_-]</code></td><td>正则中 <code>^</code> 在 <code>[...]</code> 开头表示"否定"——匹配<strong>不是</strong>字母数字下划线短横线的字符</td></tr>
+    <tr><td><code>.sub('_', name)</code></td><td>把所有匹配到的字符替换成下划线</td></tr>
+    <tr><td>为什么叫 <code>_DISALLOWED_CHARS</code></td><td>因为它的作用就是找到不允许的字符并替换掉</td></tr>
+  </table>
+
+  <p>示例：<code>normalize_mcp_name("my-server@v2")</code> → <code>"my-server_v2"</code>（<code>@</code> 被替换成 <code>_</code>）</p>
+
+  <h3>lambda 中的 * 是什么意思？</h3>
+  <pre>handlers[prefixed] = (
+    <span class="kw">lambda</span> <span class="hl">*</span>, c=mcp_client, t=tool_def[<span class="s">"name"</span>], <span class="hl">**kw</span>: c.call_tool(t, kw))</pre>
+
+  <table>
+    <tr><th>部分</th><th>含义</th></tr>
+    <tr><td><code>*</code></td><td>分隔符——后面的参数必须用关键字传入，不能用位置参数</td></tr>
+    <tr><td><code>c=mcp_client</code></td><td>默认参数——在 lambda 定义时固定 <code>mcp_client</code> 的值（闭包快照）</td></tr>
+    <tr><td><code>t=tool_def["name"]</code></td><td>默认参数——在 lambda 定义时固定工具名</td></tr>
+    <tr><td><code>**kw</code></td><td>收集所有剩余的关键字参数到一个字典</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>闭包陷阱：</strong>在循环中创建 lambda 引用循环变量，不加默认参数快照会导致所有 lambda 共享最后一个值。
+  </div>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<div class="card" id="s9">
+  <h2><span class="num">9</span> 错误处理：429, 529, FALLBACK_MODEL, raise, retry</h2>
+
+  <h3>HTTP 状态码：429 和 529</h3>
+  <table>
+    <tr><th>状态码</th><th>含义</th><th>处理方式</th></tr>
+    <tr><td><strong>429</strong></td><td>Too Many Requests（请求太多）</td><td>等待后重试（指数退避）</td></tr>
+    <tr><td><strong>529</strong></td><td>Overloaded（服务器过载，Anthropic 特有）</td><td>连续 2 次后切换到备用模型</td></tr>
+  </table>
+
+  <pre><span class="cm"># 判断 429</span>
+<span class="kw">if</span> <span class="s">"ratelimit"</span> <span class="op">in</span> name <span class="op">or</span> <span class="s">"429"</span> <span class="op">in</span> msg:
+    delay = <span class="fn">retry_delay</span>(attempt)
+    time.<span class="fn">sleep</span>(delay)
+
+<span class="cm"># 判断 529</span>
+<span class="kw">if</span> <span class="s">"overloaded"</span> <span class="op">in</span> name <span class="op">or</span> <span class="s">"529"</span> <span class="op">in</span> msg:
+    state.consecutive_529 += <span class="num">1</span>
+    <span class="kw">if</span> state.consecutive_529 >= MAX_CONSECUTIVE_529 <span class="op">and</span> FALLBACK_MODEL:
+        state.current_model = FALLBACK_MODEL  <span class="cm"># 切换到备用模型</span></pre>
+
+  <h3>为什么错误判断中会有 name？</h3>
+  <p><code>name = type(e).__name__.lower()</code> 获取异常类的名字（如 <code>RateLimitError</code> → <code>"ratelimiterror"</code>）。因为不同的 SDK 可能用不同的异常类名，所以同时检查<strong>类名</strong>和<strong>消息文本</strong>来提高匹配准确率。</p>
+
+  <h3>FALLBACK_MODEL 是什么？</h3>
+  <pre>PRIMARY_MODEL = MODEL                          <span class="cm"># 主要用这个</span>
+FALLBACK_MODEL = os.<span class="fn">getenv</span>(<span class="s">"FALLBACK_MODEL_ID"</span>)  <span class="cm"># 备用模型</span></pre>
+
+  <p>当主模型持续返回 529（过载）时，自动切换到备用模型。例如主模型是 <code>claude-sonnet-4-20250514</code>，备用模型是 <code>claude-3-haiku-20240307</code>（更快更便宜，但能力弱一些）。</p>
+
+  <h3>MAX_RECOVERY_RETRIES = 2 是最多恢复几次？</h3>
+  <p>2 次。不是重试 API 调用（那是 <code>MAX_RETRIES = 3</code>），而是在发生严重错误后，尝试<strong>恢复对话</strong>的次数。如果连续恢复失败 2 次，Agent 就放弃了。</p>
+
+  <h3>raise 单独使用是什么？</h3>
+  <p><code>raise</code> 单独使用叫<strong>重新抛出</strong>（re-raise）。当 <code>with_retry</code> 遇到既不是 429 也不是 529 的异常时，说明这个错误重试也没用（比如参数错误、网络不通），所以直接往上抛，让上层处理。</p>
+
+  <p><code>has_escalated</code> 表示"是否已经尝试过增加 max_tokens"。</p>
+</div>
+
+<!-- ==================== 10 ==================== -->
+<div class="card" id="s10">
+  <h2><span class="num">10</span> 后台任务：block, worker, background_tasks</h2>
+
+  <h3>block 里面都有什么？</h3>
+  <div class="callout teal">
+    <code>block</code> 是大模型返回的 <strong>tool_use 块</strong>，包含工具调用信息。
+  </div>
+
+  <pre>{
+    <span class="s">"type"</span>: <span class="s">"tool_use"</span>,
+    <span class="s">"id"</span>: <span class="s">"toolu_abc123"</span>,       <span class="cm"># block.id → 工具用 ID</span>
+    <span class="s">"name"</span>: <span class="s">"bash"</span>,              <span class="cm"># block.name → 工具名（大模型写的）</span>
+    <span class="s">"input"</span>: {                    <span class="cm"># block.input → 工具参数</span>
+        <span class="s">"command"</span>: <span class="s">"pip install pandas"</span>,
+        <span class="s">"run_in_background"</span>: <span class="hl">True</span>
+    }
+}</pre>
+
+  <p><code>block.name</code> 由大模型决定——大模型在 API 返回的 <code>tool_use</code> 块中填写要调用的工具名，代码根据这个名字查 <code>handlers</code> 字典来执行。</p>
+
+  <h3>block.input 和 block.name 什么区别？</h3>
+  <table>
+    <tr><th>属性</th><th>含义</th><th>值示例</th></tr>
+    <tr><td><code>block.name</code></td><td>工具名（大模型决定调哪个工具）</td><td><code>"bash"</code>、<code>"read_file"</code></td></tr>
+    <tr><td><code>block.input</code></td><td>工具的参数字典</td><td><code>{"command": "ls -la"}</code></td></tr>
+  </table>
+
+  <h3>后台任务的 worker 线程</h3>
+  <pre><span class="kw">def</span> <span class="fn">start_background_task</span>(block, handlers: dict) -> str:
+    ...
+    <span class="kw">def</span> <span class="fn">worker</span>():
+        handler = handlers.<span class="fn">get</span>(block.name)
+        result = <span class="fn">call_tool_handler</span>(handler, block.input, block.name)
+        <span class="kw">with</span> background_lock:
+            background_tasks[bg_id][<span class="s">"status"</span>] = <span class="s">"completed"</span>  <span class="cm"># 注意：写 background_tasks</span>
+            background_results[bg_id] = <span class="hl">str</span>(result)          <span class="cm"># 注意：是简单赋值，不是 dict 嵌套</span>
+
+    threading.Thread(target=worker, daemon=<span class="hl">True</span>).<span class="fn">start</span>()</pre>
+
+  <p><code>daemon=True</code> 表示<strong>守护线程</strong>——主程序退出时自动结束，不需要手动管理。</p>
+</div>
+
+<!-- ==================== 11 ==================== -->
+<div class="card" id="s11">
+  <h2><span class="num">11</span> Cron 调度系统</h2>
+
+  <h3>为什么写了 _cron_field_matches 又写 _validate_cron_field？</h3>
+  <p><strong>用途完全不同：</strong></p>
+
+  <table>
+    <tr><th>函数</th><th>目的</th><th>输出</th><th>使用场景</th></tr>
+    <tr><td><code>_cron_field_matches</code></td><td><strong>匹配</strong>——检查当前时间是否匹配表达式</td><td><code>True</code> / <code>False</code></td><td>运行时，每隔 1 秒调用</td></tr>
+    <tr><td><code>_validate_cron_field</code></td><td><strong>验证</strong>——检查表达式语法是否正确</td><td><code>None</code>（正确）或错误消息</td><td>注册时，校验用户输入</td></tr>
+  </table>
+
+  <p>一个在运行时用的（匹配逻辑），一个在注册时用的（输入校验）。因为需求不同，所以代码也不同——验证函数比匹配函数多很多检查（如数字范围、步长合法性等）。</p>
+
+  <h3>schedule_job 只是验证时间吗？</h3>
+  <p><strong>不只是。</strong> 它做三件事：</p>
+  <ol>
+    <li><strong>验证</strong>：调用 <code>validate_cron()</code> 检查 cron 表达式语法</li>
+    <li><strong>创建</strong>：创建一个 <code>CronJob</code> 对象（含随机 ID）</li>
+    <li><strong>存储</strong>：加入 <code>scheduled_jobs</code> 字典；如果需要持久化（<code>durable=True</code>），写入 <code>.scheduled_tasks.json</code> 文件</li>
+  </ol>
+
+  <h3>cron_scheduler_loop 由谁启动？</h3>
+  <p><strong>在文件加载时自动启动。</strong> <code>threading.Thread(target=cron_scheduler_loop, daemon=True).start()</code> 在模块顶层（不在函数内），所以 <code>import</code> 或 <code>python s20_comprehensive.py</code> 时就会执行。</p>
+
+  <p><code>cron_queue</code> 是线程安全的队列——Cron 线程把到期的 job 放入队列，主循环消费队列。这样不阻塞主循环。</p>
+
+  <h3>run_list_crons 是"都列出来，大模型一一执行"吗？</h3>
+  <p><strong>不是。</strong> <code>run_list_crons</code> 只是一个<strong>只读的列表查看工具</strong>，返回当前所有定时任务的文本描述。大模型看到这个列表后，决定是否要修改（取消某个任务），但列表本身不会自动执行任何任务。</p>
+
+  <p>执行逻辑在 <code>cron_scheduler_loop</code> 中——它每隔 1 秒检查一次，匹配的 job 会被放入 <code>cron_queue</code>，然后主循环在每次迭代时消费队列。</p>
+
+  <p>输出示例：</p>
+  <pre>  cron_042817: '<span class="op">*/5 * * * *</span>' -> Run tests on the project   [recurring, durable]
+  cron_931204: '<span class="op">0 9 * * 1</span>'   -> Send weekly report           [recurring, durable]</pre>
+</div>
+
+<!-- ==================== 12 ==================== -->
+<div class="card" id="s12">
+  <h2><span class="num">12</span> MCP 系统</h2>
+
+  <h3>为什么叫 _DISALLOWED_CHARS？</h3>
+  <pre>_DISALLOWED_CHARS = re.<span class="fn">compile</span>(r<span class="s">'[^a-zA-Z0-9_-]'</span>)</pre>
+
+  <p>正则中的 <code>^</code> 在字符集 <code>[...]</code> 开头表示<strong>否定</strong>。所以 <code>[^a-zA-Z0-9_-]</code> 匹配<strong>不是</strong>字母数字下划线短横线的字符。</p>
+
+  <p>变量名叫 <code>_DISALLOWED_CHARS</code>（不允许的字符），因为它的作用就是<strong>找到这些字符并替换掉</strong>：</p>
+
+  <pre><span class="kw">def</span> <span class="fn">normalize_mcp_name</span>(name: str) -> str:
+    <span class="kw">return</span> _DISALLOWED_CHARS.<span class="fn">sub</span>(<span class="s">'_'</span>, name)
+
+<span class="cm"># "my-server@v2" → "my-server_v2"  (@ 被替换成 _)</span>
+<span class="cm"># "Hello World"  → "Hello_World"   (空格被替换成 _)</span></pre>
+
+  <h3>factory 不是一个变量吗？为什么可以 factory()？</h3>
+  <div class="callout purple">
+    <strong>工厂模式：</strong><code>MOCK_SERVERS</code> 字典的值是<strong>函数</strong>（而不是函数调用的结果）。
+  </div>
+
+  <pre>MOCK_SERVERS = {
+    <span class="s">"docs"</span>: _mock_server_docs,     <span class="cm"># 注意：没有 ()，是函数本身</span>
+    <span class="s">"deploy"</span>: _mock_server_deploy,
+}
+
+factory = MOCK_SERVERS.<span class="fn">get</span>(name)  <span class="cm"># factory 拿到的是函数</span>
+mcp_client = <span class="hl">factory()</span>            <span class="cm"># 再调用它来创建实例</span></pre>
+
+  <p>这样做的目的是<strong>每次都创建新的 <code>MCPClient</code> 实例</strong>，而不是复用同一个。想加新服务器只需要往这个字典加一条。</p>
+
+  <h3>MCP 工具名前缀为什么是 mcp__server__tool？</h3>
+  <pre>prefixed = <span class="s">f"mcp__{safe_server}__{safe_tool}"</span></pre>
+
+  <p>两个原因：</p>
+  <ul>
+    <li><strong>防命名冲突：</strong>不同服务器的工具可能同名（如 docs 和 deploy 都有 <code>status</code>），前缀让名字唯一</li>
+    <li><strong>可溯源：</strong>LLM 看到 <code>mcp__docs__search</code> 就知道这个工具来自 docs 服务器</li>
+  </ul>
+</div>
+
+<!-- ==================== 13 ==================== -->
+<div class="card" id="s13">
+  <h2><span class="num">13</span> 消息总线与协议</h2>
+
+  <h3>MessageBus 的 mailbox 为什么用 JSONL 格式？</h3>
+  <p><code>.jsonl</code> = JSON Lines，每行一个 JSON 对象。优点：</p>
+  <ul>
+    <li>追加写（append）非常高效——不需要读整个文件再写</li>
+    <li>一行是一条消息，读取时 <code>splitlines()</code> 逐行解析即可</li>
+    <li>可人工查看——每行都是独立有效的 JSON</li>
+  </ul>
+
+  <h3>metadata 装什么信息？</h3>
+  <pre>msg = {<span class="s">"from"</span>: ..., <span class="s">"to"</span>: ..., <span class="s">"content"</span>: ...,
+        <span class="s">"type"</span>: msg_type, <span class="s">"ts"</span>: time.time(),
+        <span class="hl">"metadata"</span>: metadata <span class="op">or</span> {}}</pre>
+
+  <p><code>metadata</code> 存放<strong>协议相关的额外信息</strong>，如：</p>
+  <ul>
+    <li><code>request_id</code>：用于匹配请求和响应</li>
+    <li><code>approve</code>：审批结果（True/False）</li>
+    <li><code>feedback</code>：审批反馈意见</li>
+  </ul>
+
+  <h3>队友回复以 _response 结尾？</h3>
+  <pre><span class="kw">if</span> req_id <span class="op">and</span> msg_type.<span class="fn">endswith</span>(<span class="s">"_response"</span>):
+    <span class="fn">match_response</span>(msg_type, req_id, meta.<span class="fn">get</span>(<span class="s">"approve"</span>, <span class="hl">False</span>))</pre>
+
+  <p>是的，协议约定响应类型以 <code>_response</code> 结尾：</p>
+  <table>
+    <tr><th>请求类型</th><th>响应类型</th></tr>
+    <tr><td><code>shutdown_request</code></td><td><code>shutdown_response</code></td></tr>
+    <tr><td><code>plan_approval_request</code></td><td><code>plan_approval_response</code></td></tr>
+  </table>
+</div>
+
+<!-- ==================== 14 ==================== -->
+<div class="card" id="s14">
+  <h2><span class="num">14</span> 技能加载：SKILL.md, Frontmatter, directory.name</h2>
+
+  <h3>人工写 skill 要先写 Frontmatter 吗？</h3>
+  <div class="callout green">
+    <strong>是的。</strong> Skill 文件是一个 Markdown 文件，以 Frontmatter（YAML 元数据）开头。
+  </div>
+
+  <pre><span class="cm"># 这是 SKILL.md 的编写格式：</span>
+---
+name: code-review
+description: Reviews code for bugs
+---
+
+You are a code reviewer. 检查代码质量问题...
+
+---
+
+<span class="cm"># 代码中的解析：</span>
+raw = manifest.<span class="fn">read_text</span>()
+meta, _ = <span class="fn">_parse_frontmatter</span>(raw)</pre>
+
+  <p>Frontmatter 中的 <code>name</code> 和 <code>description</code> 会被 <code>scan_skills</code> 读取来注册技能。如果 Frontmatter 中不提供 <code>name</code>，则用 <code>directory.name</code>（目录名）作为后备。</p>
+
+  <h3>scan_skills 一一遍历做了什么？</h3>
+  <div class="diagram">scan_skills 遍历流程：
+
+SKILLS_DIR（skills/）
+  ├── code-review/     → is_dir? ✅ → 有 SKILL.md? ✅ → 解析 → 注册
+  ├── task-manager/    → is_dir? ✅ → 有 SKILL.md? ✅ → 解析 → 注册
+  └── README.md        → is_dir? ❌ → 跳过</div>
+</div>
+
+<!-- ==================== 15 ==================== -->
+<div class="card" id="s15">
+  <h2><span class="num">15</span> 语法小抄与常见困惑</h2>
+
+  <h3>语法小抄</h3>
+  <table>
+    <tr><th>语法/概念</th><th>含义</th></tr>
+    <tr><td><code>@dataclass</code></td><td>自动生成 <code>__init__</code>、<code>__repr__</code>、<code>__eq__</code></td></tr>
+    <tr><td><code>asdict(obj)</code></td><td>dataclass → 普通字典（JSON 可序列化）</td></tr>
+    <tr><td><code>**dict</code></td><td>字典解包为关键字参数</td></tr>
+    <tr><td><code>Path.is_relative_to()</code></td><td>检查路径是否在另一路径下（Python 3.9+）</td></tr>
+    <tr><td><code>ast.literal_eval()</code></td><td>安全版 eval()，只计算字面量</td></tr>
+    <tr><td><code>re.sub() / pattern.sub()</code></td><td>正则替换</td></tr>
+    <tr><td><code>glob.glob(pattern, root_dir=...)</code></td><td>文件通配符搜索</td></tr>
+    <tr><td><code>yaml.safe_load()</code></td><td>安全解析 YAML 字符串</td></tr>
+    <tr><td><code>f"'{var}'"</code></td><td>f-string 中给值加引号包裹</td></tr>
+    <tr><td><code>readline.get_line_buffer()</code></td><td>获取当前终端输入行的内容</td></tr>
+    <tr><td><code>split("---", 2)</code></td><td>最多分割 2 次，得到最多 3 个片段</td></tr>
+    <tr><td><code>threading.Thread(daemon=True)</code></td><td>守护线程，主程序退出自动结束</td></tr>
+    <tr><td><code>class Task:</code> vs <code>task = Task(...)</code></td><td>类（蓝图）vs 对象（实例）</td></tr>
+    <tr><td><code>lambda *, c=x, **kw: ...</code></td><td>lambda 中 * 强制关键字参数，默认参数快照，**kw 收集剩余参数</td></tr>
+    <tr><td><code>fn()</code> 在参数中</td><td>函数参数——把函数当作变量传来传去</td></tr>
+    <tr><td><code>\033[36m...\033[0m</code></td><td>ANSI 终端颜色——36 青色，0 重置</td></tr>
+  </table>
+
+  <h3>更新 context</h3>
+  <pre>context.<span class="fn">update</span>(<span class="fn">update_context</span>(context, history))</pre>
+
+  <p><code>context.update()</code> 是 Python 字典的<strong>内置方法</strong>，把另一个字典的键值对合并到当前字典中。这里外层 <code>.update()</code> 是 dict 方法，内层 <code>update_context()</code> 是自定义函数（返回一个新的 context 字典）。</p>
+
+  <h3>__main__ 中的 CLI_ACTIVE = True</h3>
+  <p>这行在 <code>if __name__ == "__main__"</code> 块中，启动终端打印信息开关。因为模块顶层 <code>CLI_ACTIVE = False</code>，当作为脚本运行时设置为 <code>True</code>，启用终端打印功能。</p>
+
+  <h3>为什么 agent_loop 和 cron_autorun_loop 都要上锁？</h3>
+  <p><code>agent_lock</code> 确保<strong>同一时间只有一个线程在运行 agent_loop</strong>。如果用户输入触发的 agent_loop 和 cron 触发的 agent_loop 同时运行，会相互干扰对话历史。</p>
+
+  <h3>turn_start = len(history) 的作用？</h3>
+  <p>记录当前轮次开始前的历史长度，用于 <code>print_turn_assistants(history, turn_start)</code> 只打印<strong>本轮新增</strong>的助手回复，而不是每次都打印全部历史。</p>
+
+  <h3>常见困惑 FAQ</h3>
+
+  <div class="callout">
+    <strong>Q：所有 task 保存方式都是 task_id.json 吗？</strong>
+  </div>
+  <p><strong>A：对。</strong> 每个 task 对应一个文件。好处是读一个任务不需要加载全部任务（性能好），删除/修改一个不影响其他任务。</p>
+
+  <div class="callout">
+    <strong>Q：class 和 object 是一回事吗？</strong>
+  </div>
+  <p><strong>A：不是。</strong> class 是"造对象的模板"，object 是"用模板造出来的具体东西"。所有用 class 造出来的实例都是对象。在 Python 中，连类本身也是对象（type 的实例）。</p>
+
+  <div class="callout">
+    <strong>Q：terminal_print 和 print 的区别？</strong>
+  </div>
+  <p><strong>A：</strong>print 在后台线程直接输出会破坏用户正在输入的内容。terminal_print 先保存用户输入 → 清行 → 打印 → 恢复输入行。</p>
+
+  <div class="callout">
+    <strong>Q：什么是"index 0 in size 0"错误？</strong>
+  </div>
+  <p><strong>A：</strong>尝试访问空列表的第一个元素（<code>list[0]</code> 但 <code>len(list) == 0</code>）。比如 <code>messages[-1]</code> 在 <code>messages</code> 为空时报错。</p>
+
+  <div class="callout">
+    <strong>Q：为什么 fn() 可以传函数？</strong>
+  </div>
+  <p><strong>A：</strong>Python 中函数是一等公民——函数可以像变量一样赋值、传参、返回。这就是<strong>高阶函数</strong>模式，把"要执行的操作"作为参数传递，实现"重试逻辑"的复用。</p>
+
+  <div class="callout">
+    <strong>Q：主动压缩和被动压缩的效果一样吗？</strong>
+  </div>
+  <p><strong>A：</strong>从"把长对话变成摘要"的角度看一样。但触发时机不同（主动是预防、被动是抢救），保留量不同（被动更激进，只留 5 条）。紧急程度不同决定了保留策略不同。</p>
+
+  <div class="callout">
+    <strong>Q：为什么压缩 tool_result 就够了（micro_compact）？</strong>
+  </div>
+  <p><strong>A：</strong>tool_result 是对话中最大的内容来源。一次 pytest 的 tool_result 可能有几千行输出，而其他消息（用户指令、助手回复）通常很短。所以压缩 tool_result 的性价比最高——改动最小，省空间最多。</p>
+</div>
+
+</div>
+</body>
+</html>
